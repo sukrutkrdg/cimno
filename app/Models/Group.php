@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Group extends Model
 {
     use SoftDeletes;
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     public function branch()
     {

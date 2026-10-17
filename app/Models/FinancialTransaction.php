@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class FinancialTransaction extends Model
 {
     use SoftDeletes;
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     protected $casts = [
         'transaction_date' => 'date',

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WhatsappTemplate extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     protected $casts = [
         'is_active' => 'boolean',

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Lead extends Model
 {
     use SoftDeletes;
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     protected $casts = [
         'trial_date' => 'date',

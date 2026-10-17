@@ -21,9 +21,15 @@
             <p class="text-xs text-slate-500">Salon Sahibi (Süper Yönetici), Sekreter ve Antrenör hesaplarınızla giriş yapın.</p>
         </div>
 
-        @if(session('login_error'))
+        @if(session('error') || session('login_error'))
             <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
-                ⚠️ {{ session('login_error') }}
+                ⚠️ {{ session('error') ?? session('login_error') }}
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                ✅ {{ session('success') }}
             </div>
         @endif
 

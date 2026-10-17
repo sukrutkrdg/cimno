@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WhatsappMessage extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     protected $casts = [
         'sent_at' => 'datetime',

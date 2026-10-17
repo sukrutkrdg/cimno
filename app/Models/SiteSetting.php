@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SiteSetting extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     public static function getVal(string $key, $default = null)
     {

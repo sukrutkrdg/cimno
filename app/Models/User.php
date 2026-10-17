@@ -11,7 +11,7 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
 
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     protected $hidden = [
         'password',

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DevelopmentRecord extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     protected $casts = [
         'skills' => 'array',

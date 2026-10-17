@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AuditLog extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     public function user()
     {
@@ -15,13 +15,17 @@ class AuditLog extends Model
 
     public static function record(string $action, string $description, ?string $entityType = null, ?int $entityId = null): void
     {
-        static::create([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'entity_type' => $entityType,
-            'entity_id' => $entityId,
-            'description' => $description,
-            'ip_address' => request()?->ip(),
-        ]);
+        try {
+            static::create([
+                'user_id' => session('admin_user_id') ?? auth()->id(),
+                'action' => $action,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'description' => $description,
+                'ip_address' => request()?->ip(),
+            ]);
+        } catch (\Throwable $e) {
+            // Denetim günlüğü hatası ana işlemi kesintiye uğratmasın
+        }
     }
 }

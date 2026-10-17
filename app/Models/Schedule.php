@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Schedule extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     public function group()
     {
