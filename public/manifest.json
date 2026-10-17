@@ -1,0 +1,40 @@
+{
+  "name": "Enerjik Cimnastik Mobil Uygulaması",
+  "short_name": "Enerjik Cimnastik",
+  "description": "Enerjik Cimnastik Veli, Antrenör ve Yönetici Mobil Uygulaması",
+  "start_url": "/mobil",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1E1B4B",
+  "theme_color": "#4F46E5",
+  "lang": "tr-TR",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Veli Ekranı",
+      "short_name": "Veli",
+      "url": "/mobil?rol=veli",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Antrenör Yoklama",
+      "short_name": "Yoklama",
+      "url": "/mobil?rol=antrenor",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Yönetici & WhatsApp",
+      "short_name": "Yönetim",
+      "url": "/mobil?rol=yonetici",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}
