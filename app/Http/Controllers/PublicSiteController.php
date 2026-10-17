@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 
 class PublicSiteController extends Controller
 {
+    // 1. NORMAL VATANDAŞIN GÖRECEĞİ KURUMSAL WEB SİTESİ
     public function home()
     {
         $settings = SiteSetting::pluck('value', 'key')->toArray();
@@ -46,6 +47,7 @@ class PublicSiteController extends Controller
         ));
     }
 
+    // Online Ön Kayıt / Ücretsiz Deneme Dersi Başvurusu
     public function submitTrialLead(Request $request)
     {
         $validated = $request->validate([
@@ -90,64 +92,78 @@ class PublicSiteController extends Controller
 
     public function parentPortal(Request $request)
     {
-        return redirect()->route('public.mobile.pwa', ['rol' => 'veli', 'phone' => $request->query('phone', '05332223344')]);
+        return redirect()->route('public.mobile.pwa', $request->all());
     }
 
-    // Tarayıcıdan Açılan Mobil Uygulama Ekranı (Ana Ekrana Kısayol Olarak Eklenir)
+    // 2. VELİ GİRİŞİ VE VELİYE ÖZEL MOBİL UYGULAMA EKRANI (/mobil)
     public function mobilePwa(Request $request)
     {
-        $rol = $request->query('rol', 'veli'); // veli, antrenor, yonetici
-        $phone = $request->query('phone', '05332223344');
-        $cleanPhone = preg_replace('/\D+/', '', $phone);
-
-        $students = Student::with([
-            'branch',
-            'group.schedules',
-            'group.coach',
-            'package',
-            'discountRule',
-            'attendances' => fn($q) => $q->latest('attendance_date')->take(10),
-            'invoices.payments',
-            'developmentRecords.coach',
-        ])->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-          ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-          ->get();
-
-        $groups = Group::with(['branch', 'coach', 'schedules', 'activeStudents'])->where('is_active', true)->get();
-        $overdueInvoices = Invoice::with('student.group')->whereIn('status', ['unpaid', 'partial'])->orderBy('due_date')->get();
-        $cashAccounts = CashAccount::all();
-        $whatsappQueue = WhatsappMessage::with(['template', 'student'])->where('status', 'queued')->latest()->get();
-        $leads = Lead::with('branch')->whereIn('status', ['new', 'trial_scheduled', 'thinking'])->latest()->get();
         $settings = SiteSetting::pluck('value', 'key')->toArray();
-        $announcements = Announcement::latest()->take(6)->get();
 
-        $stats = [
-            'today_collection' => Payment::whereDate('payment_date', today())->sum('amount'),
-            'month_collection' => Payment::whereMonth('payment_date', now()->month)->sum('amount'),
-            'overdue_total' => $overdueInvoices->sum('remaining_amount'),
-            'active_students' => Student::where('status', 'active')->count(),
-        ];
+        // Çıkış yapılmak istendiyse
+        if ($request->boolean('cikis')) {
+            session()->forget('logged_parent_phone');
+            return redirect()->route('public.mobile.pwa');
+        }
+
+        // Telefon numarası formdan veya URL'den geldiyse doğrula
+        $inputPhone = $request->input('phone');
+        $loginError = null;
+
+        if ($inputPhone !== null) {
+            $cleanInput = preg_replace('/\D+/', '', $inputPhone);
+            if (strlen($cleanInput) >= 9) {
+                $matchedCount = Student::where('parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
+                    ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
+                    ->count();
+
+                if ($matchedCount > 0) {
+                    session(['logged_parent_phone' => $inputPhone]);
+                } else {
+                    $loginError = 'Bu telefon numarasına bağlı aktif bir öğrenci kaydı bulunamadı. Lütfen salon sekreterliğimizle iletişime geçin.';
+                }
+            } else {
+                $loginError = 'Lütfen geçerli bir cep telefonu numarası girin (Ör: 0533 222 33 44).';
+            }
+        }
+
+        $activePhone = $inputPhone && !$loginError ? $inputPhone : session('logged_parent_phone');
+        $students = collect();
+
+        if ($activePhone) {
+            $cleanPhone = preg_replace('/\D+/', '', $activePhone);
+            $students = Student::with([
+                'branch',
+                'group.schedules',
+                'group.coach',
+                'package',
+                'discountRule',
+                'attendances' => fn($q) => $q->latest('attendance_date')->take(10),
+                'invoices.payments',
+                'developmentRecords.coach',
+            ])->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
+              ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
+              ->get();
+        }
+
+        $sekme = $request->query('sekme', 'cocuklarim'); // cocuklarim, aidat, karne, duyurular
+        $announcements = Announcement::whereIn('target_audience', ['all', 'parents'])->latest()->take(6)->get();
 
         return view('public.mobile-app', compact(
-            'rol',
-            'phone',
+            'activePhone',
+            'loginError',
             'students',
-            'groups',
-            'overdueInvoices',
-            'cashAccounts',
-            'whatsappQueue',
-            'leads',
+            'sekme',
             'settings',
-            'announcements',
-            'stats'
+            'announcements'
         ));
     }
 
-    // VELİ SALONA GELDİĞİNDE QR OKUTUP YOKLAMA YAPMA EKRANI (/qr-yoklama)
+    // 3. VELİ SALONA GELDİĞİNDE QR OKUTUP YOKLAMA YAPMA EKRANI (/qr-yoklama)
     public function qrCheckinPage(Request $request)
     {
-        $phone = $request->query('phone', '05332223344');
-        $cleanPhone = preg_replace('/\D+/', '', $phone);
+        $phone = $request->query('phone', session('logged_parent_phone', ''));
+        $cleanPhone = preg_replace('/\D+/', '', (string) $phone);
         $studentId = $request->query('student_id');
 
         $students = collect();
@@ -198,7 +214,6 @@ class PublicSiteController extends Controller
             ]
         );
 
-        // Üst üste devamsızlık sayacını sıfırla; telafi kullandıysa telafi hakkını düş
         $student->update(['consecutive_absences' => 0]);
         if ($status === 'makeup' && $student->makeup_credits > 0) {
             $student->decrement('makeup_credits');

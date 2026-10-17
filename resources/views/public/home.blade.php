@@ -20,47 +20,76 @@
 </head>
 <body class="bg-slate-50 text-slate-900">
 
-    <!-- Üst Bilgi Barı -->
-    <div class="bg-indigo-950 text-indigo-100 text-xs py-2 px-4">
-        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-            <div class="flex items-center gap-4">
-                <span>📍 {{ $settings['city_district'] ?? 'Tekirdağ' }} · {{ $settings['address'] ?? '' }}</span>
-                <span class="hidden md:inline">☎️ {{ $settings['phone'] ?? '0538 899 31 59' }}</span>
+    <!-- Üst İletişim Barı (Sadece Ziyaretçi Bilgileri) -->
+    <div class="bg-indigo-950 text-indigo-100 text-xs py-2 px-4 border-b border-indigo-900">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4 truncate">
+                <span>📍 {{ $settings['city_district'] ?? 'Tekirdağ' }} · {{ $settings['address'] ?? 'Süleymanpaşa' }}</span>
+                <span class="hidden sm:inline">☎️ {{ $settings['phone'] ?? '0538 899 31 59' }}</span>
             </div>
-            <div class="flex items-center gap-4 font-semibold">
+            <div class="flex items-center gap-4 font-semibold shrink-0">
                 <a href="https://www.instagram.com/enerjik.cimnastik/" target="_blank" class="text-pink-400 hover:underline">📸 @enerjik.cimnastik</a>
                 <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode('Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp İletişim</a>
-                <a href="{{ route('public.mobile.pwa') }}" class="text-amber-300 hover:underline">📲 Mobil Uygulama</a>
-                <a href="{{ route('public.qr.poster') }}" class="text-indigo-200 hover:underline">🏁 QR Afiş</a>
-                <a href="{{ route('admin.index') }}" class="bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1 rounded">⚙️ Yönetim Paneli</a>
             </div>
         </div>
     </div>
 
-    <!-- Navigasyon -->
-    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/" class="flex items-center gap-3">
-                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-12 h-12 rounded-full object-cover border-2 border-purple-600 shadow-md">
+    <!-- Kurumsal Navigasyon (Masaüstünde Dengeli, Mobilde Açılır Menülü) -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center gap-4">
+            <!-- Sol: Logo ve Kulüp Adı -->
+            <a href="/" class="flex items-center gap-3 shrink-0">
+                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-12 h-12 rounded-full object-cover border-2 border-purple-600 shadow">
                 <div>
-                    <span class="font-extrabold text-lg tracking-tight text-slate-900 block leading-none">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</span>
-                    <span class="text-[11px] text-purple-700 font-bold">🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar</span>
+                    <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 block leading-tight">Tekirdağ Enerjik Cimnastik</span>
+                    <span class="text-[11px] text-purple-700 font-bold block">🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar</span>
                 </div>
             </a>
-            <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
-                <a href="#branslar" class="hover:text-indigo-600">Branşlar</a>
-                <a href="#program" class="hover:text-indigo-600">Ders Programı</a>
-                <a href="#ucretler" class="hover:text-indigo-600">Paket & Ücretler</a>
-                <a href="#antrenorler" class="hover:text-indigo-600">Antrenörler</a>
-                <a href="#galeri" class="hover:text-indigo-600">Galeri & Duyurular</a>
-                <a href="#sss" class="hover:text-indigo-600">SSS</a>
+
+            <!-- Orta: Masaüstü Menü Linkleri -->
+            <nav class="hidden xl:flex items-center gap-7 text-sm font-bold text-slate-700">
+                <a href="#branslar" class="hover:text-indigo-600 transition">Branşlarımız</a>
+                <a href="#program" class="hover:text-indigo-600 transition">Ders Programı</a>
+                <a href="#ucretler" class="hover:text-indigo-600 transition">Paket & Ücretler</a>
+                <a href="#antrenorler" class="hover:text-indigo-600 transition">Antrenörler</a>
+                <a href="#galeri" class="hover:text-indigo-600 transition">Galeri</a>
+                <a href="#sss" class="hover:text-indigo-600 transition">SSS</a>
             </nav>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('public.mobile.pwa') }}" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-                    📲 Mobil Kısayol & Veli Girişi
+
+            <!-- Sağ: Veli Girişi & Deneme Dersi Butonları -->
+            <div class="hidden sm:flex items-center gap-2.5 shrink-0">
+                <a href="{{ route('public.mobile.pwa') }}" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 hover:bg-indigo-50 transition">
+                    👨‍👩‍👧 Veli Girişi
                 </a>
-                <a href="#on-kayit" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20">
+                <a href="#on-kayit" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition">
                     ✨ Ücretsiz Deneme Dersi
+                </a>
+            </div>
+
+            <!-- Mobil / Tablet Hamburger Menü Butonu -->
+            <button onclick="document.getElementById('mobile-nav-drawer').classList.toggle('hidden')" class="xl:hidden p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100" aria-label="Menüyü Aç">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobil / Tablet Açılır Menü -->
+        <div id="mobile-nav-drawer" class="hidden xl:hidden bg-white border-t border-slate-200 px-4 py-4 space-y-3 shadow-lg">
+            <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
+                <a href="#branslar" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🤸 Branşlarımız</a>
+                <a href="#program" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📅 Ders Programı</a>
+                <a href="#ucretler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏷️ Paket & Ücretler</a>
+                <a href="#antrenorler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏅 Antrenörler</a>
+                <a href="#galeri" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📸 Salon Galerisi</a>
+                <a href="#sss" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">❓ Sık Sorulanlar</a>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                <a href="{{ route('public.mobile.pwa') }}" class="text-center py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 font-extrabold text-xs">
+                    👨‍👩‍👧 Veli Girişi
+                </a>
+                <a href="#on-kayit" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="text-center py-2.5 rounded-xl bg-rose-600 text-white font-extrabold text-xs">
+                    ✨ Deneme Dersi
                 </a>
             </div>
         </div>
@@ -355,9 +384,20 @@
                     <a href="https://www.instagram.com/enerjik.cimnastik/" target="_blank" class="inline-block mt-1 text-pink-400 font-bold hover:underline">📸 instagram.com/enerjik.cimnastik</a>
                 </div>
             </div>
-            <div class="md:col-span-2">
-                <h4 class="text-white font-bold mb-2">🔒 KVKK Aydınlatma Metni ve Çocuk Verisi Güvenliği</h4>
-                <p class="leading-relaxed text-slate-400">{{ $settings['kvkk_text'] ?? '' }}</p>
+            <div class="md:col-span-2 space-y-3">
+                <div>
+                    <h4 class="text-white font-bold mb-1.5">🔒 KVKK Aydınlatma Metni ve Çocuk Verisi Güvenliği</h4>
+                    <p class="leading-relaxed text-slate-400">{{ $settings['kvkk_text'] ?? '' }}</p>
+                </div>
+                <div class="pt-3 border-t border-slate-800/80 flex flex-wrap justify-between items-center gap-3 text-[11px] text-slate-500">
+                    <span>© {{ date('Y') }} Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.</span>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ route('public.mobile.pwa') }}" class="hover:text-slate-300">👨‍👩‍👧 Veli Girişi</a>
+                        <a href="{{ route('public.qr.checkin') }}" class="hover:text-slate-300">📷 Salon QR Yoklama</a>
+                        <a href="{{ route('public.qr.poster') }}" class="hover:text-slate-300">🏁 QR Afiş</a>
+                        <a href="{{ route('admin.index') }}" class="hover:text-slate-300">⚙️ Yönetici & Antrenör Girişi</a>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>

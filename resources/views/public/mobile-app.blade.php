@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Enerjik Cimnastik Mobil</title>
+    <title>Veli Girişi & Mobil Panel | Tekirdağ Enerjik Cimnastik</title>
 
     <!-- PWA & iOS / Android Ana Ekran Kısayol Etiketleri -->
     <link rel="manifest" href="/manifest.json">
@@ -24,79 +24,126 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900 pb-24 select-none">
+<body class="bg-slate-100 text-slate-900 pb-24">
 
-    <!-- Mobil Uygulama Üst Barı (Native App Header) -->
-    <header class="bg-gradient-to-r from-indigo-950 via-purple-900 to-indigo-800 text-white px-4 pt-4 pb-3.5 sticky top-0 z-40 shadow-md">
+    <!-- Üst Uygulama Barı -->
+    <header class="bg-gradient-to-r from-indigo-950 via-purple-900 to-indigo-900 text-white px-4 py-3.5 sticky top-0 z-40 shadow-md">
         <div class="max-w-lg mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2.5">
+            <a href="/" class="flex items-center gap-2.5">
                 <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-10 h-10 rounded-full object-cover border-2 border-purple-300 shadow">
                 <div>
-                    <h1 class="font-extrabold text-sm leading-tight">Enerjik Cimnastik Mobil</h1>
-                    <span id="network-badge" class="text-[11px] text-emerald-300 font-semibold">🟢 Tekirdağ · Çevrimiçi</span>
+                    <h1 class="font-extrabold text-sm leading-tight">Enerjik Cimnastik</h1>
+                    <span class="text-[11px] text-purple-200 font-semibold">👨‍👩‍👧 Veli Mobil Takip Sistemi</span>
                 </div>
-            </div>
+            </a>
             <div class="flex items-center gap-1.5">
-                <button onclick="openInstallModal()" class="px-2.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow">
+                <button onclick="triggerPwaInstall()" class="px-2.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow">
                     📲 Ana Ekrana Ekle
                 </button>
-                <a href="{{ route('public.qr.poster') }}" class="px-2.5 py-1.5 rounded-xl bg-white/15 text-white font-bold text-[11px]">
-                    🏁 QR Afiş
-                </a>
+                @if($activePhone && $students->isNotEmpty())
+                    <a href="{{ route('public.mobile.pwa', ['cikis' => 1]) }}" class="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-[11px]">
+                        Çıkış
+                    </a>
+                @else
+                    <a href="/" class="px-2.5 py-1.5 rounded-xl bg-white/15 text-white font-bold text-[11px]">
+                        ← Site
+                    </a>
+                @endif
             </div>
         </div>
     </header>
 
-    <!-- iOS & Android Ana Ekrana Kısayol Ekleme Bilgi Bandı -->
-    <div id="install-banner" class="max-w-lg mx-auto mt-3 px-3">
-        <div class="bg-gradient-to-r from-indigo-600 to-rose-600 text-white rounded-2xl p-3.5 shadow flex items-center justify-between gap-3">
-            <div class="text-xs">
-                <strong class="block text-sm font-extrabold">📱 Telefonunuza Uygulama Olarak Ekleyin!</strong>
-                <span class="text-indigo-100 text-[11px]">Mağaza indirmesi gerekmeden iPhone ve Android ana ekranınıza tek dokunuşla kısayol ekleyin.</span>
+    <main class="max-w-lg mx-auto p-3.5 space-y-4">
+
+        <!-- ==================================================== -->
+        <!-- DURUM A: VELİ HENÜZ GİRİŞ YAPMADIYSA (GİRİŞ EKRANI)  -->
+        <!-- ==================================================== -->
+        @if(!$activePhone || $students->isEmpty())
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-lg space-y-5 mt-2">
+                <div class="text-center space-y-2">
+                    <img src="/icons/logo.jpg" alt="Logo" class="w-20 h-20 rounded-full object-cover mx-auto border-4 border-purple-600 shadow-md">
+                    <span class="inline-block text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-purple-100 text-purple-800">
+                        Öğrenciye Bağlı Veli Sistemi
+                    </span>
+                    <h2 class="text-xl font-extrabold text-slate-900">👨‍👩‍👧 Veli Girişi</h2>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız</strong> otomatik olarak öğrencinize tanımlanır. Kayıtlı telefon numaranızı girerek öğrencinizin ders programını, yoklamasını, aidat makbuzlarını ve gelişim karnesini görüntüleyebilirsiniz.
+                    </p>
+                </div>
+
+                @if($loginError)
+                    <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
+                        ⚠️ {{ $loginError }}
+                    </div>
+                @endif
+
+                <form method="GET" action="{{ route('public.mobile.pwa') }}" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-700 mb-1">Salonda Kayıtlı Cep Telefonu Numaranız</label>
+                        <input type="tel" name="phone" required placeholder="05XX XXX XX XX" class="w-full rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:outline-none px-4 py-3 text-base font-extrabold tracking-wide">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/25 transition">
+                        🔓 Giriş Yap ve Öğrencimi Göster
+                    </button>
+                </form>
+
+                <!-- Telefon Ana Ekranına Kısayol Ekleme Kutusu -->
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-between gap-3">
+                    <div class="text-xs">
+                        <strong class="block text-indigo-950 font-extrabold">📲 Telefon Ekranına Kısayol Atın</strong>
+                        <span class="text-slate-600 text-[11px]">Uygulama gibi tek dokunuşla açmak için ana ekranınıza ekleyin.</span>
+                    </div>
+                    <button onclick="triggerPwaInstall()" class="shrink-0 px-3 py-2 rounded-xl bg-indigo-600 text-white font-extrabold text-xs">
+                        Kısayol Ekle
+                    </button>
+                </div>
+
+                <!-- Demo / Test İçin Örnek Veli Numaraları -->
+                <div class="pt-3 border-t border-slate-200 space-y-2">
+                    <span class="block text-[11px] font-extrabold uppercase text-slate-400">Hızlı Test İçin Örnek Kayıtlı Veliler:</span>
+                    <div class="grid grid-cols-1 gap-2">
+                        <a href="{{ route('public.mobile.pwa', ['phone' => '05332223344']) }}" class="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 flex justify-between items-center text-xs">
+                            <div>
+                                <strong class="block text-slate-900">👨‍👩‍👧‍👦 Veli: Murat Arslan (0533 222 33 44)</strong>
+                                <span class="text-[11px] text-slate-500">2 Kardeş Sporcu: Elif Arslan & Kerem Arslan</span>
+                            </div>
+                            <span class="text-indigo-600 font-extrabold">Giriş →</span>
+                        </a>
+                        <a href="{{ route('public.mobile.pwa', ['phone' => '05354445566']) }}" class="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 flex justify-between items-center text-xs">
+                            <div>
+                                <strong class="block text-slate-900">👩 Veli: Zeynep Çelik (0535 444 55 66)</strong>
+                                <span class="text-[11px] text-slate-500">Sporcu: Defne Çelik (Ritmik Cimnastik)</span>
+                            </div>
+                            <span class="text-indigo-600 font-extrabold">Giriş →</span>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <button onclick="triggerPwaInstall()" class="shrink-0 px-3.5 py-2 rounded-xl bg-white text-indigo-900 font-extrabold text-xs shadow">
-                Kısayol Ekle
-            </button>
-        </div>
-    </div>
-
-    <!-- ANA MOBİL EKRAN İÇERİĞİ -->
-    <main class="max-w-lg mx-auto p-3 space-y-4">
+        @else
 
         <!-- ==================================================== -->
-        <!-- 1. VELİ MOBİL EKRANI                                 -->
+        <!-- DURUM B: VELİ GİRİŞ YAPTIYSA (ÖĞRENCİYE ÖZEL EKRAN)  -->
         <!-- ==================================================== -->
-        @if($rol === 'veli')
-            <!-- Veli Hızlı Salon Giriş QR Yoklama Kartı -->
+            <!-- Hoş Geldiniz & Hızlı QR Yoklama Kartı -->
             <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-3">
                 <div>
-                    <span class="text-[10px] font-extrabold uppercase bg-white/20 px-2 py-0.5 rounded-full">Salona Geldiniz mi?</span>
-                    <h2 class="text-sm font-extrabold mt-1">📷 QR ile Hızlı Ders Yoklaması Yap</h2>
-                    <p class="text-[11px] text-emerald-100">Salondaki QR kodu okutarak veya buradan tek dokunuşla giriş bildirin.</p>
+                    <span class="text-[10px] font-extrabold uppercase bg-white/20 px-2 py-0.5 rounded-full">Hoş Geldiniz, Sayın {{ $students->first()->parent_name }}</span>
+                    <h2 class="text-sm font-extrabold mt-1">📷 Salona Geldiniz mi? QR Yoklama</h2>
+                    <p class="text-[11px] text-emerald-100">Salona girişte tek dokunuşla bugünkü ders yoklamasını onaylayın.</p>
                 </div>
-                <a href="{{ route('public.qr.checkin', ['phone' => $phone]) }}" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow">
+                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone]) }}" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow">
                     ✅ Yoklama Yap
                 </a>
             </div>
 
-            <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm">
-                <form method="GET" action="{{ route('public.mobile.pwa') }}" class="flex items-center justify-between gap-2">
-                    <input type="hidden" name="rol" value="veli">
-                    <span class="text-xs font-bold text-slate-600">Veli Hesabı:</span>
-                    <select name="phone" onchange="this.form.submit()" class="flex-1 bg-slate-100 border border-slate-300 text-slate-900 text-xs rounded-xl px-3 py-2 font-bold">
-                        <option value="05332223344" {{ str_contains($phone, '2223344') ? 'selected' : '' }}>Murat Arslan (Elif & Kerem Arslan)</option>
-                        <option value="05354445566" {{ str_contains($phone, '4445566') ? 'selected' : '' }}>Zeynep Çelik (Defne Çelik)</option>
-                    </select>
-                </form>
-            </div>
-
+            <!-- Veliye Bağlı Öğrenciler (Kardeşse Alt Alta veya Sekmeli Görünür) -->
             @foreach($students as $st)
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">{{ $st->branch?->name }}</span>
                             <h2 class="text-lg font-extrabold mt-1">🤸 {{ $st->full_name }}</h2>
-                            <p class="text-[11px] text-indigo-200">{{ $st->group?->name }} · Antrenör: {{ $st->group?->coach?->name }}</p>
+                            <p class="text-[11px] text-indigo-200">{{ $st->group?->name }} · Antrenör: {{ $st->group?->coach?->name ?? 'Kulüp Antrenörü' }}</p>
                         </div>
                         <div class="text-right bg-white/10 px-3 py-1.5 rounded-xl">
                             <span class="text-[10px] text-indigo-200 block">Telafi Hakkı</span>
@@ -105,69 +152,77 @@
                     </div>
 
                     <div class="p-4 space-y-4">
-                        <!-- Ders Saatleri -->
-                        <div>
-                            <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">📅 Haftalık Antrenman Saatleri</h3>
-                            <div class="flex flex-wrap gap-1.5">
-                                @foreach($st->group?->schedules ?? [] as $sch)
-                                    <span class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-900 font-bold text-xs">
-                                        🗓️ {{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }}
-                                    </span>
-                                @endforeach
+                        @if($sekme === 'cocuklarim' || $sekme === 'tumu')
+                            <!-- Ders Saatleri -->
+                            <div>
+                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">📅 Haftalık Antrenman Saatleri</h3>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach($st->group?->schedules ?? [] as $sch)
+                                        <span class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-900 font-bold text-xs">
+                                            🗓️ {{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }} ({{ $sch->area }})
+                                        </span>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Ödeme ve Dijital Makbuzlar -->
-                        <div>
-                            <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">💳 Aidat & Dijital Makbuzlar</h3>
-                            <div class="space-y-2">
-                                @foreach($st->invoices as $inv)
-                                    <div class="p-3 rounded-xl border {{ $inv->remaining_amount > 0 ? 'bg-rose-50/60 border-rose-200' : 'bg-emerald-50/50 border-emerald-200' }}">
-                                        <div class="flex justify-between items-center">
-                                            <span class="font-bold text-xs">{{ $inv->period_label }}</span>
-                                            <span class="text-xs font-extrabold {{ $inv->remaining_amount > 0 ? 'text-rose-700' : 'text-emerald-700' }}">
-                                                {{ $inv->remaining_amount > 0 ? 'Kalan: ' . number_format($inv->remaining_amount, 0, ',', '.') . ' ₺' : '✅ Ödendi' }}
+                            <!-- Son Yoklamalar -->
+                            <div>
+                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">✅ Son Yoklama Kayıtları</h3>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    @forelse($st->attendances->take(4) as $att)
+                                        <div class="p-2 rounded-xl bg-slate-50 border text-[11px] flex justify-between items-center">
+                                            <span>{{ $att->attendance_date->format('d.m.Y') }}</span>
+                                            <span class="font-bold {{ $att->status === 'present' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                                {{ $att->status === 'present' ? '✅ Geldi' : '❌ Gelmedi' }}
                                             </span>
                                         </div>
-                                        @foreach($inv->payments as $pay)
-                                            <div class="mt-2 pt-2 border-t border-slate-200/70 flex justify-between items-center text-[11px]">
-                                                <span>🧾 {{ $pay->receipt_no }} ({{ number_format($pay->amount, 0, ',', '.') }} ₺)</span>
-                                                <a href="{{ route('public.receipt', $pay->id) }}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold">Makbuz Aç</a>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- Son Yoklamalar -->
-                        <div>
-                            <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">✅ Son Yoklama Kayıtları</h3>
-                            <div class="grid grid-cols-2 gap-1.5">
-                                @foreach($st->attendances->take(4) as $att)
-                                    <div class="p-2 rounded-xl bg-slate-50 border text-[11px] flex justify-between items-center">
-                                        <span>{{ $att->attendance_date->format('d.m.Y') }}</span>
-                                        <span class="font-bold {{ $att->status === 'present' ? 'text-emerald-600' : 'text-rose-600' }}">
-                                            {{ $att->status === 'present' ? 'Geldi' : 'Gelmedi' }}
-                                        </span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- Gelişim Karnesi -->
-                        @foreach($st->developmentRecords as $dev)
-                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs">
-                                <div class="font-extrabold text-amber-950">🏅 {{ $dev->term_label }} ({{ $dev->current_level }})</div>
-                                <div class="grid grid-cols-4 gap-1 text-center my-2 text-[11px]">
-                                    <div class="bg-white p-1 rounded border">Esn: <strong>{{ $dev->flexibility_score }}</strong></div>
-                                    <div class="bg-white p-1 rounded border">Kuv: <strong>{{ $dev->strength_score }}</strong></div>
-                                    <div class="bg-white p-1 rounded border">Den: <strong>{{ $dev->balance_score }}</strong></div>
-                                    <div class="bg-white p-1 rounded border">Dis: <strong>{{ $dev->discipline_score }}</strong></div>
+                                    @empty
+                                        <p class="text-xs text-slate-400 col-span-2">Henüz yoklama kaydı bulunmuyor.</p>
+                                    @endforelse
                                 </div>
-                                <p class="text-[11px] text-slate-700 italic">"{{ $dev->coach_comment }}"</p>
                             </div>
-                        @endforeach
+                        @endif
+
+                        @if($sekme === 'cocuklarim' || $sekme === 'aidat')
+                            <!-- Ödeme ve Dijital Makbuzlar -->
+                            <div>
+                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">💳 Aidat Durumu & Dijital Makbuzlar</h3>
+                                <div class="space-y-2">
+                                    @foreach($st->invoices as $inv)
+                                        <div class="p-3 rounded-xl border {{ $inv->remaining_amount > 0 ? 'bg-rose-50/60 border-rose-200' : 'bg-emerald-50/50 border-emerald-200' }}">
+                                            <div class="flex justify-between items-center">
+                                                <span class="font-bold text-xs">{{ $inv->period_label }}</span>
+                                                <span class="text-xs font-extrabold {{ $inv->remaining_amount > 0 ? 'text-rose-700' : 'text-emerald-700' }}">
+                                                    {{ $inv->remaining_amount > 0 ? 'Kalan: ' . number_format($inv->remaining_amount, 0, ',', '.') . ' ₺' : '✅ Ödendi' }}
+                                                </span>
+                                            </div>
+                                            @foreach($inv->payments as $pay)
+                                                <div class="mt-2 pt-2 border-t border-slate-200/70 flex justify-between items-center text-[11px]">
+                                                    <span>🧾 {{ $pay->receipt_no }} ({{ number_format($pay->amount, 0, ',', '.') }} ₺)</span>
+                                                    <a href="{{ route('public.receipt', $pay->id) }}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold">Makbuz PDF</a>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($sekme === 'cocuklarim' || $sekme === 'karne')
+                            <!-- Gelişim Karnesi -->
+                            @foreach($st->developmentRecords as $dev)
+                                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+                                    <div class="font-extrabold text-amber-950">🏅 {{ $dev->term_label }} ({{ $dev->current_level }})</div>
+                                    <div class="grid grid-cols-4 gap-1 text-center my-2 text-[11px]">
+                                        <div class="bg-white p-1 rounded border">Esn: <strong>{{ $dev->flexibility_score }}</strong></div>
+                                        <div class="bg-white p-1 rounded border">Kuv: <strong>{{ $dev->strength_score }}</strong></div>
+                                        <div class="bg-white p-1 rounded border">Den: <strong>{{ $dev->balance_score }}</strong></div>
+                                        <div class="bg-white p-1 rounded border">Dis: <strong>{{ $dev->discipline_score }}</strong></div>
+                                    </div>
+                                    <p class="text-[11px] text-slate-700 italic">"{{ $dev->coach_comment }}"</p>
+                                </div>
+                            @endforeach
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -175,122 +230,11 @@
             <!-- Kulüp IBAN ve Hızlı WhatsApp -->
             <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
                 <div class="text-xs font-extrabold text-indigo-600">🏦 Havale / EFT İçin Kulüp IBAN Bilgisi</div>
-                <div class="text-xs font-bold">{{ $settings['iban_holder'] ?? '' }}</div>
+                <div class="text-xs font-bold">{{ $settings['iban_holder'] ?? 'Enerjik Cimnastik Spor Kulübü' }}</div>
                 <div class="text-xs font-mono bg-slate-100 p-2 rounded-xl select-all">{{ $settings['iban_number'] ?? '' }}</div>
-                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905321001001' }}?text={{ urlencode('Merhaba, mobil uygulamadan yazıyorum.') }}" target="_blank" class="block text-center w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">
+                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode('Merhaba, veli ekranından yazıyorum.') }}" target="_blank" class="block text-center w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">
                     💬 Salon WhatsApp Hattına Yaz
                 </a>
-            </div>
-        @endif
-
-        <!-- ==================================================== -->
-        <!-- 2. ANTRENÖR MOBİL EKRANI (ÇEVRİMDIŞI YOKLAMA)        -->
-        <!-- ==================================================== -->
-        @if($rol === 'antrenor')
-            <div class="bg-indigo-950 text-white rounded-2xl p-4 shadow">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <span class="text-[11px] text-amber-300 font-bold uppercase">Antrenör Mobil Modülü</span>
-                        <h2 class="text-base font-extrabold">🎽 Tek Dokunuşla Grup Yoklaması</h2>
-                    </div>
-                    <button onclick="syncOfflineQueue()" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs">
-                        🔄 Senkronize Et
-                    </button>
-                </div>
-                <p class="text-[11px] text-indigo-200 mt-1">İnternet kesilse bile yoklamalar telefon hafızasına kaydedilir ve bağlantı geldiğinde otomatik gönderilir.</p>
-                <div id="offline-status" class="text-[11px] text-amber-300 font-bold mt-1 hidden"></div>
-            </div>
-
-            @foreach($groups as $grp)
-                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <div>
-                            <span class="text-[11px] font-bold text-indigo-600">{{ $grp->branch?->name }} · {{ $grp->area }}</span>
-                            <h3 class="font-extrabold text-sm">{{ $grp->name }}</h3>
-                        </div>
-                        <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100">{{ $grp->activeStudents->count() }}/{{ $grp->capacity }}</span>
-                    </div>
-
-                    <div class="space-y-2">
-                        @foreach($grp->activeStudents as $st)
-                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center gap-2">
-                                <div>
-                                    <div class="font-bold text-xs">{{ $st->full_name }}</div>
-                                    <div class="text-[10px] text-slate-500">Telafi Hakkı: {{ $st->makeup_credits }} · Beden: {{ $st->uniform_size ?? '-' }}</div>
-                                </div>
-                                <div class="flex gap-1.5">
-                                    <button onclick="markMobileAttendance({{ $grp->id }}, {{ $st->id }}, 'present', this)" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">
-                                        ✅ Geldi
-                                    </button>
-                                    <button onclick="markMobileAttendance({{ $grp->id }}, {{ $st->id }}, 'absent', this)" class="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-700 text-xs font-bold">
-                                        ❌ Yok
-                                    </button>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endforeach
-        @endif
-
-        <!-- ==================================================== -->
-        <!-- 3. YÖNETİCİ / SEKRETER MOBİL EKRANI                  -->
-        <!-- ==================================================== -->
-        @if($rol === 'yonetici')
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-                    <span class="text-[11px] text-slate-500 font-bold">Bu Ayki Tahsilat</span>
-                    <div class="text-xl font-extrabold text-emerald-600 mt-0.5">{{ number_format($stats['month_collection'], 0, ',', '.') }} ₺</div>
-                </div>
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-                    <span class="text-[11px] text-slate-500 font-bold">Bekleyen Aidat</span>
-                    <div class="text-xl font-extrabold text-rose-600 mt-0.5">{{ number_format($stats['overdue_total'], 0, ',', '.') }} ₺</div>
-                </div>
-            </div>
-
-            <!-- Mobil Hızlı Tahsilat -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                <h3 class="font-extrabold text-sm mb-2.5">⚡ Hızlı Aidat Tahsilatı Gir</h3>
-                <form action="{{ route('admin.payments.store') }}" method="POST" class="space-y-2.5 text-xs">
-                    @csrf
-                    <select name="invoice_id" class="w-full border rounded-xl px-3 py-2.5 bg-slate-50 font-bold">
-                        @foreach($overdueInvoices as $inv)
-                            <option value="{{ $inv->id }}">{{ $inv->student?->full_name }} ({{ number_format($inv->remaining_amount, 0, ',', '.') }} ₺)</option>
-                        @endforeach
-                    </select>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" name="amount" value="1220" required class="border rounded-xl px-3 py-2 font-bold" placeholder="Tutar (₺)">
-                        <select name="payment_method" class="border rounded-xl px-3 py-2 bg-white font-bold">
-                            <option value="cash">Nakit</option>
-                            <option value="pos">POS (Kart)</option>
-                            <option value="bank_transfer">Havale/EFT</option>
-                        </select>
-                    </div>
-                    <input type="hidden" name="cash_account_id" value="{{ $cashAccounts->first()?->id ?? 1 }}">
-                    <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold">
-                        🧾 Tahsilatı Kaydet & Makbuz Üret
-                    </button>
-                </form>
-            </div>
-
-            <!-- WhatsApp Business Hazır Cevap Kuyruğu -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-2.5">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-extrabold text-sm text-emerald-800">💬 WhatsApp Business Hazır Mesajlar ({{ $whatsappQueue->count() }})</h3>
-                    <a href="{{ route('admin.index', ['tab' => 'mesajlar']) }}" class="text-[11px] font-bold text-indigo-600 underline">Tam Panel</a>
-                </div>
-                @foreach($whatsappQueue as $msg)
-                    <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="font-extrabold text-xs">{{ $msg->recipient_name }}</span>
-                            <span class="text-[10px] font-mono bg-white px-2 py-0.5 rounded border font-bold">{{ $msg->template?->shortcut ?? '/mesaj' }}</span>
-                        </div>
-                        <p class="text-[11px] text-slate-700 leading-snug">{{ $msg->message_text }}</p>
-                        <a href="{{ route('admin.whatsapp.send', $msg->id) }}" target="_blank" class="block text-center w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm">
-                            💬 WhatsApp Business'ta Aç & Gönder →
-                        </a>
-                    </div>
-                @endforeach
             </div>
         @endif
 
@@ -303,12 +247,12 @@
                 <h3 class="text-lg font-extrabold">📲 Telefon Ana Ekranına Kısayol Ekle</h3>
                 <button onclick="closeInstallModal()" class="text-slate-400 font-extrabold text-lg">✕</button>
             </div>
-            <p class="text-xs text-slate-600">App Store veya Google Play'e gerek kalmadan uygulamamızı 5 saniyede telefon ekranınıza ekleyebilirsiniz:</p>
+            <p class="text-xs text-slate-600">Mağaza indirmesi gerekmeden uygulamamızı 5 saniyede telefon ekranınıza ekleyebilirsiniz:</p>
 
             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
                 <div class="font-extrabold text-indigo-900">🍎 iPhone / iPad (Safari) İçin:</div>
                 <p>1. Ekranın altındaki <strong>Paylaş (Yukarı Oklu Kare ⬆️)</strong> simgesine dokunun.</p>
-                <p>2. Menüden <strong>"Ana Ekrana Ekle" (Add to Home Screen)</strong> seçeneğine basıp sağ üstten <strong>Ekle</strong> deyin.</p>
+                <p>2. Menüden <strong>"Ana Ekrana Ekle"</strong> seçeneğine basıp sağ üstten <strong>Ekle</strong> deyin.</p>
             </div>
 
             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
@@ -323,37 +267,37 @@
         </div>
     </div>
 
-    <!-- Alt Mobil Uygulama Navigasyon Barı (Bottom Tab Bar) -->
-    <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 shadow-lg">
-        <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2">
-            <a href="{{ route('public.mobile.pwa', ['rol' => 'veli']) }}" class="flex flex-col items-center gap-0.5 {{ $rol === 'veli' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                <span class="text-lg">👨‍👩‍👧</span>
-                <span class="text-[11px]">Veli Ekranı</span>
-            </a>
-            <a href="{{ route('public.mobile.pwa', ['rol' => 'antrenor']) }}" class="flex flex-col items-center gap-0.5 {{ $rol === 'antrenor' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                <span class="text-lg">🎽</span>
-                <span class="text-[11px]">Antrenör Yoklama</span>
-            </a>
-            <a href="{{ route('public.mobile.pwa', ['rol' => 'yonetici']) }}" class="flex flex-col items-center gap-0.5 {{ $rol === 'yonetici' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                <span class="text-lg">💬</span>
-                <span class="text-[11px]">Yönetim & WA</span>
-            </a>
-            <a href="{{ route('admin.index') }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
-                <span class="text-lg">⚙️</span>
-                <span class="text-[11px]">Tam Panel</span>
-            </a>
-        </div>
-    </nav>
+    <!-- Alt Mobil Uygulama Navigasyon Barı (Yalnız Veli Menüsü) -->
+    @if($activePhone && $students->isNotEmpty())
+        <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 shadow-lg">
+            <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2">
+                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'cocuklarim']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'cocuklarim' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
+                    <span class="text-lg">🤸</span>
+                    <span class="text-[11px]">Öğrencim</span>
+                </a>
+                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone]) }}" class="flex flex-col items-center gap-0.5 text-emerald-600 font-extrabold">
+                    <span class="text-lg">📷</span>
+                    <span class="text-[11px]">QR Yoklama</span>
+                </a>
+                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'aidat']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'aidat' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
+                    <span class="text-lg">💳</span>
+                    <span class="text-[11px]">Aidat & Makbuz</span>
+                </a>
+                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'karne']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'karne' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
+                    <span class="text-lg">🏅</span>
+                    <span class="text-[11px]">Gelişim Karnesi</span>
+                </a>
+            </div>
+        </nav>
+    @endif
 
     <script>
-        // 1. PWA Service Worker Kaydı
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').catch(() => {});
             });
         }
 
-        // 2. Android Chrome Otomatik Kurulum İstemi + iOS Rehberi
         let deferredPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -380,55 +324,6 @@
             m.classList.add('hidden');
             m.classList.remove('flex');
         }
-
-        // 3. Antrenör Çevrimdışı (Offline) Yoklama ve Otomatik Senkronizasyon
-        async function markMobileAttendance(groupId, studentId, status, btn) {
-            const record = {
-                group_id: groupId,
-                student_id: studentId,
-                status: status,
-                attendance_date: new Date().toISOString().slice(0, 10)
-            };
-
-            const queue = JSON.parse(localStorage.getItem('enerjik_offline_attendance') || '[]');
-            queue.push(record);
-            localStorage.setItem('enerjik_offline_attendance', JSON.stringify(queue));
-
-            btn.textContent = status === 'present' ? '✓ Kaydedildi' : '✗ Kaydedildi';
-            await syncOfflineQueue();
-        }
-
-        async function syncOfflineQueue() {
-            const queue = JSON.parse(localStorage.getItem('enerjik_offline_attendance') || '[]');
-            const badge = document.getElementById('offline-status');
-            if (queue.length === 0) return;
-
-            try {
-                const res = await fetch('{{ route("public.mobile.attendance.sync") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ records: queue })
-                });
-                if (res.ok) {
-                    localStorage.removeItem('enerjik_offline_attendance');
-                    if (badge) {
-                        badge.classList.remove('hidden');
-                        badge.textContent = `✅ ${queue.length} yoklama sunucuya senkronize edildi.`;
-                    }
-                }
-            } catch (err) {
-                if (badge) {
-                    badge.classList.remove('hidden');
-                    badge.textContent = `📶 Çevrimdışı mod: ${queue.length} yoklama telefona kaydedildi, internet gelince gönderilecek.`;
-                }
-            }
-        }
-
-        window.addEventListener('online', syncOfflineQueue);
     </script>
 </body>
 </html>
