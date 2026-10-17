@@ -79,7 +79,7 @@ class AdminPanelController extends Controller
         $coachPayrolls = User::where('role', 'coach')->get()->map(function ($coach) {
             $lessonsGiven = Attendance::where('coach_id', $coach->id)
                 ->whereMonth('attendance_date', now()->month)
-                ->distinct('attendance_date', 'group_id')
+                ->distinct()
                 ->count('attendance_date');
             // En azından programdaki aktif derslerinden örnek baz hesap
             $lessonCount = max($lessonsGiven, $coach->groups()->count() * 8);
