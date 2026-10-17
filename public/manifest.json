@@ -1,19 +1,19 @@
 {
-  "name": "Enerjik Cimnastik Mobil Uygulaması",
+  "name": "Enerjik Cimnastik Spor Kulübü",
   "short_name": "Enerjik Cimnastik",
-  "description": "Enerjik Cimnastik Veli, Antrenör ve Yönetici Mobil Uygulaması",
+  "description": "Enerjik Cimnastik Tekirdağ - Veli, Antrenör ve Yönetici Mobil Uygulaması",
   "start_url": "/mobil",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1E1B4B",
+  "background_color": "#ffffff",
   "theme_color": "#4F46E5",
   "lang": "tr-TR",
   "icons": [
     {
-      "src": "/icons/icon.svg",
+      "src": "/icons/logo.jpg",
       "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ],
@@ -22,19 +22,19 @@
       "name": "Veli Ekranı",
       "short_name": "Veli",
       "url": "/mobil?rol=veli",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/logo.jpg", "sizes": "192x192", "type": "image/jpeg" }]
+    },
+    {
+      "name": "QR Yoklama",
+      "short_name": "QR Yoklama",
+      "url": "/qr-yoklama",
+      "icons": [{ "src": "/icons/logo.jpg", "sizes": "192x192", "type": "image/jpeg" }]
     },
     {
       "name": "Antrenör Yoklama",
-      "short_name": "Yoklama",
+      "short_name": "Antrenör",
       "url": "/mobil?rol=antrenor",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
-    },
-    {
-      "name": "Yönetici & WhatsApp",
-      "short_name": "Yönetim",
-      "url": "/mobil?rol=yonetici",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/logo.jpg", "sizes": "192x192", "type": "image/jpeg" }]
     }
   ]
 }

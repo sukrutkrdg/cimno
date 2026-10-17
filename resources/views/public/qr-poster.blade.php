@@ -9,9 +9,10 @@
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="bg-slate-100 p-6">
-    <div class="max-w-4xl mx-auto bg-white rounded-3xl border-2 border-indigo-600 p-8 shadow-xl text-center space-y-6">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-800 text-xs font-extrabold">
-            🤸 {{ $settings['club_name'] ?? 'Enerjik Cimnastik Spor Kulübü' }}
+    <div class="max-w-4xl mx-auto bg-white rounded-3xl border-2 border-purple-700 p-8 shadow-xl text-center space-y-5">
+        <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-purple-600 shadow-lg">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 text-purple-900 text-xs font-extrabold">
+            🟣 {{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik Spor Kulübü' }}
         </div>
         <h1 class="text-3xl font-extrabold text-slate-900 leading-tight">
             Salon Giriş QR Yoklama & Mobil Uygulama Kısayolu

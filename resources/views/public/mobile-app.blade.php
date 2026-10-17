@@ -12,8 +12,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Enerjik Cimnastik">
-    <link rel="apple-touch-icon" href="/icons/icon.svg">
-    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+    <link rel="apple-touch-icon" href="/icons/logo.jpg">
+    <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,13 +27,13 @@
 <body class="bg-slate-100 text-slate-900 pb-24 select-none">
 
     <!-- Mobil Uygulama Üst Barı (Native App Header) -->
-    <header class="bg-gradient-to-r from-indigo-950 via-indigo-900 to-indigo-800 text-white px-4 pt-4 pb-3.5 sticky top-0 z-40 shadow-md">
+    <header class="bg-gradient-to-r from-indigo-950 via-purple-900 to-indigo-800 text-white px-4 pt-4 pb-3.5 sticky top-0 z-40 shadow-md">
         <div class="max-w-lg mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2.5">
-                <img src="/icons/icon.svg" alt="Logo" class="w-9 h-9 rounded-xl shadow">
+                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-10 h-10 rounded-full object-cover border-2 border-purple-300 shadow">
                 <div>
                     <h1 class="font-extrabold text-sm leading-tight">Enerjik Cimnastik Mobil</h1>
-                    <span id="network-badge" class="text-[11px] text-emerald-300 font-semibold">🟢 Çevrimiçi · Senkronize</span>
+                    <span id="network-badge" class="text-[11px] text-emerald-300 font-semibold">🟢 Tekirdağ · Çevrimiçi</span>
                 </div>
             </div>
             <div class="flex items-center gap-1.5">

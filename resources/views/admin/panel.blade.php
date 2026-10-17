@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli (16 Modül) | Enerjik Cimnastik</title>
+    <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
@@ -13,9 +14,9 @@
     <!-- Üst Yönetim Barı -->
     <header class="bg-slate-900 text-white px-4 py-3 flex flex-wrap justify-between items-center gap-3 sticky top-0 z-50 shadow">
         <div class="flex items-center gap-3">
-            <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-extrabold text-lg">🤸</span>
+            <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-10 h-10 rounded-full object-cover border-2 border-purple-400 shadow">
             <div>
-                <h1 class="font-extrabold text-sm sm:text-base leading-none">Enerjik Cimnastik · Salon Yönetim Sistemi</h1>
+                <h1 class="font-extrabold text-sm sm:text-base leading-none">Tekirdağ Enerjik Cimnastik · Yönetim Paneli</h1>
                 <span class="text-[11px] text-slate-400">Tek Veritabanı · 16 Modül · WhatsApp Business Hazır Cevap Motoru</span>
             </div>
         </div>

@@ -837,18 +837,18 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $settings = [
-            ['key' => 'club_name', 'value' => 'Enerjik Cimnastik Spor Kulübü', 'group' => 'general'],
-            ['key' => 'hero_title', 'value' => 'Çocuğunuzun Enerjisini Esneklik, Özgüven ve Disipline Dönüştürüyoruz!', 'group' => 'general'],
-            ['key' => 'hero_subtitle', 'value' => '3-16 yaş arası çocuklar ve yetişkinler için federasyon onaylı antrenörler eşliğinde maksimum 12 kişilik gruplarda güvenli cimnastik eğitimi.', 'group' => 'general'],
-            ['key' => 'city_district', 'value' => 'Tekirdağ / Süleymanpaşa & Çorlu', 'group' => 'seo'],
-            ['key' => 'seo_title', 'value' => 'Enerjik Cimnastik | Çocuk & Artistik & Ritmik Cimnastik Kursu', 'group' => 'seo'],
-            ['key' => 'phone', 'value' => '0532 100 10 01', 'group' => 'contact'],
-            ['key' => 'whatsapp_number', 'value' => '905321001001', 'group' => 'contact'],
-            ['key' => 'address', 'value' => 'Atatürk Mah. Olimpiyat Cad. No: 24/A Enerjik Plaza', 'group' => 'contact'],
+            ['key' => 'club_name', 'value' => 'Tekirdağ Enerjik Cimnastik Spor Kulübü', 'group' => 'general'],
+            ['key' => 'hero_title', 'value' => 'Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar!', 'group' => 'general'],
+            ['key' => 'hero_subtitle', 'value' => '3-12 Yaş Grubu Temel Cimnastik Eğitimi ve Yarışmacı Cimnastik Eğitimi. Çocukların enerjisini esneklik, özgüven ve disipline dönüştürüyoruz.', 'group' => 'general'],
+            ['key' => 'city_district', 'value' => 'Tekirdağ', 'group' => 'seo'],
+            ['key' => 'seo_title', 'value' => 'Tekirdağ Enerjik Cimnastik | Çocuk & Yarışmacı Cimnastik Kursu', 'group' => 'seo'],
+            ['key' => 'phone', 'value' => '0538 899 31 59', 'group' => 'contact'],
+            ['key' => 'whatsapp_number', 'value' => '905388993159', 'group' => 'contact'],
+            ['key' => 'address', 'value' => 'Tekirdağ Merkez / Süleymanpaşa', 'group' => 'contact'],
             ['key' => 'working_hours', 'value' => 'Salı - Pazar: 09:30 - 20:30 (Pazartesi İdari İzin)', 'group' => 'contact'],
-            ['key' => 'iban_holder', 'value' => 'Enerjik Cimnastik Spor Kulübü Ltd. Şti.', 'group' => 'finance'],
+            ['key' => 'iban_holder', 'value' => 'Enerjik Cimnastik Spor Kulübü', 'group' => 'finance'],
             ['key' => 'iban_number', 'value' => 'TR45 0006 2000 1230 0006 2999 01', 'group' => 'finance'],
-            ['key' => 'kvkk_text', 'value' => '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, Enerjik Cimnastik Spor Kulübü olarak veri sorumlusu sıfatıyla; reşit olmayan sporcularımızın ve velilerimizin kimlik, iletişim, sağlık beyanı ve görsel kayıt verilerini yalnızca kulüp faaliyetlerinin yürütülmesi, acil durum güvenliği ve Türkiye Cimnastik Federasyonu lisans süreçleri kapsamında işliyor, üçüncü kişilerle paylaşmıyoruz.', 'group' => 'kvkk'],
+            ['key' => 'kvkk_text', 'value' => '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, Tekirdağ Enerjik Cimnastik Spor Kulübü olarak veri sorumlusu sıfatıyla; reşit olmayan sporcularımızın ve velilerimizin kimlik, iletişim, sağlık beyanı ve görsel kayıt verilerini yalnızca kulüp faaliyetlerinin yürütülmesi, acil durum güvenliği ve Türkiye Cimnastik Federasyonu lisans süreçleri kapsamında işliyor, üçüncü kişilerle paylaşmıyoruz.', 'group' => 'kvkk'],
         ];
         foreach ($settings as $s) {
             SiteSetting::create($s);

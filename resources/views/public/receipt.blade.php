@@ -8,9 +8,12 @@
 <body class="bg-slate-100 p-6">
     <div class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-300 p-8 shadow-lg">
         <div class="flex justify-between items-start border-b border-slate-200 pb-5">
-            <div>
-                <h1 class="text-xl font-extrabold text-slate-900">{{ $settings['club_name'] ?? 'Enerjik Cimnastik Spor Kulübü' }}</h1>
-                <p class="text-xs text-slate-500 mt-1">{{ $settings['address'] ?? '' }} · Tel: {{ $settings['phone'] ?? '' }}</p>
+            <div class="flex items-center gap-3">
+                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-14 h-14 rounded-full object-cover border-2 border-purple-600 shadow">
+                <div>
+                    <h1 class="text-lg font-extrabold text-slate-900">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">{{ $settings['address'] ?? '' }} · Tel: {{ $settings['phone'] ?? '0538 899 31 59' }}</p>
+                </div>
             </div>
             <div class="text-right">
                 <span class="text-xs font-bold uppercase text-indigo-600 block">Dijital Tahsilat Makbuzu</span>

@@ -7,7 +7,8 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1E1B4B">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="/icons/icon.svg">
+    <link rel="apple-touch-icon" href="/icons/logo.jpg">
+    <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
@@ -18,10 +19,10 @@
     <header class="bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-900 text-white px-4 py-4 shadow-md sticky top-0 z-40">
         <div class="max-w-lg mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2.5">
-                <span class="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center text-xl font-extrabold">📷</span>
+                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow">
                 <div>
                     <h1 class="font-extrabold text-sm sm:text-base leading-none">Salon Giriş QR Yoklama</h1>
-                    <span class="text-[11px] text-emerald-200 font-semibold">{{ today()->format('d.m.Y') }} · Hoş Geldiniz!</span>
+                    <span class="text-[11px] text-emerald-200 font-semibold">{{ today()->format('d.m.Y') }} · Tekirdağ Enerjik Cimnastik</span>
                 </div>
             </div>
             <a href="{{ route('public.mobile.pwa') }}" class="px-3 py-1.5 rounded-xl bg-white/15 text-white text-xs font-bold">

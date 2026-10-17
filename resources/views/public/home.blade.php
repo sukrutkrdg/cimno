@@ -10,7 +10,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Enerjik Cimnastik">
-    <link rel="apple-touch-icon" href="/icons/icon.svg">
+    <link rel="apple-touch-icon" href="/icons/logo.jpg">
+    <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -24,12 +25,13 @@
         <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
             <div class="flex items-center gap-4">
                 <span>📍 {{ $settings['city_district'] ?? 'Tekirdağ' }} · {{ $settings['address'] ?? '' }}</span>
-                <span class="hidden md:inline">🕒 {{ $settings['working_hours'] ?? '' }}</span>
+                <span class="hidden md:inline">☎️ {{ $settings['phone'] ?? '0538 899 31 59' }}</span>
             </div>
             <div class="flex items-center gap-4 font-semibold">
-                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905321001001' }}?text={{ urlencode('Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp Hızlı İletişim</a>
-                <a href="{{ route('public.mobile.pwa') }}" class="text-amber-300 hover:underline">📲 Mobil Uygulama (Ana Ekrana Ekle)</a>
-                <a href="{{ route('public.qr.poster') }}" class="text-indigo-200 hover:underline">🏁 QR Kısayol Afişi</a>
+                <a href="https://www.instagram.com/enerjik.cimnastik/" target="_blank" class="text-pink-400 hover:underline">📸 @enerjik.cimnastik</a>
+                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode('Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp İletişim</a>
+                <a href="{{ route('public.mobile.pwa') }}" class="text-amber-300 hover:underline">📲 Mobil Uygulama</a>
+                <a href="{{ route('public.qr.poster') }}" class="text-indigo-200 hover:underline">🏁 QR Afiş</a>
                 <a href="{{ route('admin.index') }}" class="bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1 rounded">⚙️ Yönetim Paneli</a>
             </div>
         </div>
@@ -37,12 +39,12 @@
 
     <!-- Navigasyon -->
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 py-3.5 flex justify-between items-center">
-            <a href="/" class="flex items-center gap-2.5">
-                <span class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center text-white text-xl font-extrabold shadow">🤸</span>
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3">
+                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-12 h-12 rounded-full object-cover border-2 border-purple-600 shadow-md">
                 <div>
-                    <span class="font-extrabold text-lg tracking-tight text-slate-900 block leading-none">{{ $settings['club_name'] ?? 'Enerjik Cimnastik' }}</span>
-                    <span class="text-[11px] text-indigo-600 font-semibold">Türkiye Cimnastik Federasyonu Lisanslı Kulübü</span>
+                    <span class="font-extrabold text-lg tracking-tight text-slate-900 block leading-none">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</span>
+                    <span class="text-[11px] text-purple-700 font-bold">🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar</span>
                 </div>
             </a>
             <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
@@ -344,10 +346,14 @@
     <!-- KVKK ve Alt Bilgi -->
     <footer id="kvkk" class="bg-slate-950 text-slate-400 py-12 text-xs border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
-            <div>
-                <h4 class="text-white font-extrabold text-base mb-2">{{ $settings['club_name'] ?? 'Enerjik Cimnastik' }}</h4>
-                <p class="leading-relaxed">{{ $settings['address'] ?? '' }} ({{ $settings['city_district'] ?? '' }})</p>
-                <p class="mt-2 text-slate-300 font-semibold">Tel: {{ $settings['phone'] ?? '' }}</p>
+            <div class="flex items-start gap-3.5">
+                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-14 h-14 rounded-full object-cover border-2 border-purple-500 shrink-0">
+                <div>
+                    <h4 class="text-white font-extrabold text-base mb-1">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</h4>
+                    <p class="leading-relaxed">{{ $settings['address'] ?? '' }} ({{ $settings['city_district'] ?? 'Tekirdağ' }})</p>
+                    <p class="mt-1.5 text-slate-300 font-semibold">Tel: {{ $settings['phone'] ?? '0538 899 31 59' }}</p>
+                    <a href="https://www.instagram.com/enerjik.cimnastik/" target="_blank" class="inline-block mt-1 text-pink-400 font-bold hover:underline">📸 instagram.com/enerjik.cimnastik</a>
+                </div>
             </div>
             <div class="md:col-span-2">
                 <h4 class="text-white font-bold mb-2">🔒 KVKK Aydınlatma Metni ve Çocuk Verisi Güvenliği</h4>
