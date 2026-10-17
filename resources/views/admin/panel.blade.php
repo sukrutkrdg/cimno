@@ -22,48 +22,72 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <!-- Rol Görünüm Seçici (Rol Bazlı Yetki Testi) -->
-            <form method="GET" action="{{ route('admin.index') }}" class="flex items-center gap-1.5">
-                <input type="hidden" name="tab" value="{{ $activeTab }}">
-                <span class="text-xs text-slate-400">Aktif Rol:</span>
-                <select name="role_view" onchange="this.form.submit()" class="bg-slate-800 border border-slate-700 text-amber-300 text-xs rounded-lg px-2.5 py-1.5 font-bold">
-                    <option value="super_admin" {{ $currentRole === 'super_admin' ? 'selected' : '' }}>👑 Süper Yönetici (Salon Sahibi - Tüm Yetkiler)</option>
-                    <option value="secretary" {{ $currentRole === 'secretary' ? 'selected' : '' }}>🗂️ Sekreter (Ön Büro - Gider/Kâr Gizli)</option>
-                    <option value="coach" {{ $currentRole === 'coach' ? 'selected' : '' }}>🎽 Antrenör (Yalnız Gruplar, Yoklama & Gelişim)</option>
-                </select>
-            </form>
+            <!-- Giriş Yapan Kullanıcı Rozeti -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="font-extrabold text-white">{{ $authUser->name }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-purple-600/40 text-purple-200 border border-purple-500/40 font-bold">
+                    {{ $authUser->roleLabel() }}
+                </span>
+            </div>
+
+            @if($authUser->role === 'super_admin')
+                <!-- Rol Görünüm Seçici (Sadece Süper Yönetici Diğer Rolleri Test Edebilir) -->
+                <form method="GET" action="{{ route('admin.index') }}" class="flex items-center gap-1.5">
+                    <input type="hidden" name="tab" value="{{ $activeTab }}">
+                    <span class="text-[11px] text-slate-400 hidden sm:inline">Görünüm:</span>
+                    <select name="role_view" onchange="this.form.submit()" class="bg-slate-800 border border-slate-700 text-amber-300 text-xs rounded-lg px-2.5 py-1.5 font-bold">
+                        <option value="super_admin" {{ $currentRole === 'super_admin' ? 'selected' : '' }}>👑 Süper Yönetici (Tam Yetki)</option>
+                        <option value="secretary" {{ $currentRole === 'secretary' ? 'selected' : '' }}>🗂️ Sekreter Görünümü Testi</option>
+                        <option value="coach" {{ $currentRole === 'coach' ? 'selected' : '' }}>🎽 Antrenör Görünümü Testi</option>
+                    </select>
+                </form>
+            @endif
+
             <a href="{{ route('public.home') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700">🌐 Veli Sitesi</a>
-            <a href="{{ route('public.mobile.pwa') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-600">📲 Mobil Uygulama (PWA)</a>
-            <a href="{{ route('public.qr.poster') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400">🏁 QR Kısayol Afişi</a>
+            <a href="{{ route('public.mobile.pwa') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-600">📲 Mobil Uygulama</a>
+            <a href="{{ route('public.qr.poster') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400">🏁 QR Afişi</a>
+
+            <form method="POST" action="{{ route('admin.logout') }}" class="inline">
+                @csrf
+                <button type="submit" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow">
+                    🔒 Çıkış
+                </button>
+            </form>
         </div>
     </header>
 
     <div class="flex-1 flex flex-col lg:flex-row">
-        <!-- Sol Menü: 16 Modül -->
+        <!-- Sol Menü: 16 Modül (Yetkiye Göre Filtrelenir) -->
         <aside class="w-full lg:w-64 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-3 shrink-0">
-            <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1.5">16 Yönetim Modülü</div>
+            <div class="flex items-center justify-between px-3 py-1.5">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Yetkili Modüller ({{ count($allowedTabs) }})</span>
+                @if($authUser->role === 'super_admin')
+                    <a href="{{ route('admin.index', ['tab' => 'personel']) }}" class="text-[10px] font-bold text-indigo-600 hover:underline">⚙️ Yetkiler</a>
+                @endif
+            </div>
             @php
                 $navItems = [
-                    ['id' => 'pano', 'icon' => '📊', 'label' => '1. Pano (Özet)', 'roles' => ['super_admin', 'secretary', 'coach']],
-                    ['id' => 'adaylar', 'icon' => '🎯', 'label' => '2. Adaylar (Ön Kayıt)', 'roles' => ['super_admin', 'secretary']],
-                    ['id' => 'ogrenciler', 'icon' => '🤸', 'label' => '3. Öğrenciler & Kayıt', 'roles' => ['super_admin', 'secretary', 'coach']],
-                    ['id' => 'gruplar', 'icon' => '🏅', 'label' => '4-5. Branş, Grup & Program', 'roles' => ['super_admin', 'secretary', 'coach']],
-                    ['id' => 'yoklama', 'icon' => '✅', 'label' => '6. Tek Dokunuş Yoklama', 'roles' => ['super_admin', 'secretary', 'coach']],
-                    ['id' => 'paketler', 'icon' => '🏷️', 'label' => '7. Paket & Toplu Fiyat', 'roles' => ['super_admin', 'secretary']],
-                    ['id' => 'aidat', 'icon' => '💳', 'label' => '8. Aidat & Tahsilat', 'roles' => ['super_admin', 'secretary']],
-                    ['id' => 'kasa', 'icon' => '🏦', 'label' => '9. Gelir-Gider & Kasa', 'roles' => ['super_admin']],
-                    ['id' => 'personel', 'icon' => '👥', 'label' => '10. Personel & Hakediş', 'roles' => ['super_admin']],
-                    ['id' => 'mesajlar', 'icon' => '💬', 'label' => '11. WhatsApp Hazır Cevap', 'roles' => ['super_admin', 'secretary']],
-                    ['id' => 'etkinlikler', 'icon' => '🎪', 'label' => '12. Etkinlik & Yaz Okulu', 'roles' => ['super_admin', 'secretary', 'coach']],
-                    ['id' => 'gelisim', 'icon' => '📈', 'label' => '13. Gelişim Karnesi', 'roles' => ['super_admin', 'secretary', 'coach']],
-                    ['id' => 'raporlar', 'icon' => '📑', 'label' => '14. Raporlar & Excel', 'roles' => ['super_admin']],
-                    ['id' => 'site_icerigi', 'icon' => '🌐', 'label' => '15. Site İçeriği (CMS)', 'roles' => ['super_admin', 'secretary']],
-                    ['id' => 'ayarlar', 'icon' => '⚙️', 'label' => '16. Ayarlar, Yedek & KVKK', 'roles' => ['super_admin']],
+                    ['id' => 'pano', 'icon' => '📊', 'label' => '1. Pano (Özet)'],
+                    ['id' => 'adaylar', 'icon' => '🎯', 'label' => '2. Adaylar (Ön Kayıt)'],
+                    ['id' => 'ogrenciler', 'icon' => '🤸', 'label' => '3. Öğrenciler & Kayıt'],
+                    ['id' => 'gruplar', 'icon' => '🏅', 'label' => '4-5. Branş, Grup & Program'],
+                    ['id' => 'yoklama', 'icon' => '✅', 'label' => '6. Tek Dokunuş Yoklama'],
+                    ['id' => 'paketler', 'icon' => '🏷️', 'label' => '7. Paket & Toplu Fiyat'],
+                    ['id' => 'aidat', 'icon' => '💳', 'label' => '8. Aidat & Tahsilat'],
+                    ['id' => 'kasa', 'icon' => '🏦', 'label' => '9. Gelir-Gider & Kasa'],
+                    ['id' => 'personel', 'icon' => '👥', 'label' => '10. Personel, Yetki & Hakediş'],
+                    ['id' => 'mesajlar', 'icon' => '💬', 'label' => '11. WhatsApp Hazır Cevap'],
+                    ['id' => 'etkinlikler', 'icon' => '🎪', 'label' => '12. Etkinlik & Yaz Okulu'],
+                    ['id' => 'gelisim', 'icon' => '📈', 'label' => '13. Gelişim Karnesi'],
+                    ['id' => 'raporlar', 'icon' => '📑', 'label' => '14. Raporlar & Excel'],
+                    ['id' => 'site_icerigi', 'icon' => '🌐', 'label' => '15. Site İçeriği (CMS)'],
+                    ['id' => 'ayarlar', 'icon' => '⚙️', 'label' => '16. Ayarlar, Yedek & KVKK'],
                 ];
             @endphp
             <nav class="flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0">
                 @foreach($navItems as $item)
-                    @if(in_array($currentRole, $item['roles']))
+                    @if(in_array($item['id'], $allowedTabs, true))
                         <a href="{{ route('admin.index', ['tab' => $item['id'], 'role_view' => $currentRole]) }}"
                            class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition {{ $activeTab === $item['id'] ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' }}">
                             <span>{{ $item['icon'] }}</span>
@@ -791,9 +815,9 @@
             @if($activeTab === 'personel' && $currentRole === 'super_admin')
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Kabul Kriteri #5: Sekreter / Antrenör Hesabı Açma ve Kapatma -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
                         <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #5</span>
-                        <h3 class="text-lg font-extrabold mb-3">👤 Yeni Sekreter / Antrenör Hesabı Aç</h3>
+                        <h3 class="text-lg font-extrabold mb-3">👤 Yeni Yönetici / Sekreter / Antrenör Ekle</h3>
                         <form action="{{ route('admin.staff.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
                             <div>
@@ -839,45 +863,109 @@
                                 </div>
                             </div>
                             <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                                ➕ Personel Hesabını Aç
+                                ➕ Personel Hesabını Aç (Varsayılan Şifre: password)
                             </button>
                         </form>
                     </div>
 
-                    <div class="lg:col-span-7 space-y-6">
+                    <div class="lg:col-span-8 space-y-6">
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                            <h3 class="text-base font-extrabold mb-3">👥 Kullanıcılar ve Yetki Durumu (Hesap Aç/Kapat)</h3>
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b text-slate-600 uppercase">
-                                    <tr>
-                                        <th class="p-2.5">Ad Soyad</th>
-                                        <th class="p-2.5">Rol</th>
-                                        <th class="p-2.5">Durum</th>
-                                        <th class="p-2.5 text-right">Hesap İşlemi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y">
-                                    @foreach($staff as $u)
-                                        <tr>
-                                            <td class="p-2.5 font-bold">{{ $u->name }} <span class="block text-[11px] text-slate-500">{{ $u->phone }}</span></td>
-                                            <td class="p-2.5">{{ $u->roleLabel() }}</td>
-                                            <td class="p-2.5">
-                                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold {{ $u->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
-                                                    {{ $u->is_active ? 'Aktif' : 'Kapatıldı' }}
-                                                </span>
-                                            </td>
-                                            <td class="p-2.5 text-right">
-                                                <form action="{{ route('admin.staff.toggle', $u->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="px-3 py-1 rounded-lg font-bold {{ $u->is_active ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-700' }}">
-                                                        {{ $u->is_active ? '🔒 Hesabı Kapat' : '🔓 Hesabı Aç' }}
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                            <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                                <div>
+                                    <h3 class="text-base font-extrabold">🛡️ Yönetici, Sekreter & Antrenör Yetki Matrisi</h3>
+                                    <p class="text-[11px] text-slate-500">Her personelin hangi ekranları görebileceğini, işlem yetkilerini ve giriş şifresini buradan özelleştirin.</p>
+                                </div>
+                                <a href="{{ route('admin.login') }}" class="text-xs font-bold text-indigo-600 underline">🔐 Giriş Ekranı: /panel/giris</a>
+                            </div>
+
+                            <div class="space-y-4">
+                                @foreach($staff as $u)
+                                    <form action="{{ route('admin.staff.permissions', $u->id) }}" method="POST" class="p-4 rounded-2xl border {{ $u->is_active ? 'border-slate-200 bg-slate-50/60' : 'border-rose-200 bg-rose-50/40' }} space-y-3 text-xs">
+                                        @csrf
+                                        <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-slate-200/80">
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-extrabold text-sm text-slate-900">{{ $u->name }}</span>
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $u->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
+                                                        {{ $u->is_active ? '🟢 Aktif Hesap' : '🔴 Girişe Kapalı' }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] text-slate-500 mt-0.5">
+                                                    📧 <span class="font-mono">{{ $u->email }}</span> · 📞 <span class="font-mono">{{ $u->phone }}</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <select name="role" class="border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-bold text-xs">
+                                                    <option value="super_admin" {{ $u->role === 'super_admin' ? 'selected' : '' }}>👑 Süper Yönetici (Salon Sahibi)</option>
+                                                    <option value="secretary" {{ $u->role === 'secretary' ? 'selected' : '' }}>🗂️ Sekreter (Ön Büro)</option>
+                                                    <option value="coach" {{ $u->role === 'coach' ? 'selected' : '' }}>🎽 Antrenör (Eğitmen)</option>
+                                                </select>
+
+                                                <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 font-bold cursor-pointer">
+                                                    <input type="checkbox" name="is_active" value="1" {{ $u->is_active ? 'checked' : '' }}>
+                                                    <span>Giriş Aktif</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        @if($u->role === 'super_admin')
+                                            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                                                👑 Süper Yönetici (Salon Sahibi) tüm 16 modüle, kasa/gider hesaplarına, personel yetkilerine ve veritabanı yedeğine tam erişime sahiptir.
+                                            </div>
+                                        @else
+                                            <div class="grid sm:grid-cols-3 gap-2 pt-1">
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_collect_payment" value="1" {{ $u->hasPermission('collect_payment') ? 'checked' : '' }}>
+                                                    <span>💳 Aidat & Tahsilat Girebilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_view_expenses" value="1" {{ $u->hasPermission('view_expenses') ? 'checked' : '' }}>
+                                                    <span>🏦 Kasa & Giderleri Görebilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_view_reports" value="1" {{ $u->hasPermission('view_reports') ? 'checked' : '' }}>
+                                                    <span>📑 Finansal Raporları Görebilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_send_whatsapp" value="1" {{ $u->hasPermission('send_whatsapp') ? 'checked' : '' }}>
+                                                    <span>💬 WhatsApp Kuyruğu Gönderebilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_edit_content" value="1" {{ $u->hasPermission('edit_content') ? 'checked' : '' }}>
+                                                    <span>🌐 Site İçeriği Düzenleyebilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_only_own_groups" value="1" {{ $u->hasPermission('only_own_groups') ? 'checked' : '' }}>
+                                                    <span>🎽 Yalnızca Kendi Gruplarını Görsün</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_take_attendance" value="1" {{ $u->hasPermission('take_attendance') ? 'checked' : '' }}>
+                                                    <span>✅ Yoklama Alabilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_add_development" value="1" {{ $u->hasPermission('add_development') ? 'checked' : '' }}>
+                                                    <span>📈 Gelişim Karnesi Girebilsin</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="perm_delete_student" value="1" {{ $u->hasPermission('delete_student') ? 'checked' : '' }}>
+                                                    <span>🗑️ Kayıt Silebilsin / Arşivlesin</span>
+                                                </label>
+                                            </div>
+                                        @endif
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+                                            <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+                                                <label class="text-[11px] font-bold text-slate-600 shrink-0">🔑 Yeni Şifre:</label>
+                                                <input type="password" name="new_password" placeholder="Değiştirmek istemiyorsanız boş bırakın" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs">
+                                            </div>
+                                            <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs shadow-sm">
+                                                💾 Yetki & Şifreyi Kaydet
+                                            </button>
+                                        </div>
+                                    </form>
+                                @endforeach
+                            </div>
                         </div>
 
                         <!-- Otomatik Antrenör Hakediş Hesabı -->

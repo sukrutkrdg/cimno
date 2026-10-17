@@ -15,8 +15,12 @@ Route::get('/veli-portali', [PublicSiteController::class, 'parentPortal'])->name
 Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.qr.poster');
 Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->name('public.receipt');
 
-// 2. Yönetim Paneli (16 Modül - Salon Sahibi, Sekreter, Antrenör)
+// 2. Yönetim Paneli (Yetkili Giriş + 16 Modül: Salon Sahibi, Sekreter, Antrenör)
 Route::prefix('panel')->group(function () {
+    Route::get('/giris', [AdminPanelController::class, 'loginForm'])->name('admin.login');
+    Route::post('/giris', [AdminPanelController::class, 'loginSubmit'])->name('admin.login.submit');
+    Route::get('/cikis', [AdminPanelController::class, 'logout'])->name('admin.logout');
+
     Route::get('/', [AdminPanelController::class, 'index'])->name('admin.index');
     Route::post('/adaylar/{lead}/kayda-donustur', [AdminPanelController::class, 'convertLeadToStudent'])->name('admin.leads.convert');
     Route::post('/ogrenciler', [AdminPanelController::class, 'storeStudent'])->name('admin.students.store');
@@ -29,6 +33,7 @@ Route::prefix('panel')->group(function () {
     Route::post('/kasa-hareketi', [AdminPanelController::class, 'storeFinancialTransaction'])->name('admin.transactions.store');
     Route::post('/personel', [AdminPanelController::class, 'storeStaff'])->name('admin.staff.store');
     Route::post('/personel/{user}/durum', [AdminPanelController::class, 'toggleStaffStatus'])->name('admin.staff.toggle');
+    Route::post('/personel/{user}/yetki', [AdminPanelController::class, 'updateStaffPermissions'])->name('admin.staff.permissions');
     Route::post('/whatsapp-sablon/{template}', [AdminPanelController::class, 'updateWhatsappTemplate'])->name('admin.whatsapp.template.update');
     Route::post('/whatsapp-kuyruk-uret', [AdminPanelController::class, 'generateDailyWhatsappQueue'])->name('admin.whatsapp.generate');
     Route::get('/whatsapp-gonder/{message}', [AdminPanelController::class, 'markWhatsappSent'])->name('admin.whatsapp.send');

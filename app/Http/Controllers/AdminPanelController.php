@@ -31,10 +31,143 @@ use Illuminate\Support\Str;
 
 class AdminPanelController extends Controller
 {
+    protected function getAuthenticatedStaff(): ?User
+    {
+        $userId = session('admin_user_id');
+        if (!$userId) {
+            return null;
+        }
+        $user = User::whereIn('role', ['super_admin', 'secretary', 'coach'])
+            ->where('is_active', true)
+            ->find($userId);
+
+        return $user;
+    }
+
+    public function loginForm()
+    {
+        if ($this->getAuthenticatedStaff()) {
+            return redirect()->route('admin.index');
+        }
+        return view('admin.login');
+    }
+
+    public function loginSubmit(Request $request)
+    {
+        $request->validate([
+            'identity' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $identity = trim($request->input('identity'));
+        $password = $request->input('password');
+        $cleanDigits = preg_replace('/\D+/', '', $identity);
+        $last10 = strlen($cleanDigits) >= 10 ? substr($cleanDigits, -10) : null;
+
+        $user = User::whereIn('role', ['super_admin', 'secretary', 'coach'])
+            ->where(function ($q) use ($identity, $last10) {
+                $q->where('email', strtolower($identity));
+                if ($last10) {
+                    $q->orWhere('phone', 'like', '%' . $last10 . '%');
+                }
+            })
+            ->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
+            return back()->withInput()->with('error', 'Giriş bilgileri hatalı! Lütfen e-posta/telefon veya şifrenizi kontrol edin.');
+        }
+
+        if (!$user->is_active) {
+            return back()->withInput()->with('error', 'Hesabınız pasif durumdadır. Lütfen Salon Yöneticisi ile iletişime geçin.');
+        }
+
+        session([
+            'admin_user_id' => $user->id,
+            'admin_role' => $user->role,
+        ]);
+
+        AuditLog::record('yonetici_girisi', "{$user->name} ({$user->roleLabel()}) yönetim paneline giriş yaptı.", 'User', $user->id);
+
+        return redirect()->route('admin.index')->with('success', "Hoş geldiniz {$user->name}! ({$user->roleLabel()}) yetkisiyle giriş yapıldı.");
+    }
+
+    public function logout()
+    {
+        $user = $this->getAuthenticatedStaff();
+        if ($user) {
+            AuditLog::record('yonetici_cikisi', "{$user->name} yönetim panelinden çıkış yaptı.", 'User', $user->id);
+        }
+        session()->forget(['admin_user_id', 'admin_role']);
+        return redirect()->route('admin.login')->with('success', 'Güvenli çıkış yapıldı.');
+    }
+
+    public function updateStaffPermissions(Request $request, User $user)
+    {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser || $authUser->role !== 'super_admin') {
+            return redirect()->route('admin.index')->with('error', 'Bu işlem yalnızca Süper Yönetici (Salon Sahibi) tarafından yapılabilir!');
+        }
+
+        $role = $request->input('role', $user->role);
+        if (!in_array($role, ['super_admin', 'secretary', 'coach'], true)) {
+            $role = $user->role;
+        }
+
+        $permissions = [
+            'collect_payment' => $request->boolean('perm_collect_payment'),
+            'view_expenses' => $request->boolean('perm_view_expenses'),
+            'view_reports' => $request->boolean('perm_view_reports'),
+            'send_whatsapp' => $request->boolean('perm_send_whatsapp'),
+            'edit_content' => $request->boolean('perm_edit_content'),
+            'delete_student' => $request->boolean('perm_delete_student'),
+            'only_own_groups' => $request->boolean('perm_only_own_groups'),
+            'take_attendance' => $request->boolean('perm_take_attendance'),
+            'add_development' => $request->boolean('perm_add_development'),
+        ];
+
+        $updateData = [
+            'role' => $role,
+            'is_active' => $request->boolean('is_active', true),
+            'permissions' => $permissions,
+        ];
+
+        if ($request->filled('new_password')) {
+            $updateData['password'] = Hash::make($request->input('new_password'));
+        }
+
+        $user->update($updateData);
+
+        AuditLog::record('yetki_guncellendi', "{$user->name} personelinin rol ({$user->roleLabel()}) ve erişim yetkileri güncellendi.", 'User', $user->id);
+
+        return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$user->name} için rol, erişim yetkileri ve giriş ayarları başarıyla güncellendi!");
+    }
+
     public function index(Request $request)
     {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser) {
+            return redirect()->route('admin.login');
+        }
+
         $activeTab = $request->query('tab', 'pano');
-        $currentRole = $request->query('role_view', 'super_admin'); // Rol simülasyonu / görünümü: super_admin, secretary, coach
+
+        // Sadece Süper Yönetici diğer rolleri önizleyebilir; Sekreter ve Antrenör kendi rolüne kilitlidir
+        if ($authUser->role === 'super_admin') {
+            $currentRole = $request->query('role_view', 'super_admin');
+        } else {
+            $currentRole = $authUser->role;
+        }
+
+        // Yetkili Sekme Kontrolü
+        $allowedTabs = $authUser->allowedTabs();
+        if ($authUser->role === 'super_admin' && $currentRole !== 'super_admin') {
+            $previewUser = new User(['role' => $currentRole]);
+            $allowedTabs = $previewUser->allowedTabs();
+        }
+
+        if (!in_array($activeTab, $allowedTabs, true)) {
+            $activeTab = 'pano';
+        }
 
         // 1. Pano İstatistikleri
         $todayCollection = Payment::whereDate('payment_date', today())->sum('amount');
@@ -44,12 +177,33 @@ class AdminPanelController extends Controller
         $activeStudentsCount = Student::where('status', 'active')->count();
         $newLeadsCount = Lead::whereIn('status', ['new', 'trial_scheduled', 'thinking'])->count();
 
+        // Antrenör sadece kendi gruplarını görsün mü?
+        $restrictToCoachId = ($authUser->role === 'coach' && $authUser->hasPermission('only_own_groups', true))
+            ? $authUser->id
+            : null;
+
         // Veriler
         $branches = Branch::withCount('students')->orderBy('sort_order')->get();
-        $groups = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents')->get();
-        $schedules = Schedule::with(['group.branch', 'group.coach'])->orderBy('start_time')->get();
+        $groupsQuery = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents');
+        if ($restrictToCoachId) {
+            $groupsQuery->where('coach_id', $restrictToCoachId);
+        }
+        $groups = $groupsQuery->get();
+
+        $schedulesQuery = Schedule::with(['group.branch', 'group.coach'])->orderBy('start_time');
+        if ($restrictToCoachId) {
+            $schedulesQuery->whereHas('group', fn($q) => $q->where('coach_id', $restrictToCoachId));
+        }
+        $schedules = $schedulesQuery->get();
+
         $leads = Lead::with(['branch', 'trialGroup'])->latest()->get();
-        $students = Student::with(['branch', 'group', 'package', 'discountRule', 'siblings', 'invoices'])->latest()->get();
+
+        $studentsQuery = Student::with(['branch', 'group', 'package', 'discountRule', 'siblings', 'invoices'])->latest();
+        if ($restrictToCoachId) {
+            $studentsQuery->whereHas('group', fn($q) => $q->where('coach_id', $restrictToCoachId));
+        }
+        $students = $studentsQuery->get();
+
         $packages = Package::all();
         $discountRules = DiscountRule::all();
         $invoices = Invoice::with(['student.group', 'package', 'payments'])->latest('due_date')->get();
@@ -106,6 +260,8 @@ class AdminPanelController extends Controller
         ];
 
         return view('admin.panel', compact(
+            'authUser',
+            'allowedTabs',
             'activeTab',
             'currentRole',
             'todayCollection',
