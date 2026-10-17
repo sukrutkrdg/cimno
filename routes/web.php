@@ -19,7 +19,7 @@ Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->n
 Route::prefix('panel')->group(function () {
     Route::get('/giris', [AdminPanelController::class, 'loginForm'])->name('admin.login');
     Route::post('/giris', [AdminPanelController::class, 'loginSubmit'])->name('admin.login.submit');
-    Route::get('/cikis', [AdminPanelController::class, 'logout'])->name('admin.logout');
+    Route::match(['get', 'post'], '/cikis', [AdminPanelController::class, 'logout'])->name('admin.logout');
 
     Route::get('/', [AdminPanelController::class, 'index'])->name('admin.index');
     Route::post('/adaylar/{lead}/kayda-donustur', [AdminPanelController::class, 'convertLeadToStudent'])->name('admin.leads.convert');
