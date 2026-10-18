@@ -28,8 +28,8 @@
                 <span class="hidden sm:inline">☎️ {{ $settings['phone'] ?? '0538 899 31 59' }}</span>
             </div>
             <div class="flex items-center gap-4 font-semibold shrink-0">
-                <a href="https://www.instagram.com/enerjik.cimnastik/" target="_blank" class="text-pink-400 hover:underline">📸 @enerjik.cimnastik</a>
-                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode('Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp İletişim</a>
+                <a href="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/enerjik.cimnastik/' }}" target="_blank" class="text-pink-400 hover:underline">📸 {{ $settings['instagram_handle'] ?? '@enerjik.cimnastik' }}</a>
+                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode($settings['whatsapp_welcome_msg'] ?? 'Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp İletişim</a>
             </div>
         </div>
     </div>
@@ -39,30 +39,40 @@
         <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center gap-4">
             <!-- Sol: Logo ve Kulüp Adı -->
             <a href="/" class="flex items-center gap-3 shrink-0">
-                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-12 h-12 rounded-full object-cover border-2 border-purple-600 shadow">
+                <img src="{{ $settings['logo_url'] ?? '/icons/logo.jpg' }}" alt="Enerjik Cimnastik Logo" class="w-12 h-12 rounded-full object-cover border-2 border-purple-600 shadow">
                 <div>
-                    <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 block leading-tight">Tekirdağ Enerjik Cimnastik</span>
-                    <span class="text-[11px] text-purple-700 font-bold block">🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar</span>
+                    <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 block leading-tight">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</span>
+                    <span class="text-[11px] text-purple-700 font-bold block">{{ $settings['club_slogan'] ?? '🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar' }}</span>
                 </div>
             </a>
 
             <!-- Orta: Masaüstü Menü Linkleri -->
             <nav class="hidden xl:flex items-center gap-7 text-sm font-bold text-slate-700">
-                <a href="#branslar" class="hover:text-indigo-600 transition">Branşlarımız</a>
-                <a href="#program" class="hover:text-indigo-600 transition">Ders Programı</a>
-                <a href="#ucretler" class="hover:text-indigo-600 transition">Paket & Ücretler</a>
-                <a href="#antrenorler" class="hover:text-indigo-600 transition">Antrenörler</a>
-                <a href="#galeri" class="hover:text-indigo-600 transition">Galeri</a>
-                <a href="#sss" class="hover:text-indigo-600 transition">SSS</a>
+                <a href="#branslar" class="hover:text-indigo-600 transition">{{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
+                @if(($settings['show_schedule_section'] ?? '1') === '1')
+                    <a href="#program" class="hover:text-indigo-600 transition">{{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
+                @endif
+                @if(($settings['show_prices_section'] ?? '1') === '1')
+                    <a href="#ucretler" class="hover:text-indigo-600 transition">{{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
+                @endif
+                @if(($settings['show_coaches_section'] ?? '1') === '1')
+                    <a href="#antrenorler" class="hover:text-indigo-600 transition">{{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
+                @endif
+                @if(($settings['show_gallery_section'] ?? '1') === '1')
+                    <a href="#galeri" class="hover:text-indigo-600 transition">{{ $settings['nav_gallery'] ?? 'Galeri' }}</a>
+                @endif
+                @if(($settings['show_faq_section'] ?? '1') === '1')
+                    <a href="#sss" class="hover:text-indigo-600 transition">{{ $settings['nav_faq'] ?? 'SSS' }}</a>
+                @endif
             </nav>
 
             <!-- Sağ: Veli Girişi & Deneme Dersi Butonları -->
             <div class="hidden sm:flex items-center gap-2.5 shrink-0">
                 <a href="{{ route('public.mobile.pwa') }}" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 hover:bg-indigo-50 transition">
-                    👨‍👩‍👧 Veli Girişi
+                    👨‍👩‍👧 {{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}
                 </a>
                 <a href="#on-kayit" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition">
-                    ✨ Ücretsiz Deneme Dersi
+                    ✨ {{ $settings['header_trial_btn'] ?? 'Ücretsiz Deneme Dersi' }}
                 </a>
             </div>
 
@@ -77,19 +87,29 @@
         <!-- Mobil / Tablet Açılır Menü -->
         <div id="mobile-nav-drawer" class="hidden xl:hidden bg-white border-t border-slate-200 px-4 py-4 space-y-3 shadow-lg">
             <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
-                <a href="#branslar" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🤸 Branşlarımız</a>
-                <a href="#program" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📅 Ders Programı</a>
-                <a href="#ucretler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏷️ Paket & Ücretler</a>
-                <a href="#antrenorler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏅 Antrenörler</a>
-                <a href="#galeri" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📸 Salon Galerisi</a>
-                <a href="#sss" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">❓ Sık Sorulanlar</a>
+                <a href="#branslar" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🤸 {{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
+                @if(($settings['show_schedule_section'] ?? '1') === '1')
+                    <a href="#program" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📅 {{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
+                @endif
+                @if(($settings['show_prices_section'] ?? '1') === '1')
+                    <a href="#ucretler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏷️ {{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
+                @endif
+                @if(($settings['show_coaches_section'] ?? '1') === '1')
+                    <a href="#antrenorler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏅 {{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
+                @endif
+                @if(($settings['show_gallery_section'] ?? '1') === '1')
+                    <a href="#galeri" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📸 {{ $settings['nav_gallery'] ?? 'Salon Galerisi' }}</a>
+                @endif
+                @if(($settings['show_faq_section'] ?? '1') === '1')
+                    <a href="#sss" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">❓ {{ $settings['nav_faq'] ?? 'Sık Sorulanlar' }}</a>
+                @endif
             </div>
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                 <a href="{{ route('public.mobile.pwa') }}" class="text-center py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 font-extrabold text-xs">
-                    👨‍👩‍👧 Veli Girişi
+                    👨‍👩‍👧 {{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}
                 </a>
                 <a href="#on-kayit" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="text-center py-2.5 rounded-xl bg-rose-600 text-white font-extrabold text-xs">
-                    ✨ Deneme Dersi
+                    ✨ {{ $settings['header_trial_btn'] ?? 'Deneme Dersi' }}
                 </a>
             </div>
         </div>
@@ -100,7 +120,7 @@
         <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-12 gap-10 items-center">
             <div class="lg:col-span-7 space-y-6">
                 <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-800/80 border border-indigo-600/50 text-xs font-semibold text-amber-300">
-                    <span>🏆 3-16 Yaş Çocuk & Yetişkin Cimnastik Okulu</span>
+                    <span>{{ $settings['hero_badge'] ?? '🏆 3-16 Yaş Çocuk & Yetişkin Cimnastik Okulu' }}</span>
                 </div>
                 <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
                     {{ $settings['hero_title'] ?? 'Çocuğunuzun Enerjisini Esneklik, Özgüven ve Disipline Dönüştürüyoruz!' }}
@@ -110,24 +130,24 @@
                 </p>
                 <div class="flex flex-wrap gap-3 pt-2">
                     <a href="#on-kayit" class="px-6 py-3.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm shadow-lg shadow-rose-500/30">
-                        🤸 Ücretsiz Deneme Dersi Randevusu Al
+                        {{ $settings['hero_btn_primary'] ?? '🤸 Ücretsiz Deneme Dersi Randevusu Al' }}
                     </a>
                     <a href="#program" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20">
-                        📅 Haftalık Ders Programını Gör
+                        {{ $settings['hero_btn_secondary'] ?? '📅 Haftalık Ders Programını Gör' }}
                     </a>
                 </div>
                 <div class="grid grid-cols-3 gap-4 pt-6 border-t border-indigo-800/80 text-center sm:text-left">
                     <div>
-                        <div class="text-2xl font-extrabold text-amber-400">Maks. 12</div>
-                        <div class="text-xs text-indigo-200">Kişilik Butik Gruplar</div>
+                        <div class="text-2xl font-extrabold text-amber-400">{{ $settings['stat_1_val'] ?? 'Maks. 12' }}</div>
+                        <div class="text-xs text-indigo-200">{{ $settings['stat_1_label'] ?? 'Kişilik Butik Gruplar' }}</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-extrabold text-emerald-400">%100</div>
-                        <div class="text-xs text-indigo-200">Dijital Yoklama & Gelişim Karnesi</div>
+                        <div class="text-2xl font-extrabold text-emerald-400">{{ $settings['stat_2_val'] ?? '%100' }}</div>
+                        <div class="text-xs text-indigo-200">{{ $settings['stat_2_label'] ?? 'Dijital Yoklama & Gelişim Karnesi' }}</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-extrabold text-rose-400">%15</div>
-                        <div class="text-xs text-indigo-200">Kardeş & Dönem İndirimi</div>
+                        <div class="text-2xl font-extrabold text-rose-400">{{ $settings['stat_3_val'] ?? '%15' }}</div>
+                        <div class="text-xs text-indigo-200">{{ $settings['stat_3_label'] ?? 'Kardeş & Dönem İndirimi' }}</div>
                     </div>
                 </div>
             </div>
@@ -135,8 +155,8 @@
                 <div class="bg-white text-slate-900 rounded-2xl p-6 shadow-2xl border border-indigo-100" id="on-kayit">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <span class="text-xs font-bold uppercase tracking-wider text-rose-600">Online Ön Kayıt</span>
-                            <h2 class="text-xl font-extrabold">Ücretsiz Deneme Dersi Formu</h2>
+                            <span class="text-xs font-bold uppercase tracking-wider text-rose-600">{{ $settings['trial_form_badge'] ?? 'Online Ön Kayıt' }}</span>
+                            <h2 class="text-xl font-extrabold">{{ $settings['trial_form_title'] ?? 'Ücretsiz Deneme Dersi Formu' }}</h2>
                         </div>
                         <span class="text-2xl">🎯</span>
                     </div>
@@ -188,7 +208,7 @@
                             <span><a href="#kvkk" class="text-indigo-600 underline font-semibold">KVKK Aydınlatma Metni</a>'ni okudum, deneme dersi planlaması için tarafımla iletişime geçilmesini onaylıyorum.</span>
                         </label>
                         <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition">
-                            🚀 Ücretsiz Deneme Dersi Talebi Gönder
+                            {{ $settings['trial_form_submit'] ?? '🚀 Ücretsiz Deneme Dersi Talebi Gönder' }}
                         </button>
                     </form>
                 </div>
@@ -199,9 +219,9 @@
     <!-- Branşlarımız -->
     <section id="branslar" class="py-16 max-w-7xl mx-auto px-4">
         <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Yaş ve Seviyeye Özel Eğitim</span>
-            <h2 class="text-3xl font-extrabold mt-1">Cimnastik Branşlarımız</h2>
-            <p class="text-slate-600 text-sm mt-2">Her yaş grubunun fiziksel ve pedagojik gelişimine uygun, Türkiye Cimnastik Federasyonu müfredatıyla uyumlu branşlar.</p>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">{{ $settings['section_branches_badge'] ?? 'Yaş ve Seviyeye Özel Eğitim' }}</span>
+            <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_branches_title'] ?? 'Cimnastik Branşlarımız' }}</h2>
+            <p class="text-slate-600 text-sm mt-2">{{ $settings['section_branches_sub'] ?? 'Her yaş grubunun fiziksel ve pedagojik gelişimine uygun, Türkiye Cimnastik Federasyonu müfredatıyla uyumlu branşlar.' }}</p>
         </div>
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($branches as $b)
@@ -229,12 +249,13 @@
     </section>
 
     <!-- Haftalık Ders Programı & Canlı Kontenjan -->
+    @if(($settings['show_schedule_section'] ?? '1') === '1')
     <section id="program" class="py-16 bg-white border-y border-slate-200">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-wrap justify-between items-end gap-4 mb-10">
                 <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Canlı Salon Takvimi</span>
-                    <h2 class="text-3xl font-extrabold mt-1">Haftalık Ders Programı & Kontenjanlar</h2>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">{{ $settings['section_schedule_badge'] ?? 'Canlı Salon Takvimi' }}</span>
+                    <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_schedule_title'] ?? 'Haftalık Ders Programı & Kontenjanlar' }}</h2>
                 </div>
                 <span class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold">
                     🟢 Kontenjan bilgisi yönetim panelinden anlık güncellenir
@@ -275,13 +296,15 @@
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Paket ve Ücretler -->
+    @if(($settings['show_prices_section'] ?? '1') === '1')
     <section id="ucretler" class="py-16 max-w-7xl mx-auto px-4">
         <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-bold uppercase tracking-wider text-rose-600">Şeffaf Fiyatlandırma</span>
-            <h2 class="text-3xl font-extrabold mt-1">Eğitim Paketleri ve İndirim Kuralları</h2>
-            <p class="text-slate-600 text-sm mt-2">Kardeş kaydında %15, 3 aylık peşin dönem kaydında %10 indirim otomatik uygulanır.</p>
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-600">{{ $settings['section_packages_badge'] ?? 'Şeffaf Fiyatlandırma' }}</span>
+            <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_packages_title'] ?? 'Eğitim Paketleri ve İndirim Kuralları' }}</h2>
+            <p class="text-slate-600 text-sm mt-2">{{ $settings['section_packages_sub'] ?? 'Kardeş kaydında %15, 3 aylık peşin dönem kaydında %10 indirim otomatik uygulanır.' }}</p>
         </div>
         <div class="grid md:grid-cols-3 gap-6">
             @foreach($packages as $pkg)
@@ -304,19 +327,21 @@
             @endforeach
         </div>
     </section>
+    @endif
 
     <!-- Antrenörler -->
+    @if(($settings['show_coaches_section'] ?? '1') === '1')
     <section id="antrenorler" class="py-16 bg-slate-900 text-white">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center max-w-2xl mx-auto mb-12">
-                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Uzman Kadromuz</span>
-                <h2 class="text-3xl font-extrabold mt-1">Federasyon Belgeli Antrenörlerimiz</h2>
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">{{ $settings['section_coaches_badge'] ?? 'Uzman Kadromuz' }}</span>
+                <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_coaches_title'] ?? 'Federasyon Belgeli Antrenörlerimiz' }}</h2>
             </div>
             <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 @foreach($coaches as $coach)
                     <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 flex items-start gap-4">
                         <div class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-bold shrink-0">
-                            Medal
+                            🏅
                         </div>
                         <div>
                             <h3 class="text-lg font-extrabold">{{ $coach->name }}</h3>
@@ -328,12 +353,14 @@
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Galeri & Duyurular -->
     <section id="galeri" class="py-16 max-w-7xl mx-auto px-4">
         <div class="grid lg:grid-cols-12 gap-10">
+            @if(($settings['show_gallery_section'] ?? '1') === '1')
             <div class="lg:col-span-7">
-                <h2 class="text-2xl font-extrabold mb-6">📸 Salonumuzdan Kareler</h2>
+                <h2 class="text-2xl font-extrabold mb-6">📸 {{ $settings['section_gallery_title'] ?? 'Salonumuzdan Kareler' }}</h2>
                 <div class="grid sm:grid-cols-2 gap-4">
                     @foreach($gallery as $item)
                         <div class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
@@ -346,8 +373,9 @@
                     @endforeach
                 </div>
             </div>
-            <div class="lg:col-span-5" id="sss">
-                <h2 class="text-2xl font-extrabold mb-6">📢 Güncel Duyurular & SSS</h2>
+            @endif
+            <div class="{{ ($settings['show_gallery_section'] ?? '1') === '1' ? 'lg:col-span-5' : 'lg:col-span-12' }}" id="sss">
+                <h2 class="text-2xl font-extrabold mb-6">📢 {{ $settings['section_faq_title'] ?? 'Güncel Duyurular & SSS' }}</h2>
                 <div class="space-y-3 mb-8">
                     @foreach($announcements as $ann)
                         <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100">
@@ -357,6 +385,7 @@
                         </div>
                     @endforeach
                 </div>
+                @if(($settings['show_faq_section'] ?? '1') === '1')
                 <div class="space-y-3">
                     @foreach($faqs as $faq)
                         <details class="group bg-white rounded-xl border border-slate-200 p-4">
@@ -368,6 +397,7 @@
                         </details>
                     @endforeach
                 </div>
+                @endif
             </div>
         </div>
     </section>
@@ -376,12 +406,12 @@
     <footer id="kvkk" class="bg-slate-950 text-slate-400 py-12 text-xs border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
             <div class="flex items-start gap-3.5">
-                <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-14 h-14 rounded-full object-cover border-2 border-purple-500 shrink-0">
+                <img src="{{ $settings['logo_url'] ?? '/icons/logo.jpg' }}" alt="Enerjik Cimnastik Logo" class="w-14 h-14 rounded-full object-cover border-2 border-purple-500 shrink-0">
                 <div>
                     <h4 class="text-white font-extrabold text-base mb-1">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</h4>
                     <p class="leading-relaxed">{{ $settings['address'] ?? '' }} ({{ $settings['city_district'] ?? 'Tekirdağ' }})</p>
                     <p class="mt-1.5 text-slate-300 font-semibold">Tel: {{ $settings['phone'] ?? '0538 899 31 59' }}</p>
-                    <a href="https://www.instagram.com/enerjik.cimnastik/" target="_blank" class="inline-block mt-1 text-pink-400 font-bold hover:underline">📸 instagram.com/enerjik.cimnastik</a>
+                    <a href="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/enerjik.cimnastik/' }}" target="_blank" class="inline-block mt-1 text-pink-400 font-bold hover:underline">📸 {{ $settings['instagram_handle'] ?? 'instagram.com/enerjik.cimnastik' }}</a>
                 </div>
             </div>
             <div class="md:col-span-2 space-y-3">
@@ -390,7 +420,7 @@
                     <p class="leading-relaxed text-slate-400">{{ $settings['kvkk_text'] ?? '' }}</p>
                 </div>
                 <div class="pt-3 border-t border-slate-800/80 flex flex-wrap justify-between items-center gap-3 text-[11px] text-slate-500">
-                    <span>© {{ date('Y') }} Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.</span>
+                    <span>{{ $settings['footer_copyright'] ?? ('© ' . date('Y') . ' Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.') }}</span>
                     <div class="flex items-center gap-4">
                         <a href="{{ route('public.mobile.pwa') }}" class="hover:text-slate-300">👨‍👩‍👧 Veli Girişi</a>
                         <a href="{{ route('public.qr.checkin') }}" class="hover:text-slate-300">📷 Salon QR Yoklama</a>

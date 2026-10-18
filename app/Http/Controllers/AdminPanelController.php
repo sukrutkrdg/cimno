@@ -744,7 +744,7 @@ class AdminPanelController extends Controller
         return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', 'Gelir/Gider hareketi kaydedildi ve ilgili kasa/banka bakiyesi güncellendi.');
     }
 
-    // MODÜL 10: Personel / Sekreter / Antrenör Hesabı Açma ve Kapatma (Kabul Kriteri #5)
+    // MODÜL 10: Personel / Sekreter / Antrenör Hesabı Açma, Kapatma ve Silme (Kabul Kriteri #5)
     public function storeStaff(Request $request)
     {
         $validated = $request->validate([
@@ -756,30 +756,38 @@ class AdminPanelController extends Controller
             'compensation_type' => 'required|in:fixed,per_lesson,both,none',
             'base_salary' => 'nullable|numeric|min:0',
             'per_lesson_rate' => 'nullable|numeric|min:0',
+            'password' => 'nullable|string|min:4|max:60',
         ]);
+
+        $plainPassword = $request->filled('password') ? $request->input('password') : 'enerjik2026';
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => strtolower(trim($validated['email'])),
             'phone' => $validated['phone'],
             'role' => $validated['role'],
             'specialty' => $validated['specialty'] ?? null,
             'compensation_type' => $validated['compensation_type'],
             'base_salary' => $validated['base_salary'] ?? 0,
             'per_lesson_rate' => $validated['per_lesson_rate'] ?? 0,
-            'password' => Hash::make('enerjik2026'),
+            'password' => Hash::make($plainPassword),
             'api_token' => 'token-' . Str::random(24),
             'is_active' => true,
             'permissions' => [
-                'view_expenses' => $request->boolean('perm_view_expenses'),
-                'view_profit' => $request->boolean('perm_view_profit'),
-                'collect_payments' => true,
+                'collect_payment' => $validated['role'] !== 'coach',
+                'view_expenses' => $validated['role'] === 'super_admin',
+                'view_reports' => $validated['role'] === 'super_admin',
+                'send_whatsapp' => $validated['role'] !== 'coach',
+                'edit_content' => $validated['role'] !== 'coach',
+                'only_own_groups' => $validated['role'] === 'coach',
+                'take_attendance' => true,
+                'add_development' => true,
             ],
         ]);
 
         AuditLog::record('personel_eklendi', "Yeni personel hesabı açıldı: {$user->name} ({$user->roleLabel()})", 'User', $user->id);
 
-        return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$user->name} ({$user->roleLabel()}) hesabı başarıyla açıldı!");
+        return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$user->name} ({$user->roleLabel()}) hesabı başarıyla açıldı! Giriş E-postası: {$user->email} · Şifre: {$plainPassword}");
     }
 
     public function toggleStaffStatus(User $user)
@@ -788,6 +796,42 @@ class AdminPanelController extends Controller
         $durum = $user->is_active ? 'aktif edildi' : 'kapatıldı (pasife alındı)';
         AuditLog::record('personel_durum_degisti', "{$user->name} kullanıcı hesabı {$durum}.", 'User', $user->id);
         return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$user->name} hesabı {$durum}.");
+    }
+
+    public function destroyStaff(Request $request, User $user)
+    {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser || $authUser->role !== 'super_admin') {
+            return redirect()->route('admin.index')->with('error', 'Kullanıcı silme işlemi yalnızca Süper Yönetici tarafından yapılabilir!');
+        }
+
+        if ($authUser->id === $user->id) {
+            return redirect()->route('admin.index', ['tab' => 'personel'])->with('error', 'Şu anda oturum açtığınız kendi Süper Yönetici hesabınızı silemezsiniz!');
+        }
+
+        $name = $user->name;
+        $roleLabel = $user->roleLabel();
+        Group::where('coach_id', $user->id)->update(['coach_id' => null]);
+        $user->delete();
+
+        AuditLog::record('personel_silindi', "{$name} ({$roleLabel}) kullanıcı hesabı sistemden silindi.", 'User', $user->id);
+
+        return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$name} ({$roleLabel}) kullanıcı hesabı başarıyla silindi.");
+    }
+
+    public function destroyStudent(Request $request, Student $student)
+    {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser || !$authUser->hasPermission('delete_student', $authUser->role === 'super_admin')) {
+            return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('error', 'Öğrenci/Veli kaydı silme yetkiniz bulunmamaktadır.');
+        }
+
+        $name = $student->full_name;
+        $student->delete();
+
+        AuditLog::record('ogrenci_silindi', "{$name} sporcu ve veli giriş kaydı silindi.", 'Student', $student->id);
+
+        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "{$name} sporcu/veli kaydı başarıyla silindi.");
     }
 
     // MODÜL 11: WhatsApp Business Hazır Cevap & Kural Güncelleme (Kabul Kriteri #4)
@@ -884,28 +928,155 @@ class AdminPanelController extends Controller
         return redirect()->route('admin.index', ['tab' => 'gelisim'])->with('success', 'Öğrenci gelişim karnesi oluşturuldu ve veli ekranında yayınlandı!');
     }
 
-    // MODÜL 15: Site İçeriği, Duyuru ve Fotoğraf Güncelleme (Kabul Kriteri #6)
+    // MODÜL 15: Tam Kapsamlı Site İçeriği (CMS) Yönetimi (Kabul Kriteri #6)
     public function updateSiteSettings(Request $request)
     {
         foreach ($request->except(['_token']) as $key => $value) {
-            SiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+            SiteSetting::updateOrCreate(['key' => $key], ['value' => (string) $value]);
         }
-        AuditLog::record('site_icerigi_guncellendi', 'Web sitesi içerik ve iletişim ayarları güncellendi.');
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Web sitesi metinleri, iletişim ve SEO ayarları anında güncellendi!');
+        AuditLog::record('site_icerigi_guncellendi', 'Web sitesi tüm içerik, görünüm, istatistik, iletişim ve SEO ayarları güncellendi.');
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Web sitesi metinleri, manşet, bölüm başlıkları, görünürlük ve iletişim ayarları anında güncellendi!');
     }
 
+    // CMS: Branş Ekle / Güncelle / Sil
+    public function storeBranch(Request $request)
+    {
+        $name = $request->input('name', 'Yeni Branş');
+        Branch::create([
+            'name' => $name,
+            'slug' => Str::slug($name) . '-' . Str::lower(Str::random(4)),
+            'icon' => $request->input('icon', '🤸'),
+            'age_range' => $request->input('age_range', '4-12 Yaş'),
+            'level' => $request->input('level', 'Başlangıç & Orta Seviye'),
+            'description' => $request->input('description', ''),
+            'benefits' => $request->input('benefits', ''),
+            'sort_order' => (int) $request->input('sort_order', 1),
+            'is_active' => true,
+        ]);
+        AuditLog::record('brans_eklendi', "Sitedeki branşlara '{$name}' eklendi.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$name}' branşı web sitesine eklendi!");
+    }
+
+    public function updateBranch(Request $request, Branch $branch)
+    {
+        $branch->update([
+            'name' => $request->input('name', $branch->name),
+            'icon' => $request->input('icon', $branch->icon),
+            'age_range' => $request->input('age_range', $branch->age_range),
+            'level' => $request->input('level', $branch->level),
+            'description' => $request->input('description', $branch->description),
+            'benefits' => $request->input('benefits', $branch->benefits),
+            'sort_order' => (int) $request->input('sort_order', $branch->sort_order),
+        ]);
+        AuditLog::record('brans_guncellendi', "'{$branch->name}' branş bilgileri güncellendi.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$branch->name}' branş kartı güncellendi!");
+    }
+
+    public function destroyBranch(Branch $branch)
+    {
+        $name = $branch->name;
+        $branch->delete();
+        AuditLog::record('brans_silindi', "'{$name}' branşı siteden kaldırıldı.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$name}' branşı siteden silindi.");
+    }
+
+    // CMS: Eğitim Paketi & Ücret Kartı Ekle / Güncelle / Sil
+    public function storePackage(Request $request)
+    {
+        $pkg = Package::create([
+            'name' => $request->input('name', 'Yeni Eğitim Paketi'),
+            'billing_cycle' => $request->input('billing_cycle', 'monthly'),
+            'lessons_count' => (int) $request->input('lessons_count', 8),
+            'price' => (float) $request->input('price', 3000),
+            'description' => $request->input('description', ''),
+            'is_active' => true,
+        ]);
+        AuditLog::record('paket_eklendi', "Yeni eğitim paketi eklendi: {$pkg->name} ({$pkg->price} TL)");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$pkg->name}' paketi web sitesine eklendi!");
+    }
+
+    public function updatePackage(Request $request, Package $package)
+    {
+        $package->update([
+            'name' => $request->input('name', $package->name),
+            'lessons_count' => (int) $request->input('lessons_count', $package->lessons_count),
+            'price' => (float) $request->input('price', $package->price),
+            'description' => $request->input('description', $package->description),
+        ]);
+        AuditLog::record('paket_guncellendi', "'{$package->name}' paket ücreti/içeriği güncellendi.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$package->name}' paket kartı güncellendi!");
+    }
+
+    public function destroyPackage(Package $package)
+    {
+        $name = $package->name;
+        $package->delete();
+        AuditLog::record('paket_silindi', "'{$name}' paketi silindi.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$name}' paketi siteden silindi.");
+    }
+
+    // CMS: Duyuru Ekle / Güncelle / Sil
     public function storeAnnouncement(Request $request)
     {
         Announcement::create([
             'title' => $request->input('title'),
             'content' => $request->input('content'),
             'target_audience' => $request->input('target_audience', 'all'),
-            'is_pinned' => $request->boolean('is_pinned'),
+            'is_pinned' => $request->boolean('is_pinned', true),
         ]);
         AuditLog::record('duyuru_eklendi', "Yeni duyuru yayınlandı: " . $request->input('title'));
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Yeni duyuru sitede ve mobil uygulamada yayınlandı!');
     }
 
+    public function updateAnnouncement(Request $request, Announcement $announcement)
+    {
+        $announcement->update([
+            'title' => $request->input('title', $announcement->title),
+            'content' => $request->input('content', $announcement->content),
+        ]);
+        AuditLog::record('duyuru_guncellendi', "Duyuru güncellendi: {$announcement->title}");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Duyuru metni güncellendi!');
+    }
+
+    public function destroyAnnouncement(Announcement $announcement)
+    {
+        $announcement->delete();
+        AuditLog::record('duyuru_silindi', 'Duyuru yayından kaldırıldı.');
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Duyuru silindi.');
+    }
+
+    // CMS: Sıkça Sorulan Sorular (SSS / FAQ) Ekle / Güncelle / Sil
+    public function storeFaq(Request $request)
+    {
+        Faq::create([
+            'question' => $request->input('question'),
+            'answer' => $request->input('answer'),
+            'sort_order' => (int) $request->input('sort_order', 1),
+            'is_active' => true,
+        ]);
+        AuditLog::record('sss_eklendi', 'Web sitesine yeni SSS eklendi.');
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Yeni Sıkça Sorulan Soru sitede yayınlandı!');
+    }
+
+    public function updateFaq(Request $request, Faq $faq)
+    {
+        $faq->update([
+            'question' => $request->input('question', $faq->question),
+            'answer' => $request->input('answer', $faq->answer),
+            'sort_order' => (int) $request->input('sort_order', $faq->sort_order),
+        ]);
+        AuditLog::record('sss_guncellendi', 'SSS maddesi güncellendi.');
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'SSS sorusu ve cevabı güncellendi!');
+    }
+
+    public function destroyFaq(Faq $faq)
+    {
+        $faq->delete();
+        AuditLog::record('sss_silindi', 'SSS maddesi silindi.');
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'SSS maddesi silindi.');
+    }
+
+    // CMS: Galeri Fotoğrafı Ekle / Güncelle / Sil
     public function storeGalleryItem(Request $request)
     {
         $studentId = $request->input('student_id');
@@ -925,6 +1096,34 @@ class AdminPanelController extends Controller
         ]);
 
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Fotoğraf KVKK izin kontrolünden geçerek galeriye eklendi!');
+    }
+
+    public function updateGalleryItem(Request $request, GalleryItem $galleryItem)
+    {
+        $galleryItem->update([
+            'title' => $request->input('title', $galleryItem->title),
+            'category' => $request->input('category', $galleryItem->category),
+            'image_url' => $request->input('image_url', $galleryItem->image_url),
+        ]);
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Galeri fotoğrafı güncellendi!');
+    }
+
+    public function destroyGalleryItem(GalleryItem $galleryItem)
+    {
+        $galleryItem->delete();
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Fotoğraf galeriden kaldırıldı.');
+    }
+
+    // CMS: Antrenör Vitrin Bilgisi (Sitede Görünen Bio & Uzmanlık) Güncelleme
+    public function updateCoachProfile(Request $request, User $user)
+    {
+        $user->update([
+            'name' => $request->input('name', $user->name),
+            'specialty' => $request->input('specialty', $user->specialty),
+            'bio' => $request->input('bio', $user->bio),
+        ]);
+        AuditLog::record('antrenor_vitrin_guncellendi', "{$user->name} antrenör vitrin bilgileri güncellendi.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "{$user->name} antrenör tanıtım kartı güncellendi!");
     }
 
     // MODÜL 14: Aylık Gelir-Gider Raporunu Excel (CSV) Olarak İndirme (Kabul Kriteri #7)

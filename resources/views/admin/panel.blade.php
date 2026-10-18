@@ -394,14 +394,24 @@
                                             <span class="block text-[11px] text-slate-500">Rapor: {{ $st->medical_report_expires_at?->format('d.m.Y') ?? '-' }}</span>
                                         </td>
                                         <td class="p-2.5">
-                                            <form action="{{ route('admin.students.status', $st->id) }}" method="POST">
-                                                @csrf
-                                                <select name="status" onchange="this.form.submit()" class="text-[11px] font-bold rounded-lg border px-2 py-1 {{ $st->status === 'active' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }}">
-                                                    <option value="active" {{ $st->status === 'active' ? 'selected' : '' }}>Aktif</option>
-                                                    <option value="frozen" {{ $st->status === 'frozen' ? 'selected' : '' }}>Donduruldu</option>
-                                                    <option value="left" {{ $st->status === 'left' ? 'selected' : '' }}>Ayrıldı (Arşiv)</option>
-                                                </select>
-                                            </form>
+                                            <div class="flex items-center gap-1.5">
+                                                <form action="{{ route('admin.students.status', $st->id) }}" method="POST">
+                                                    @csrf
+                                                    <select name="status" onchange="this.form.submit()" class="text-[11px] font-bold rounded-lg border px-2 py-1 {{ $st->status === 'active' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }}">
+                                                        <option value="active" {{ $st->status === 'active' ? 'selected' : '' }}>Aktif</option>
+                                                        <option value="frozen" {{ $st->status === 'frozen' ? 'selected' : '' }}>Donduruldu</option>
+                                                        <option value="left" {{ $st->status === 'left' ? 'selected' : '' }}>Ayrıldı (Arşiv)</option>
+                                                    </select>
+                                                </form>
+                                                @if($authUser->hasPermission('delete_student', $authUser->role === 'super_admin'))
+                                                    <form action="{{ route('admin.students.destroy', $st->id) }}" method="POST" onsubmit="return confirm('{{ $st->full_name }} sporcu ve veli giriş kaydını silmek istediğinize emin misiniz?')">
+                                                        @csrf
+                                                        <button type="submit" title="Kaydı Sil" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold">
+                                                            🗑️ Sil
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -862,8 +872,12 @@
                                     <input type="number" name="per_lesson_rate" value="0" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                             </div>
+                            <div>
+                                <label class="font-bold block mb-1">Giriş Şifresi *</label>
+                                <input type="text" name="password" required value="enerjik2026" placeholder="Giriş şifresi belirleyin" class="w-full border rounded-xl px-3 py-2 font-mono font-bold">
+                            </div>
                             <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                                ➕ Personel Hesabını Aç (Varsayılan Şifre: password)
+                                ➕ Yeni Kullanıcı Hesabını Aç
                             </button>
                         </form>
                     </div>
@@ -872,98 +886,111 @@
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
                                 <div>
-                                    <h3 class="text-base font-extrabold">🛡️ Yönetici, Sekreter & Antrenör Yetki Matrisi</h3>
-                                    <p class="text-[11px] text-slate-500">Her personelin hangi ekranları görebileceğini, işlem yetkilerini ve giriş şifresini buradan özelleştirin.</p>
+                                    <h3 class="text-base font-extrabold">🛡️ Yönetici, Sekreter & Antrenör Yetki Matrisi (Düzenle & Sil)</h3>
+                                    <p class="text-[11px] text-slate-500">Her personelin hangi ekranları görebileceğini, işlem yetkilerini, şifresini özelleştirin veya hesabını silin.</p>
                                 </div>
                                 <a href="{{ route('admin.login') }}" class="text-xs font-bold text-indigo-600 underline">🔐 Giriş Ekranı: /panel/giris</a>
                             </div>
 
                             <div class="space-y-4">
                                 @foreach($staff as $u)
-                                    <form action="{{ route('admin.staff.permissions', $u->id) }}" method="POST" class="p-4 rounded-2xl border {{ $u->is_active ? 'border-slate-200 bg-slate-50/60' : 'border-rose-200 bg-rose-50/40' }} space-y-3 text-xs">
-                                        @csrf
-                                        <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-slate-200/80">
-                                            <div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="font-extrabold text-sm text-slate-900">{{ $u->name }}</span>
-                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $u->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
-                                                        {{ $u->is_active ? '🟢 Aktif Hesap' : '🔴 Girişe Kapalı' }}
-                                                    </span>
+                                    <div class="p-4 rounded-2xl border {{ $u->is_active ? 'border-slate-200 bg-slate-50/60' : 'border-rose-200 bg-rose-50/40' }} space-y-3 text-xs">
+                                        <form action="{{ route('admin.staff.permissions', $u->id) }}" method="POST" class="space-y-3">
+                                            @csrf
+                                            <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-slate-200/80">
+                                                <div>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="font-extrabold text-sm text-slate-900">{{ $u->name }}</span>
+                                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $u->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
+                                                            {{ $u->is_active ? '🟢 Aktif Hesap' : '🔴 Girişe Kapalı' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                                        📧 <span class="font-mono">{{ $u->email }}</span> · 📞 <span class="font-mono">{{ $u->phone }}</span>
+                                                    </div>
                                                 </div>
-                                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                                    📧 <span class="font-mono">{{ $u->email }}</span> · 📞 <span class="font-mono">{{ $u->phone }}</span>
+
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <select name="role" class="border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-bold text-xs">
+                                                        <option value="super_admin" {{ $u->role === 'super_admin' ? 'selected' : '' }}>👑 Süper Yönetici (Salon Sahibi)</option>
+                                                        <option value="secretary" {{ $u->role === 'secretary' ? 'selected' : '' }}>🗂️ Sekreter (Ön Büro)</option>
+                                                        <option value="coach" {{ $u->role === 'coach' ? 'selected' : '' }}>🎽 Antrenör (Eğitmen)</option>
+                                                    </select>
+
+                                                    <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 font-bold cursor-pointer">
+                                                        <input type="checkbox" name="is_active" value="1" {{ $u->is_active ? 'checked' : '' }}>
+                                                        <span>Giriş Aktif</span>
+                                                    </label>
                                                 </div>
                                             </div>
 
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <select name="role" class="border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-bold text-xs">
-                                                    <option value="super_admin" {{ $u->role === 'super_admin' ? 'selected' : '' }}>👑 Süper Yönetici (Salon Sahibi)</option>
-                                                    <option value="secretary" {{ $u->role === 'secretary' ? 'selected' : '' }}>🗂️ Sekreter (Ön Büro)</option>
-                                                    <option value="coach" {{ $u->role === 'coach' ? 'selected' : '' }}>🎽 Antrenör (Eğitmen)</option>
-                                                </select>
+                                            @if($u->role === 'super_admin')
+                                                <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                                                    👑 Süper Yönetici (Salon Sahibi) tüm 16 modüle, kasa/gider hesaplarına, personel yetkilerine ve veritabanı yedeğine tam erişime sahiptir.
+                                                </div>
+                                            @else
+                                                <div class="grid sm:grid-cols-3 gap-2 pt-1">
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_collect_payment" value="1" {{ $u->hasPermission('collect_payment') ? 'checked' : '' }}>
+                                                        <span>💳 Aidat & Tahsilat Girebilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_view_expenses" value="1" {{ $u->hasPermission('view_expenses') ? 'checked' : '' }}>
+                                                        <span>🏦 Kasa & Giderleri Görebilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_view_reports" value="1" {{ $u->hasPermission('view_reports') ? 'checked' : '' }}>
+                                                        <span>📑 Finansal Raporları Görebilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_send_whatsapp" value="1" {{ $u->hasPermission('send_whatsapp') ? 'checked' : '' }}>
+                                                        <span>💬 WhatsApp Kuyruğu Gönderebilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_edit_content" value="1" {{ $u->hasPermission('edit_content') ? 'checked' : '' }}>
+                                                        <span>🌐 Site İçeriği Düzenleyebilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_only_own_groups" value="1" {{ $u->hasPermission('only_own_groups') ? 'checked' : '' }}>
+                                                        <span>🎽 Yalnızca Kendi Gruplarını Görsün</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_take_attendance" value="1" {{ $u->hasPermission('take_attendance') ? 'checked' : '' }}>
+                                                        <span>✅ Yoklama Alabilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_add_development" value="1" {{ $u->hasPermission('add_development') ? 'checked' : '' }}>
+                                                        <span>📈 Gelişim Karnesi Girebilsin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_delete_student" value="1" {{ $u->hasPermission('delete_student') ? 'checked' : '' }}>
+                                                        <span>🗑️ Kayıt Silebilsin / Arşivlesin</span>
+                                                    </label>
+                                                </div>
+                                            @endif
 
-                                                <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 font-bold cursor-pointer">
-                                                    <input type="checkbox" name="is_active" value="1" {{ $u->is_active ? 'checked' : '' }}>
-                                                    <span>Giriş Aktif</span>
-                                                </label>
+                                            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+                                                <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+                                                    <label class="text-[11px] font-bold text-slate-600 shrink-0">🔑 Yeni Şifre:</label>
+                                                    <input type="password" name="new_password" placeholder="Değiştirmek istemiyorsanız boş bırakın" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs">
+                                                </div>
+                                                <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs shadow-sm">
+                                                    💾 Yetki & Şifreyi Kaydet
+                                                </button>
                                             </div>
-                                        </div>
+                                        </form>
 
-                                        @if($u->role === 'super_admin')
-                                            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
-                                                👑 Süper Yönetici (Salon Sahibi) tüm 16 modüle, kasa/gider hesaplarına, personel yetkilerine ve veritabanı yedeğine tam erişime sahiptir.
-                                            </div>
-                                        @else
-                                            <div class="grid sm:grid-cols-3 gap-2 pt-1">
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_collect_payment" value="1" {{ $u->hasPermission('collect_payment') ? 'checked' : '' }}>
-                                                    <span>💳 Aidat & Tahsilat Girebilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_view_expenses" value="1" {{ $u->hasPermission('view_expenses') ? 'checked' : '' }}>
-                                                    <span>🏦 Kasa & Giderleri Görebilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_view_reports" value="1" {{ $u->hasPermission('view_reports') ? 'checked' : '' }}>
-                                                    <span>📑 Finansal Raporları Görebilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_send_whatsapp" value="1" {{ $u->hasPermission('send_whatsapp') ? 'checked' : '' }}>
-                                                    <span>💬 WhatsApp Kuyruğu Gönderebilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_edit_content" value="1" {{ $u->hasPermission('edit_content') ? 'checked' : '' }}>
-                                                    <span>🌐 Site İçeriği Düzenleyebilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_only_own_groups" value="1" {{ $u->hasPermission('only_own_groups') ? 'checked' : '' }}>
-                                                    <span>🎽 Yalnızca Kendi Gruplarını Görsün</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_take_attendance" value="1" {{ $u->hasPermission('take_attendance') ? 'checked' : '' }}>
-                                                    <span>✅ Yoklama Alabilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_add_development" value="1" {{ $u->hasPermission('add_development') ? 'checked' : '' }}>
-                                                    <span>📈 Gelişim Karnesi Girebilsin</span>
-                                                </label>
-                                                <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                    <input type="checkbox" name="perm_delete_student" value="1" {{ $u->hasPermission('delete_student') ? 'checked' : '' }}>
-                                                    <span>🗑️ Kayıt Silebilsin / Arşivlesin</span>
-                                                </label>
+                                        @if($authUser->id !== $u->id)
+                                            <div class="pt-2 border-t border-slate-200/70 flex justify-end">
+                                                <form action="{{ route('admin.staff.destroy', $u->id) }}" method="POST" onsubmit="return confirm('{{ $u->name }} ({{ $u->roleLabel() }}) kullanıcısını sistemden tamamen silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold text-[11px] transition">
+                                                        🗑️ Kullanıcıyı Sil
+                                                    </button>
+                                                </form>
                                             </div>
                                         @endif
-
-                                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
-                                            <div class="flex items-center gap-2 flex-1 min-w-[220px]">
-                                                <label class="text-[11px] font-bold text-slate-600 shrink-0">🔑 Yeni Şifre:</label>
-                                                <input type="password" name="new_password" placeholder="Değiştirmek istemiyorsanız boş bırakın" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs">
-                                            </div>
-                                            <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs shadow-sm">
-                                                💾 Yetki & Şifreyi Kaydet
-                                            </button>
-                                        </div>
-                                    </form>
+                                    </div>
                                 @endforeach
                             </div>
                         </div>
@@ -1194,81 +1221,437 @@
             @endif
 
             <!-- ========================================== -->
-            <!-- 15. SİTE İÇERİĞİ (CMS)                     -->
+            <!-- 15. TAM KAPSAMLI SİTE İÇERİĞİ (CMS STÜDYOSU) -->
             <!-- ========================================== -->
             @if($activeTab === 'site_icerigi')
-                <div class="grid lg:grid-cols-12 gap-6">
-                    <!-- Kabul Kriteri #6: Sitedeki metin, duyuru ve fotoğrafı değiştirme -->
-                    <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #6 · Yazılımcıya İhtiyaç Duymadan Yönetim</span>
-                        <h3 class="text-lg font-extrabold mb-3">🌐 Web Sitesi Metinleri, İletişim ve SEO Ayarları</h3>
-                        <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-3 text-xs">
-                            @csrf
-                            <div>
-                                <label class="font-bold block mb-1">Kulüp Adı</label>
-                                <input type="text" name="club_name" value="{{ $settings['club_name'] ?? '' }}" class="w-full border rounded-xl px-3 py-2 font-bold">
-                            </div>
-                            <div>
-                                <label class="font-bold block mb-1">Ana Sayfa Manşet Başlığı</label>
-                                <input type="text" name="hero_title" value="{{ $settings['hero_title'] ?? '' }}" class="w-full border rounded-xl px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="font-bold block mb-1">Ana Sayfa Alt Açıklama</label>
-                                <textarea name="hero_subtitle" rows="2" class="w-full border rounded-xl p-2.5">{{ $settings['hero_subtitle'] ?? '' }}</textarea>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #6 · Tam Kapsamlı Görsel & Metinsel CMS Stüdyosu</span>
+                        <h2 class="text-2xl font-extrabold">🌐 Web Sitesi (Frontend) Tam İçerik Yönetim Merkezi</h2>
+                        <p class="text-xs text-slate-500">Ana sayfadaki tüm başlıkları, butonları, istatistikleri, branşları, paket fiyatlarını, antrenör vitrinini, SSS, duyuru ve fotoğraf galerisini buradan yönetin.</p>
+                    </div>
+                    <a href="{{ route('public.home') }}" target="_blank" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow">
+                        👁️ Canlı Web Sitesini Görüntüle ↗
+                    </a>
+                </div>
+
+                <!-- 1. GENEL SİTE METİNLERİ, MANŞET (HERO), İSTATİSTİKLER, MENÜ & GÖRÜNÜRLÜK AYARLARI -->
+                <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-6 text-xs">
+                    @csrf
+                    <div class="grid lg:grid-cols-12 gap-6">
+                        <!-- Sol: Kurumsal Kimlik, İletişim, Menü & Bölüm Görünürlükleri -->
+                        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                            <h3 class="text-base font-extrabold text-indigo-950 border-b pb-2">🏢 1. Kurumsal Kimlik, Logo, Slogan & İletişim</h3>
+                            <div class="grid sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label class="font-bold block mb-1">Telefon</label>
-                                    <input type="text" name="phone" value="{{ $settings['phone'] ?? '' }}" class="w-full border rounded-xl px-3 py-2">
+                                    <label class="font-bold block mb-1">Kulüp Adı (Üst Bar & Footer)</label>
+                                    <input type="text" name="club_name" value="{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}" class="w-full border rounded-xl px-3 py-2 font-bold">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Logo Altı Slogan</label>
+                                    <input type="text" name="club_slogan" value="{{ $settings['club_slogan'] ?? '🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar' }}" class="w-full border rounded-xl px-3 py-2 font-bold text-purple-700">
+                                </div>
+                            </div>
+
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-bold block mb-1">Logo Görsel Adresi (URL)</label>
+                                    <input type="text" name="logo_url" value="{{ $settings['logo_url'] ?? '/icons/logo.jpg' }}" class="w-full border rounded-xl px-3 py-2 font-mono">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Tarayıcı Sekme Başlığı (SEO Title)</label>
+                                    <input type="text" name="seo_title" value="{{ $settings['seo_title'] ?? 'Tekirdağ Enerjik Cimnastik Spor Kulübü' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                            </div>
+
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-bold block mb-1">Telefon Numarası</label>
+                                    <input type="text" name="phone" value="{{ $settings['phone'] ?? '0538 899 31 59' }}" class="w-full border rounded-xl px-3 py-2 font-bold">
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">WhatsApp Numarası (905...)</label>
-                                    <input type="text" name="whatsapp_number" value="{{ $settings['whatsapp_number'] ?? '' }}" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="whatsapp_number" value="{{ $settings['whatsapp_number'] ?? '905388993159' }}" class="w-full border rounded-xl px-3 py-2 font-mono">
                                 </div>
                             </div>
-                            <div>
-                                <label class="font-bold block mb-1">Yerel SEO Bölge / Şehir</label>
-                                <input type="text" name="city_district" value="{{ $settings['city_district'] ?? '' }}" class="w-full border rounded-xl px-3 py-2">
+
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-bold block mb-1">Instagram Kullanıcı Adı</label>
+                                    <input type="text" name="instagram_handle" value="{{ $settings['instagram_handle'] ?? '@enerjik.cimnastik' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Instagram Profil Linki</label>
+                                    <input type="text" name="instagram_url" value="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/enerjik.cimnastik/' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
                             </div>
+
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-bold block mb-1">Şehir / Bölge (Yerel SEO)</label>
+                                    <input type="text" name="city_district" value="{{ $settings['city_district'] ?? 'Tekirdağ / Süleymanpaşa' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Açık Adres</label>
+                                    <input type="text" name="address" value="{{ $settings['address'] ?? 'Hürriyet Mah. Süleymanpaşa / Tekirdağ' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                            </div>
+
                             <div>
-                                <label class="font-bold block mb-1">Kulüp IBAN Numarası</label>
+                                <label class="font-bold block mb-1">Kulüp IBAN Numarası (Veli Portalı & Aidat Ekranı İçin)</label>
                                 <input type="text" name="iban_number" value="{{ $settings['iban_number'] ?? '' }}" class="w-full border rounded-xl px-3 py-2 font-mono">
                             </div>
-                            <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold">💾 Site İçeriğini Güncelle</button>
-                        </form>
-                    </div>
 
-                    <div class="lg:col-span-6 space-y-6">
-                        <!-- Yeni Duyuru Ekle -->
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                            <h3 class="text-base font-extrabold mb-3">📢 Sitede ve Mobil Uygulamada Yeni Duyuru Yayınla</h3>
-                            <form action="{{ route('admin.announcements.store') }}" method="POST" class="space-y-3 text-xs">
-                                @csrf
-                                <input type="text" name="title" required placeholder="Duyuru Başlığı..." class="w-full border rounded-xl px-3 py-2 font-bold">
-                                <textarea name="content" rows="2" required placeholder="Duyuru metni..." class="w-full border rounded-xl p-2.5"></textarea>
-                                <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-bold">📢 Duyuruyu Yayınla</button>
-                            </form>
+                            <!-- Bölüm Görünürlük Kontrolleri (Aç / Kapat) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                                <span class="font-extrabold block text-slate-800">👁️ Ana Sayfa Bölümlerini Göster / Gizle</span>
+                                <div class="grid sm:grid-cols-2 gap-2">
+                                    <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
+                                        <span>📅 Ders Programı Bölümü</span>
+                                        <select name="show_schedule_section" class="font-bold text-indigo-700 bg-transparent">
+                                            <option value="1" {{ ($settings['show_schedule_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
+                                            <option value="0" {{ ($settings['show_schedule_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
+                                        </select>
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
+                                        <span>🏷️ Paket Fiyatları Bölümü</span>
+                                        <select name="show_prices_section" class="font-bold text-indigo-700 bg-transparent">
+                                            <option value="1" {{ ($settings['show_prices_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
+                                            <option value="0" {{ ($settings['show_prices_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
+                                        </select>
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
+                                        <span>🏅 Antrenörler Bölümü</span>
+                                        <select name="show_coaches_section" class="font-bold text-indigo-700 bg-transparent">
+                                            <option value="1" {{ ($settings['show_coaches_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
+                                            <option value="0" {{ ($settings['show_coaches_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
+                                        </select>
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
+                                        <span>📸 Galeri & ❓ SSS</span>
+                                        <select name="show_gallery_section" class="font-bold text-indigo-700 bg-transparent">
+                                            <option value="1" {{ ($settings['show_gallery_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
+                                            <option value="0" {{ ($settings['show_gallery_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
+                                        </select>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- KVKK Fotoğraf Onay Kontrollü Galeri Ekleme -->
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                            <h3 class="text-base font-extrabold mb-1">📸 Galeriye Fotoğraf Ekle (KVKK İzin Kontrollü)</h3>
-                            <p class="text-[11px] text-slate-500 mb-3">Fotoğraf paylaşım onayı vermeyen öğrenci seçilirse sistem otomatik olarak uyarır ve engeller.</p>
-                            <form action="{{ route('admin.gallery.store') }}" method="POST" class="space-y-3 text-xs">
-                                @csrf
-                                <input type="text" name="title" required placeholder="Fotoğraf Başlığı" class="w-full border rounded-xl px-3 py-2">
-                                <input type="url" name="image_url" required value="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80" class="w-full border rounded-xl px-3 py-2">
+                        <!-- Sağ: Manşet (Hero), İstatistik Kutuları, Bölüm Başlıkları & KVKK -->
+                        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                            <h3 class="text-base font-extrabold text-indigo-950 border-b pb-2">✨ 2. Ana Sayfa Manşet (Hero), İstatistikler & Başlıklar</h3>
+                            <div>
+                                <label class="font-bold block mb-1">Manşet Üst Rozet Yazısı</label>
+                                <input type="text" name="hero_badge" value="{{ $settings['hero_badge'] ?? '🏆 3-16 Yaş Çocuk & Yetişkin Cimnastik Okulu' }}" class="w-full border rounded-xl px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="font-bold block mb-1">Ana Manşet Başlığı (H1)</label>
+                                <input type="text" name="hero_title" value="{{ $settings['hero_title'] ?? '' }}" class="w-full border rounded-xl px-3 py-2 font-bold">
+                            </div>
+                            <div>
+                                <label class="font-bold block mb-1">Ana Manşet Alt Açıklama</label>
+                                <textarea name="hero_subtitle" rows="2" class="w-full border rounded-xl p-2.5">{{ $settings['hero_subtitle'] ?? '' }}</textarea>
+                            </div>
+
+                            <div class="grid sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label class="font-bold block mb-1">Fotoğraftaki Öğrenci (KVKK Kontrolü İçin)</label>
-                                    <select name="student_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        <option value="">Genel Salon Fotoğrafı</option>
-                                        @foreach($students as $st)
-                                            <option value="{{ $st->id }}">{{ $st->full_name }} ({{ $st->photo_consent ? '✅ Foto İzinli' : '🚫 KVKK Foto İzni YOK' }})</option>
-                                        @endforeach
-                                    </select>
+                                    <label class="font-bold block mb-1">Manşet 1. Buton Yazısı</label>
+                                    <input type="text" name="hero_btn_primary" value="{{ $settings['hero_btn_primary'] ?? '🤸 Ücretsiz Deneme Dersi Randevusu Al' }}" class="w-full border rounded-xl px-3 py-2">
                                 </div>
-                                <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold">📸 Galeriye Ekle</button>
-                            </form>
+                                <div>
+                                    <label class="font-bold block mb-1">Manşet 2. Buton Yazısı</label>
+                                    <input type="text" name="hero_btn_secondary" value="{{ $settings['hero_btn_secondary'] ?? '📅 Haftalık Ders Programını Gör' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                            </div>
+
+                            <!-- 3 İstatistik Kutusu -->
+                            <div class="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-2">
+                                <span class="font-extrabold block text-indigo-950">📊 Manşet Altı 3 İstatistik Kutusu</span>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <input type="text" name="stat_1_val" value="{{ $settings['stat_1_val'] ?? 'Maks. 12' }}" class="w-full border rounded-lg px-2 py-1 font-extrabold text-indigo-700 mb-1">
+                                        <input type="text" name="stat_1_label" value="{{ $settings['stat_1_label'] ?? 'Kişilik Butik Gruplar' }}" class="w-full border rounded-lg px-2 py-1 text-[11px]">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="stat_2_val" value="{{ $settings['stat_2_val'] ?? '%100' }}" class="w-full border rounded-lg px-2 py-1 font-extrabold text-emerald-700 mb-1">
+                                        <input type="text" name="stat_2_label" value="{{ $settings['stat_2_label'] ?? 'Dijital Yoklama & Gelişim Karnesi' }}" class="w-full border rounded-lg px-2 py-1 text-[11px]">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="stat_3_val" value="{{ $settings['stat_3_val'] ?? '%15' }}" class="w-full border rounded-lg px-2 py-1 font-extrabold text-rose-700 mb-1">
+                                        <input type="text" name="stat_3_label" value="{{ $settings['stat_3_label'] ?? 'Kardeş & Dönem İndirimi' }}" class="w-full border rounded-lg px-2 py-1 text-[11px]">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-bold block mb-1">Branşlar Bölümü Başlığı</label>
+                                    <input type="text" name="section_branches_title" value="{{ $settings['section_branches_title'] ?? 'Cimnastik Branşlarımız' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Paketler Bölümü Başlığı</label>
+                                    <input type="text" name="section_packages_title" value="{{ $settings['section_packages_title'] ?? 'Eğitim Paketleri ve İndirim Kuralları' }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="font-bold block mb-1">Alt Bilgi (Footer) KVKK Aydınlatma Metni</label>
+                                <textarea name="kvkk_text" rows="2" class="w-full border rounded-xl p-2.5">{{ $settings['kvkk_text'] ?? '' }}</textarea>
+                            </div>
+
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-lg shadow-indigo-600/20">
+                                💾 Tüm Site Metinlerini, Görünürlükleri ve Manşeti Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- 3. SİTEDEKİ CİMNASTİK BRANŞ KARTLARINI YÖNET (EKLE / DÜZENLE / SİL) -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-3">
+                        <div>
+                            <h3 class="text-base font-extrabold">🤸 3. Ana Sayfa Cimnastik Branş Kartları Yönetimi ({{ $branches->count() }} Branş)</h3>
+                            <p class="text-[11px] text-slate-500">Sitede görünen branşların ikonunu, yaş aralığını, açıklamasını ve kazanımlarını düzenleyin veya yeni branş ekleyin.</p>
+                        </div>
+                    </div>
+
+                    <!-- Yeni Branş Ekleme Formu -->
+                    <form action="{{ route('admin.branches.store') }}" method="POST" class="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-200 grid sm:grid-cols-6 gap-2.5 text-xs items-end">
+                        @csrf
+                        <div>
+                            <label class="font-bold block mb-1">İkon</label>
+                            <input type="text" name="icon" value="🤸" class="w-full border rounded-xl px-3 py-2 bg-white text-center text-base">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="font-bold block mb-1">Yeni Branş Adı *</label>
+                            <input type="text" name="name" required placeholder="Ör: Parkur & Akrobasi" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Yaş Aralığı</label>
+                            <input type="text" name="age_range" value="6-14 Yaş" class="w-full border rounded-xl px-3 py-2 bg-white">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Seviye</label>
+                            <input type="text" name="level" value="Tüm Seviyeler" class="w-full border rounded-xl px-3 py-2 bg-white">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">➕ Branş Ekle</button>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <input type="text" name="description" placeholder="Branş açıklaması..." class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <input type="text" name="benefits" placeholder="Kazanımlar (Ör: Çeviklik, Denge, Özgüven)..." class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                        </div>
+                    </form>
+
+                    <!-- Mevcut Branşları Düzenle / Sil -->
+                    <div class="grid md:grid-cols-2 gap-4">
+                        @foreach($branches as $b)
+                            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2.5 text-xs">
+                                <form action="{{ route('admin.branches.update', $b->id) }}" method="POST" class="space-y-2">
+                                    @csrf
+                                    <div class="grid grid-cols-6 gap-2">
+                                        <input type="text" name="icon" value="{{ $b->icon }}" class="border rounded-xl px-2 py-1.5 bg-white text-center text-base font-bold">
+                                        <input type="text" name="name" value="{{ $b->name }}" class="col-span-3 border rounded-xl px-3 py-1.5 bg-white font-extrabold">
+                                        <input type="text" name="age_range" value="{{ $b->age_range }}" class="col-span-2 border rounded-xl px-2.5 py-1.5 bg-white font-bold text-indigo-700">
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <input type="text" name="level" value="{{ $b->level }}" placeholder="Seviye" class="col-span-2 border rounded-xl px-3 py-1.5 bg-white">
+                                        <input type="number" name="sort_order" value="{{ $b->sort_order }}" placeholder="Sıra" class="border rounded-xl px-3 py-1.5 bg-white">
+                                    </div>
+                                    <textarea name="description" rows="2" class="w-full border rounded-xl p-2 bg-white">{{ $b->description }}</textarea>
+                                    <input type="text" name="benefits" value="{{ $b->benefits }}" placeholder="Kazanımlar" class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                                    <div class="flex justify-between items-center pt-1">
+                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Branşı Güncelle</button>
+                                    </div>
+                                </form>
+                                <form action="{{ route('admin.branches.destroy', $b->id) }}" method="POST" onsubmit="return confirm('{{ $b->name }} branşını silmek istediğinize emin misiniz?')" class="flex justify-end -mt-8">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold">🗑️ Sil</button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- 4. SİTEDEKİ EĞİTİM PAKETLERİ VE ÜCRET KARTLARINI YÖNET -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <h3 class="text-base font-extrabold border-b pb-2">🏷️ 4. Sitedeki Eğitim Paketleri ve Ücret Kartları ({{ $packages->count() }} Paket)</h3>
+
+                    <!-- Yeni Paket Ekle -->
+                    <form action="{{ route('admin.packages.store') }}" method="POST" class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 grid sm:grid-cols-5 gap-2.5 text-xs items-end">
+                        @csrf
+                        <div class="sm:col-span-2">
+                            <label class="font-bold block mb-1">Paket Adı *</label>
+                            <input type="text" name="name" required placeholder="Ör: Haftada 2 Ders Aylık Paket" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Ücret (₺) *</label>
+                            <input type="number" name="price" required value="3200" class="w-full border rounded-xl px-3 py-2 bg-white font-extrabold text-emerald-700">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Ders Sayısı</label>
+                            <input type="number" name="lessons_count" value="8" class="w-full border rounded-xl px-3 py-2 bg-white">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Paket Ekle</button>
+                        </div>
+                        <div class="sm:col-span-5">
+                            <input type="text" name="description" placeholder="Paket alt açıklaması..." class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                        </div>
+                    </form>
+
+                    <div class="grid md:grid-cols-3 gap-4">
+                        @foreach($packages as $pkg)
+                            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2 text-xs">
+                                <form action="{{ route('admin.packages.update', $pkg->id) }}" method="POST" class="space-y-2">
+                                    @csrf
+                                    <input type="text" name="name" value="{{ $pkg->name }}" class="w-full border rounded-xl px-3 py-1.5 bg-white font-extrabold">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-[10px] font-bold text-slate-500">Fiyat (₺)</label>
+                                            <input type="number" name="price" value="{{ (int) $pkg->price }}" class="w-full border rounded-xl px-3 py-1.5 bg-white font-extrabold text-indigo-700">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] font-bold text-slate-500">Ders Sayısı</label>
+                                            <input type="number" name="lessons_count" value="{{ $pkg->lessons_count }}" class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                                        </div>
+                                    </div>
+                                    <textarea name="description" rows="2" class="w-full border rounded-xl p-2 bg-white">{{ $pkg->description }}</textarea>
+                                    <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Paketi Güncelle</button>
+                                </form>
+                                <form action="{{ route('admin.packages.destroy', $pkg->id) }}" method="POST" onsubmit="return confirm('Bu paketi silmek istediğinize emin misiniz?')" class="flex justify-end -mt-7">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold">🗑️ Sil</button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- 5. DUYURULAR & 6. SIKÇA SORULAN SORULAR (SSS) YÖNETİMİ -->
+                <div class="grid lg:grid-cols-12 gap-6">
+                    <!-- Duyurular (Ekle / Düzenle / Sil) -->
+                    <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="text-base font-extrabold border-b pb-2">📢 5. Sitedeki ve Mobil Uygulamadaki Duyurular</h3>
+                        <form action="{{ route('admin.announcements.store') }}" method="POST" class="space-y-2.5 text-xs p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100">
+                            @csrf
+                            <input type="text" name="title" required placeholder="Yeni Duyuru Başlığı..." class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                            <textarea name="content" rows="2" required placeholder="Duyuru içeriği..." class="w-full border rounded-xl p-2.5 bg-white"></textarea>
+                            <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold">📢 Yeni Duyuru Yayınla</button>
+                        </form>
+
+                        <div class="space-y-3">
+                            @foreach($announcements as $ann)
+                                <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
+                                    <form action="{{ route('admin.announcements.update', $ann->id) }}" method="POST" class="space-y-2">
+                                        @csrf
+                                        <input type="text" name="title" value="{{ $ann->title }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                                        <textarea name="content" rows="2" class="w-full border rounded-lg p-2 bg-white">{{ $ann->content }}</textarea>
+                                        <button type="submit" class="px-3 py-1 rounded-lg bg-slate-900 text-white font-bold">💾 Güncelle</button>
+                                    </form>
+                                    <form action="{{ route('admin.announcements.destroy', $ann->id) }}" method="POST" class="flex justify-end -mt-7">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold">🗑️ Sil</button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- SSS / FAQ (Ekle / Düzenle / Sil) -->
+                    <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="text-base font-extrabold border-b pb-2">❓ 6. Sıkça Sorulan Sorular (SSS) Yönetimi</h3>
+                        <form action="{{ route('admin.faqs.store') }}" method="POST" class="space-y-2.5 text-xs p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200">
+                            @csrf
+                            <input type="text" name="question" required placeholder="Yeni Soru (Ör: Deneme dersi ücretli mi?)" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                            <textarea name="answer" rows="2" required placeholder="Cevap metni..." class="w-full border rounded-xl p-2.5 bg-white"></textarea>
+                            <button type="submit" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-extrabold">➕ Yeni SSS Sorusu Ekle</button>
+                        </form>
+
+                        <div class="space-y-3">
+                            @foreach($faqs as $faq)
+                                <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
+                                    <form action="{{ route('admin.faqs.update', $faq->id) }}" method="POST" class="space-y-2">
+                                        @csrf
+                                        <input type="text" name="question" value="{{ $faq->question }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                                        <textarea name="answer" rows="2" class="w-full border rounded-lg p-2 bg-white">{{ $faq->answer }}</textarea>
+                                        <button type="submit" class="px-3 py-1 rounded-lg bg-slate-900 text-white font-bold">💾 Güncelle</button>
+                                    </form>
+                                    <form action="{{ route('admin.faqs.destroy', $faq->id) }}" method="POST" class="flex justify-end -mt-7">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold">🗑️ Sil</button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. SALON FOTOĞRAF GALERİSİ & 8. ANTRENÖR VİTRİN KARTLARI -->
+                <div class="grid lg:grid-cols-12 gap-6">
+                    <!-- Galeri Yönetimi -->
+                    <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="text-base font-extrabold border-b pb-2">📸 7. Salon Fotoğraf Galerisi (Ekle / Düzenle / Sil - KVKK Kontrollü)</h3>
+                        <form action="{{ route('admin.gallery.store') }}" method="POST" class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid sm:grid-cols-2 gap-2.5 text-xs">
+                            @csrf
+                            <input type="text" name="title" required placeholder="Fotoğraf Başlığı" class="border rounded-xl px-3 py-2 bg-white font-bold">
+                            <input type="text" name="category" value="Antrenman" placeholder="Kategori (Antrenman, Salon, Gösteri)" class="border rounded-xl px-3 py-2 bg-white">
+                            <input type="url" name="image_url" required placeholder="Fotoğraf URL (https://...)" value="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80" class="sm:col-span-2 border rounded-xl px-3 py-2 bg-white">
+                            <select name="student_id" class="border rounded-xl px-3 py-2 bg-white">
+                                <option value="">Genel Salon Fotoğrafı (Öğrenci Yok)</option>
+                                @foreach($students as $st)
+                                    <option value="{{ $st->id }}">{{ $st->full_name }} ({{ $st->photo_consent ? '✅ Foto İzinli' : '🚫 KVKK Foto İzni YOK' }})</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="py-2 rounded-xl bg-indigo-600 text-white font-bold">📸 Galeriye Fotoğraf Ekle</button>
+                        </form>
+
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            @foreach($gallery as $item)
+                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
+                                    <img src="{{ $item->image_url }}" alt="{{ $item->title }}" class="w-full h-28 object-cover rounded-lg border">
+                                    <form action="{{ route('admin.gallery.update', $item->id) }}" method="POST" class="space-y-1.5">
+                                        @csrf
+                                        <input type="text" name="title" value="{{ $item->title }}" class="w-full border rounded-lg px-2 py-1 bg-white font-bold">
+                                        <input type="text" name="category" value="{{ $item->category }}" class="w-full border rounded-lg px-2 py-1 bg-white text-[11px]">
+                                        <input type="url" name="image_url" value="{{ $item->image_url }}" class="w-full border rounded-lg px-2 py-1 bg-white text-[10px] font-mono">
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold">💾 Kaydet</button>
+                                    </form>
+                                    <form action="{{ route('admin.gallery.destroy', $item->id) }}" method="POST" class="flex justify-end -mt-6">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold">🗑️ Sil</button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Antrenör Vitrin Bilgileri (Sitede Görünen Uzmanlık & Bio) -->
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 h-fit">
+                        <h3 class="text-base font-extrabold border-b pb-2">🏅 8. Sitede Görünen Antrenör Tanıtım Kartları</h3>
+                        <p class="text-[11px] text-slate-500">Ana sayfadaki "Federasyon Belgeli Antrenörlerimiz" bölümünde yer alan unvan ve özgeçmiş yazılarını düzenleyin.</p>
+                        <div class="space-y-3">
+                            @foreach($staff->where('role', 'coach') as $coach)
+                                <form action="{{ route('admin.coaches.profile', $coach->id) }}" method="POST" class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2 text-xs">
+                                    @csrf
+                                    <div>
+                                        <label class="font-bold block mb-0.5">Antrenör Adı Soyadı</label>
+                                        <input type="text" name="name" value="{{ $coach->name }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-extrabold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-0.5">Uzmanlık / Kademe Unvanı</label>
+                                        <input type="text" name="specialty" value="{{ $coach->specialty }}" placeholder="Ör: 2. Kademe Artistik Cimnastik Antrenörü" class="w-full border rounded-lg px-2.5 py-1.5 bg-white text-indigo-700 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-0.5">Sitede Görünen Özgeçmiş / Tanıtım Metni</label>
+                                        <textarea name="bio" rows="2" class="w-full border rounded-lg p-2 bg-white">{{ $coach->bio }}</textarea>
+                                    </div>
+                                    <button type="submit" class="w-full py-2 rounded-lg bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Antrenör Vitrin Kartını Güncelle</button>
+                                </form>
+                            @endforeach
                         </div>
                     </div>
                 </div>
