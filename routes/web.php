@@ -23,15 +23,23 @@ Route::prefix('panel')->group(function () {
 
     Route::get('/', [AdminPanelController::class, 'index'])->name('admin.index');
     Route::post('/adaylar/{lead}/kayda-donustur', [AdminPanelController::class, 'convertLeadToStudent'])->name('admin.leads.convert');
+    Route::post('/adaylar/{lead}/sil', [AdminPanelController::class, 'destroyLead'])->name('admin.leads.destroy');
     Route::post('/ogrenciler', [AdminPanelController::class, 'storeStudent'])->name('admin.students.store');
     Route::post('/ogrenciler/{student}/durum', [AdminPanelController::class, 'updateStudentStatus'])->name('admin.students.status');
     Route::post('/ogrenciler/{student}/sil', [AdminPanelController::class, 'destroyStudent'])->name('admin.students.destroy');
     Route::post('/gruplar', [AdminPanelController::class, 'storeGroupAndSchedule'])->name('admin.groups.store');
+    Route::post('/gruplar/{group}/sil', [AdminPanelController::class, 'destroyGroup'])->name('admin.groups.destroy');
+    Route::post('/program/{schedule}/sil', [AdminPanelController::class, 'destroySchedule'])->name('admin.schedules.destroy');
     Route::post('/yoklama', [AdminPanelController::class, 'storeAttendance'])->name('admin.attendance.store');
+    Route::post('/yoklama/{attendance}/sil', [AdminPanelController::class, 'destroyAttendance'])->name('admin.attendance.destroy');
     Route::post('/paketler/toplu-fiyat', [AdminPanelController::class, 'bulkUpdatePackagePrices'])->name('admin.packages.bulk_price');
+    Route::post('/indirim/{discountRule}/sil', [AdminPanelController::class, 'destroyDiscountRule'])->name('admin.discounts.destroy');
     Route::post('/tahsilat', [AdminPanelController::class, 'storePayment'])->name('admin.payments.store');
+    Route::post('/tahsilat/{payment}/sil', [AdminPanelController::class, 'destroyPayment'])->name('admin.payments.destroy');
     Route::post('/aidat/otomatik-borclandir', [AdminPanelController::class, 'generateMonthlyInvoices'])->name('admin.invoices.generate');
+    Route::post('/aidat/{invoice}/sil', [AdminPanelController::class, 'destroyInvoice'])->name('admin.invoices.destroy');
     Route::post('/kasa-hareketi', [AdminPanelController::class, 'storeFinancialTransaction'])->name('admin.transactions.store');
+    Route::post('/kasa-hareketi/{transaction}/sil', [AdminPanelController::class, 'destroyTransaction'])->name('admin.transactions.destroy');
     Route::post('/personel', [AdminPanelController::class, 'storeStaff'])->name('admin.staff.store');
     Route::post('/personel/{user}/durum', [AdminPanelController::class, 'toggleStaffStatus'])->name('admin.staff.toggle');
     Route::post('/personel/{user}/yetki', [AdminPanelController::class, 'updateStaffPermissions'])->name('admin.staff.permissions');
@@ -39,7 +47,10 @@ Route::prefix('panel')->group(function () {
     Route::post('/whatsapp-sablon/{template}', [AdminPanelController::class, 'updateWhatsappTemplate'])->name('admin.whatsapp.template.update');
     Route::post('/whatsapp-kuyruk-uret', [AdminPanelController::class, 'generateDailyWhatsappQueue'])->name('admin.whatsapp.generate');
     Route::get('/whatsapp-gonder/{message}', [AdminPanelController::class, 'markWhatsappSent'])->name('admin.whatsapp.send');
+    Route::post('/whatsapp-mesaj/{message}/sil', [AdminPanelController::class, 'destroyWhatsappMessage'])->name('admin.whatsapp.destroy');
+    Route::post('/etkinlik/{event}/sil', [AdminPanelController::class, 'destroyEvent'])->name('admin.events.destroy');
     Route::post('/gelisim', [AdminPanelController::class, 'storeDevelopmentRecord'])->name('admin.development.store');
+    Route::post('/gelisim/{record}/sil', [AdminPanelController::class, 'destroyDevelopmentRecord'])->name('admin.development.destroy');
     Route::post('/site-ayarlari', [AdminPanelController::class, 'updateSiteSettings'])->name('admin.settings.update');
     Route::post('/cms/brans', [AdminPanelController::class, 'storeBranch'])->name('admin.branches.store');
     Route::post('/cms/brans/{branch}/guncelle', [AdminPanelController::class, 'updateBranch'])->name('admin.branches.update');
@@ -59,4 +70,5 @@ Route::prefix('panel')->group(function () {
     Route::post('/cms/antrenor/{user}/vitrin', [AdminPanelController::class, 'updateCoachProfile'])->name('admin.coaches.profile');
     Route::get('/raporlar/excel-indir', [AdminPanelController::class, 'exportFinancialReportCsv'])->name('admin.reports.csv');
     Route::get('/ayarlar/yedek-indir', [AdminPanelController::class, 'downloadDatabaseBackup'])->name('admin.backup.download');
+    Route::post('/ayarlar/demo-temizle', [AdminPanelController::class, 'clearAllDemoData'])->name('admin.demo.clear');
 });

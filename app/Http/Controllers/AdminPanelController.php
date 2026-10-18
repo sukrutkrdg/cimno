@@ -1126,9 +1126,129 @@ class AdminPanelController extends Controller
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "{$user->name} antrenör tanıtım kartı güncellendi!");
     }
 
-    // MODÜL 14: Aylık Gelir-Gider Raporunu Excel (CSV) Olarak İndirme (Kabul Kriteri #7)
+    // =====================================================
+    // TÜM MODÜLLER İÇİN KAYIT SİLME & TEMİZLEME METODLARI
+    // =====================================================
+
+    public function destroyLead(Lead $lead)
+    {
+        $name = $lead->student_name;
+        $lead->delete();
+        AuditLog::record('aday_silindi', "Deneme/ön kayıt adayı silindi: {$name}");
+        return redirect()->route('admin.index', ['tab' => 'adaylar'])->with('success', "'{$name}' deneme/ön kayıt talebi silindi.");
+    }
+
+    public function destroyGroup(Group $group)
+    {
+        $name = $group->name;
+        Schedule::where('group_id', $group->id)->delete();
+        Student::where('group_id', $group->id)->update(['group_id' => null]);
+        $group->delete();
+        AuditLog::record('grup_silindi', "Grup ve ders programı silindi: {$name}");
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', "'{$name}' grubu ve bağlı ders saatleri silindi.");
+    }
+
+    public function destroySchedule(Schedule $schedule)
+    {
+        $info = "{$schedule->day_of_week} {$schedule->start_time}";
+        $schedule->delete();
+        AuditLog::record('program_silindi', "Ders saati silindi: {$info}");
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', "Ders programı saati ({$info}) silindi.");
+    }
+
+    public function destroyAttendance(Attendance $attendance)
+    {
+        $attendance->delete();
+        AuditLog::record('yoklama_silindi', 'Yoklama kaydı silindi.');
+        return redirect()->route('admin.index', ['tab' => 'yoklama'])->with('success', 'Yoklama kaydı silindi.');
+    }
+
+    public function destroyDiscountRule(DiscountRule $discountRule)
+    {
+        $name = $discountRule->name;
+        Student::where('discount_rule_id', $discountRule->id)->update(['discount_rule_id' => null]);
+        $discountRule->delete();
+        AuditLog::record('indirim_silindi', "İndirim kuralı silindi: {$name}");
+        return redirect()->route('admin.index', ['tab' => 'paketler'])->with('success', "'{$name}' indirim kuralı silindi.");
+    }
+
+    public function destroyInvoice(Invoice $invoice)
+    {
+        Payment::where('invoice_id', $invoice->id)->delete();
+        $invoice->delete();
+        AuditLog::record('aidat_silindi', 'Aidat borç kaydı silindi.');
+        return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Aidat borç kaydı silindi.');
+    }
+
+    public function destroyPayment(Payment $payment)
+    {
+        $payment->delete();
+        AuditLog::record('tahsilat_silindi', 'Tahsilat makbuz kaydı silindi.');
+        return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Tahsilat kaydı silindi.');
+    }
+
+    public function destroyTransaction(FinancialTransaction $transaction)
+    {
+        $title = $transaction->title;
+        $transaction->delete();
+        AuditLog::record('kasa_hareketi_silindi', "Kasa hareketi silindi: {$title}");
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$title}' kasa hareketi silindi.");
+    }
+
+    public function destroyWhatsappMessage(WhatsappMessage $message)
+    {
+        $message->delete();
+        return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', 'WhatsApp kuyruk mesajı silindi.');
+    }
+
+    public function destroyEvent(Event $event)
+    {
+        $title = $event->title;
+        $event->delete();
+        AuditLog::record('etkinlik_silindi', "Etkinlik silindi: {$title}");
+        return redirect()->route('admin.index', ['tab' => 'etkinlikler'])->with('success', "'{$title}' etkinliği silindi.");
+    }
+
+    public function destroyDevelopmentRecord(DevelopmentRecord $record)
+    {
+        $record->delete();
+        AuditLog::record('karne_silindi', 'Gelişim karnesi kaydı silindi.');
+        return redirect()->route('admin.index', ['tab' => 'gelisim'])->with('success', 'Gelişim karnesi silindi.');
+    }
+
+    public function clearAllDemoData()
+    {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser || $authUser->role !== 'super_admin') {
+            return redirect()->route('admin.index')->with('error', 'Bu işlem yalnızca Süper Yönetici tarafından yapılabilir!');
+        }
+
+        Attendance::query()->delete();
+        DevelopmentRecord::query()->delete();
+        Payment::query()->delete();
+        Invoice::query()->delete();
+        FinancialTransaction::query()->delete();
+        WhatsappMessage::query()->delete();
+        Lead::query()->delete();
+        Student::query()->forceDelete();
+        Schedule::query()->delete();
+        Group::query()->delete();
+        Event::query()->delete();
+        CashAccount::query()->update(['balance' => 0]);
+
+        AuditLog::record('demo_veriler_temizlendi', 'Tüm test/deneme kayıtları (adaylar, öğrenciler, gruplar, ders programı, aidatlar, yoklamalar) sıfırlandı.');
+
+        return redirect()->route('admin.index', ['tab' => 'pano'])->with('success', 'Tüm deneme/test kayıtları (adaylar, öğrenciler, gruplar, ders programları, yoklamalar ve aidat hareketleri) tertemiz sıfırlandı!');
+    }
+
+    // MODÜL 14: Aylık Gelir-Gider Raporunu Excel (CSV) Olarak İndirme (Kabul Kriteri #7 - Yalnız Süper Yönetici)
     public function exportFinancialReportCsv()
     {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser || $authUser->role !== 'super_admin') {
+            return redirect()->route('admin.index')->with('error', 'Gelir-Gider raporu yalnızca Süper Yönetici tarafından indirilebilir!');
+        }
+
         $filename = 'enerjik-cimnastik-gelir-gider-raporu-' . now()->format('Y-m-d') . '.csv';
 
         $headers = [
@@ -1171,9 +1291,14 @@ class AdminPanelController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // MODÜL 16: Veritabanı Yedeğini İndirme (Kabul Kriteri #8)
+    // MODÜL 16: Veritabanı Yedeğini İndirme (Kabul Kriteri #8 - Yalnız Süper Yönetici)
     public function downloadDatabaseBackup()
     {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser || $authUser->role !== 'super_admin') {
+            return redirect()->route('admin.index')->with('error', 'Veritabanı yedeği yalnızca Süper Yönetici tarafından indirilebilir!');
+        }
+
         $tables = [
             'users' => User::all(),
             'branches' => Branch::all(),

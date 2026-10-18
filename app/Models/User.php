@@ -58,14 +58,16 @@ class User extends Authenticatable
         if ($this->role === 'super_admin') {
             return true;
         }
+        // Mali, yedekleme ve yetki işlemleri yalnızca super_admin'e aittir
+        if (in_array($perm, ['collect_payment', 'view_expenses', 'view_reports'], true)) {
+            return false;
+        }
         $perms = is_array($this->permissions) ? $this->permissions : [];
         if (array_key_exists($perm, $perms)) {
             return (bool) $perms[$perm];
         }
-        // Rol bazlı varsayılan yetkiler
         if ($this->role === 'secretary') {
             return in_array($perm, [
-                'collect_payment',
                 'send_whatsapp',
                 'edit_content',
                 'take_attendance',
@@ -84,13 +86,7 @@ class User extends Authenticatable
 
     public function canSeeFinance(): bool
     {
-        if ($this->role === 'super_admin') {
-            return true;
-        }
-        if ($this->role === 'secretary') {
-            return $this->hasPermission('collect_payment', true);
-        }
-        return false;
+        return $this->role === 'super_admin';
     }
 
     public function allowedTabs(): array
@@ -105,21 +101,11 @@ class User extends Authenticatable
 
         if ($this->role === 'secretary') {
             $tabs = ['pano', 'adaylar', 'ogrenciler', 'gruplar', 'yoklama', 'etkinlikler', 'gelisim'];
-            if ($this->hasPermission('collect_payment', true)) {
-                $tabs[] = 'paketler';
-                $tabs[] = 'aidat';
-            }
-            if ($this->hasPermission('view_expenses', false)) {
-                $tabs[] = 'kasa';
-            }
             if ($this->hasPermission('send_whatsapp', true)) {
                 $tabs[] = 'mesajlar';
             }
             if ($this->hasPermission('edit_content', true)) {
                 $tabs[] = 'site_icerigi';
-            }
-            if ($this->hasPermission('view_reports', false)) {
-                $tabs[] = 'raporlar';
             }
             return $tabs;
         }

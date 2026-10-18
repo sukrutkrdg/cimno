@@ -61,10 +61,7 @@
         <!-- Sol Menü: 16 Modül (Yetkiye Göre Filtrelenir) -->
         <aside class="w-full lg:w-64 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-3 shrink-0">
             <div class="flex items-center justify-between px-3 py-1.5">
-                <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Yetkili Modüller ({{ count($allowedTabs) }})</span>
-                @if($authUser->role === 'super_admin')
-                    <a href="{{ route('admin.index', ['tab' => 'personel']) }}" class="text-[10px] font-bold text-indigo-600 hover:underline">⚙️ Yetkiler</a>
-                @endif
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Menü Modülleri ({{ count($allowedTabs) }})</span>
             </div>
             @php
                 $navItems = [
@@ -120,22 +117,28 @@
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold">📊 Salon Yönetim Panosu</h2>
-                        <p class="text-xs text-slate-500">Bugünkü dersler, tahsilatlar, bekleyen adaylar ve WhatsApp Business hazır mesaj kuyruğu</p>
+                        <p class="text-xs text-slate-500">Bugünkü dersler, sporcu yoklama durumu, bekleyen adaylar ve WhatsApp Business hazır mesaj kuyruğu</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <a href="{{ route('admin.reports.csv') }}" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">📥 Gelir-Gider Excel İndir</a>
-                        <a href="{{ route('admin.backup.download') }}" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">💾 Veritabanı Yedeği İndir</a>
-                    </div>
+                    @if($currentRole === 'super_admin')
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('admin.reports.csv') }}" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">📥 Gelir-Gider Excel İndir</a>
+                            <a href="{{ route('admin.backup.download') }}" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">💾 Veritabanı Yedeği İndir</a>
+                            <form action="{{ route('admin.demo.clear') }}" method="POST" class="inline" onsubmit="return confirm('Tüm deneme/test kayıtlarını (adaylar, öğrenciler, gruplar, ders programı, yoklama, aidat ve kasa hareketleri) temizlemek istediğinize emin misiniz?')">
+                                @csrf
+                                <button type="submit" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">🧹 Deneme Kayıtlarını Temizle</button>
+                            </form>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Özet Kartlar -->
-                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid sm:grid-cols-2 {{ $currentRole === 'super_admin' ? 'lg:grid-cols-4' : 'lg:grid-cols-2' }} gap-4">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <span class="text-xs font-bold text-slate-500">Aktif Kayıtlı Sporcu</span>
                         <div class="text-3xl font-extrabold text-indigo-700 mt-1">{{ $activeStudentsCount }}</div>
                         <span class="text-[11px] text-emerald-600 font-semibold">{{ $groups->count() }} Aktif Grup</span>
                     </div>
-                    @if($currentRole !== 'coach')
+                    @if($currentRole === 'super_admin')
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                             <span class="text-xs font-bold text-slate-500">Bu Ayki Tahsilat</span>
                             <div class="text-3xl font-extrabold text-emerald-600 mt-1">{{ number_format($monthCollection, 0, ',', '.') }} ₺</div>
@@ -150,7 +153,11 @@
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <span class="text-xs font-bold text-slate-500">Bekleyen Deneme Adayı</span>
                         <div class="text-3xl font-extrabold text-amber-600 mt-1">{{ $newLeadsCount }}</div>
-                        <a href="{{ route('admin.index', ['tab' => 'adaylar']) }}" class="text-[11px] text-indigo-600 font-bold underline">Adayları Yönet →</a>
+                        @if(in_array('adaylar', $allowedTabs, true))
+                            <a href="{{ route('admin.index', ['tab' => 'adaylar', 'role_view' => $currentRole]) }}" class="text-[11px] text-indigo-600 font-bold underline">Adayları Yönet →</a>
+                        @else
+                            <span class="text-[11px] text-slate-400">Ön Kayıt & Deneme Takibi</span>
+                        @endif
                     </div>
                 </div>
 
@@ -189,7 +196,9 @@
                     <div class="bg-white rounded-2xl border border-slate-200 p-5">
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="font-extrabold text-sm text-emerald-700">💬 Bekleyen WhatsApp Kuyruğu</h3>
-                            <a href="{{ route('admin.index', ['tab' => 'mesajlar']) }}" class="text-xs text-indigo-600 font-bold underline">Tümünü Gör</a>
+                            @if(in_array('mesajlar', $allowedTabs, true))
+                                <a href="{{ route('admin.index', ['tab' => 'mesajlar', 'role_view' => $currentRole]) }}" class="text-xs text-indigo-600 font-bold underline">Tümünü Gör</a>
+                            @endif
                         </div>
                         @foreach($whatsappQueue->where('status', 'queued')->take(3) as $msg)
                             <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 mb-2 flex justify-between items-center gap-2">
@@ -210,7 +219,7 @@
             @if($activeTab === 'adaylar')
                 <div>
                     <h2 class="text-2xl font-extrabold">🎯 Adaylar (Ön Kayıt & Deneme Dersi Talepleri)</h2>
-                    <p class="text-xs text-slate-500">Web sitesinden veya Instagram'dan gelen adayları tek tıkla kesin kayda dönüştürün</p>
+                    <p class="text-xs text-slate-500">Web sitesinden veya Instagram'dan gelen adayları tek tıkla kesin kayda dönüştürün veya deneme kayıtlarını silin</p>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -235,7 +244,7 @@
                                             {{ $lead->status }}
                                         </span>
                                     </td>
-                                    <td class="p-3.5 text-right flex justify-end gap-2">
+                                    <td class="p-3.5 text-right flex flex-wrap justify-end gap-2">
                                         <a href="https://wa.me/90{{ substr(preg_replace('/\D+/', '', $lead->parent_phone), -10) }}?text={{ urlencode('Merhaba ' . $lead->parent_name . ', Enerjik Cimnastik deneme dersi randevunuz için yazıyoruz.') }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold">💬 WhatsApp</a>
                                         @if($lead->status !== 'converted')
                                             <form action="{{ route('admin.leads.convert', $lead->id) }}" method="POST">
@@ -243,6 +252,10 @@
                                                 <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">✨ Tek Tıkla Kesin Kayda Dönüştür</button>
                                             </form>
                                         @endif
+                                        <form action="{{ route('admin.leads.destroy', $lead->id) }}" method="POST" onsubmit="return confirm('{{ $lead->student_name }} deneme / aday kaydını silmek istediğinize emin misiniz?')">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach
@@ -256,10 +269,12 @@
             <!-- ========================================== -->
             @if($activeTab === 'ogrenciler')
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <!-- Yeni Öğrenci Kaydı + İlk Tahsilat Formu (Kabul Kriteri #1) -->
+                    <!-- Yeni Öğrenci Kaydı Formu -->
                     <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #1</span>
-                        <h3 class="text-lg font-extrabold mb-3">➕ Yeni Öğrenci Kaydı Aç & İlk Tahsilatı Gir</h3>
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Öğrenci Kayıt Merkezi</span>
+                        <h3 class="text-lg font-extrabold mb-3">
+                            {{ $currentRole === 'super_admin' ? '➕ Yeni Öğrenci Kaydı Aç & İlk Tahsilatı Gir' : '➕ Yeni Öğrenci Kaydı Aç' }}
+                        </h3>
                         <form action="{{ route('admin.students.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
                             <div class="grid grid-cols-2 gap-2.5">
@@ -299,19 +314,21 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="font-bold block mb-1">Paket *</label>
+                                    <label class="font-bold block mb-1">Eğitim Programı / Paket *</label>
                                     <select name="package_id" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         @foreach($packages as $p)
-                                            <option value="{{ $p->id }}">{{ $p->name }} ({{ number_format($p->price, 0, ',', '.') }} ₺)</option>
+                                            <option value="{{ $p->id }}">
+                                                {{ $p->name }}{{ $currentRole === 'super_admin' ? ' (' . number_format($p->price, 0, ',', '.') . ' ₺)' : '' }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
-                                    <label class="font-bold block mb-1">İndirim Kuralı (Kardeş/Burs)</label>
+                                    <label class="font-bold block mb-1">İndirim / Kardeş Durumu</label>
                                     <select name="discount_rule_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        <option value="">İndirim Yok (Tam Ücret)</option>
+                                        <option value="">Standart Kayıt</option>
                                         @foreach($discountRules as $d)
                                             <option value="{{ $d->id }}">{{ $d->name }}</option>
                                         @endforeach
@@ -336,27 +353,29 @@
                                 <label class="font-bold block mb-1">Sağlık Bilgisi & Rapor Notu (Özel Nitelikli Veri)</label>
                                 <input type="text" name="health_notes" placeholder="Spor yapabilir raporu alındı, bilinen alerji yok." class="w-full border rounded-xl px-3 py-2">
                             </div>
-                            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 grid grid-cols-2 gap-2.5">
-                                <div>
-                                    <label class="font-bold text-emerald-900 block mb-1">İlk Tahsilat Tutarı (₺)</label>
-                                    <input type="number" name="initial_payment_amount" value="3200" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                            @if($currentRole === 'super_admin')
+                                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="font-bold text-emerald-900 block mb-1">İlk Tahsilat Tutarı (₺)</label>
+                                        <input type="number" name="initial_payment_amount" value="3200" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold text-emerald-900 block mb-1">Tahsilat Hesabı / POS</label>
+                                        <select name="cash_account_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            @foreach($cashAccounts as $acc)
+                                                <option value="{{ $acc->id }}">{{ $acc->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="font-bold text-emerald-900 block mb-1">Tahsilat Hesabı / POS</label>
-                                    <select name="cash_account_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        @foreach($cashAccounts as $acc)
-                                            <option value="{{ $acc->id }}">{{ $acc->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
+                            @endif
                             <div class="flex flex-wrap gap-3 pt-1">
                                 <label class="flex items-center gap-1.5"><input type="checkbox" name="kvkk_consent" value="1" checked> KVKK Onayı</label>
                                 <label class="flex items-center gap-1.5"><input type="checkbox" name="health_data_consent" value="1" checked> Sağlık Verisi Rızası</label>
                                 <label class="flex items-center gap-1.5"><input type="checkbox" name="photo_consent" value="1" checked> Fotoğraf Paylaşım Onayı</label>
                             </div>
                             <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow">
-                                ✅ Kaydı Aç, Aidat Planını Oluştur & İlk Tahsilatı Kaydet
+                                {{ $currentRole === 'super_admin' ? '✅ Kaydı Aç, Aidat Planını Oluştur & İlk Tahsilatı Kaydet' : '✅ Yeni Öğrenci Kaydını Aç' }}
                             </button>
                         </form>
                     </div>
@@ -371,7 +390,7 @@
                                     <th class="p-2.5">Branş / Grup</th>
                                     <th class="p-2.5">Veli / İletişim</th>
                                     <th class="p-2.5">KVKK & Rapor</th>
-                                    <th class="p-2.5">Durum</th>
+                                    <th class="p-2.5">Durum & İşlem</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y">
@@ -403,10 +422,10 @@
                                                         <option value="left" {{ $st->status === 'left' ? 'selected' : '' }}>Ayrıldı (Arşiv)</option>
                                                     </select>
                                                 </form>
-                                                @if($authUser->hasPermission('delete_student', $authUser->role === 'super_admin'))
+                                                @if($authUser->hasPermission('delete_student', true))
                                                     <form action="{{ route('admin.students.destroy', $st->id) }}" method="POST" onsubmit="return confirm('{{ $st->full_name }} sporcu ve veli giriş kaydını silmek istediğinize emin misiniz?')">
                                                         @csrf
-                                                        <button type="submit" title="Kaydı Sil" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold">
+                                                        <button type="submit" title="Kaydı Sil" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-[11px] font-bold transition">
                                                             🗑️ Sil
                                                         </button>
                                                     </form>
@@ -427,8 +446,8 @@
             @if($activeTab === 'gruplar')
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Kabul Kriteri #2: Yeni Grup Açıp Ders Programına Ekleme -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #2</span>
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Eğitim Planlama</span>
                         <h3 class="text-lg font-extrabold mb-3">➕ Yeni Grup Aç & Ders Programına Ekle</h3>
                         <form action="{{ route('admin.groups.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
@@ -502,19 +521,31 @@
                     </div>
 
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="text-lg font-extrabold mb-3">🗓️ Mevcut Gruplar, Doluluk ve Haftalık Ders Programı</h3>
+                        <h3 class="text-lg font-extrabold mb-3">🗓️ Mevcut Gruplar, Eğitim Planı ve Haftalık Ders Programı</h3>
                         <div class="space-y-3">
                             @foreach($groups as $g)
                                 <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
                                     <div>
                                         <span class="text-[11px] font-bold text-indigo-600">{{ $g->branch?->name }} · {{ $g->area }}</span>
                                         <h4 class="font-extrabold text-sm">{{ $g->name }} ({{ $g->active_students_count }}/{{ $g->capacity }} Öğrenci)</h4>
-                                        <p class="text-xs text-slate-500">Antrenör: {{ $g->coach?->name ?? '-' }}</p>
+                                        <p class="text-xs text-slate-500">Antrenör: {{ $g->coach?->name ?? '-' }} · {{ $g->age_group }} · {{ $g->level }}</p>
                                     </div>
-                                    <div class="flex flex-wrap gap-1.5">
+                                    <div class="flex flex-wrap items-center gap-1.5">
                                         @foreach($g->schedules as $sch)
-                                            <span class="px-2.5 py-1 rounded-lg bg-white border text-xs font-bold">{{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }}-{{ substr($sch->end_time, 0, 5) }}</span>
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border text-xs font-bold">
+                                                <span>{{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }}-{{ substr($sch->end_time, 0, 5) }}</span>
+                                                <form action="{{ route('admin.schedules.destroy', $sch->id) }}" method="POST" class="inline" onsubmit="return confirm('{{ $sch->day_of_week }} ders saati kaydını programdan silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" title="Ders Saatini Sil" class="text-rose-600 hover:text-rose-800 font-extrabold px-1">✕</button>
+                                                </form>
+                                            </span>
                                         @endforeach
+                                        <form action="{{ route('admin.groups.destroy', $g->id) }}" method="POST" onsubmit="return confirm('{{ $g->name }} grubunu ve bağlı haftalık ders programını silmek istediğinize emin misiniz?')">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">
+                                                🗑️ Grubu Sil
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             @endforeach
@@ -564,17 +595,60 @@
                             </div>
                         </form>
                     @endforeach
+
+                    <!-- Son Yoklama Kayıtları & Silme -->
+                    <div class="mt-6 pt-6 border-t border-slate-200">
+                        <h3 class="text-base font-extrabold mb-3">📋 Son Alınan Yoklama Kayıtları (Deneme / Hatalı Kayıtları Sil)</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 border-b text-slate-600 uppercase">
+                                    <tr>
+                                        <th class="p-2.5">Tarih</th>
+                                        <th class="p-2.5">Sporcu</th>
+                                        <th class="p-2.5">Grup</th>
+                                        <th class="p-2.5">Durum / Not</th>
+                                        <th class="p-2.5 text-right">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    @forelse($attendances as $att)
+                                        <tr>
+                                            <td class="p-2.5 font-mono">{{ $att->attendance_date?->format('d.m.Y') }}</td>
+                                            <td class="p-2.5 font-bold">{{ $att->student?->full_name ?? '-' }}</td>
+                                            <td class="p-2.5">{{ $att->group?->name ?? '-' }}</td>
+                                            <td class="p-2.5">
+                                                <span class="font-bold">{{ $att->status }}</span>
+                                                @if($att->note)
+                                                    <span class="text-slate-500">· {{ $att->note }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="p-2.5 text-right">
+                                                <form action="{{ route('admin.attendance.destroy', $att->id) }}" method="POST" class="inline" onsubmit="return confirm('Bu yoklama kaydını silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="p-3 text-slate-500">Henüz yoklama kaydı bulunmuyor.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             @endif
 
             <!-- ========================================== -->
             <!-- 7. PAKETLER VE TOPLU FİYAT GÜNCELLEME      -->
             <!-- ========================================== -->
-            @if($activeTab === 'paketler')
+            @if($activeTab === 'paketler' && $currentRole === 'super_admin')
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Kabul Kriteri #3: Paket Fiyatlarını Toplu Güncelleme -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #3</span>
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Fiyat Yönetimi</span>
                         <h3 class="text-lg font-extrabold mb-2">🏷️ Paket Fiyatlarını Toplu Güncelle</h3>
                         <p class="text-xs text-slate-500 mb-4">Dönem başında tüm paket fiyatlarını yüzdesel (%) veya sabit TL olarak tek tıkla güncelleyin.</p>
                         <form action="{{ route('admin.packages.bulk_price') }}" method="POST" class="space-y-3 text-xs">
@@ -597,20 +671,30 @@
                         <h3 class="text-lg font-extrabold mb-3">📦 Aktif Eğitim Paketleri ve İndirim Kuralları</h3>
                         <div class="space-y-3 mb-6">
                             @foreach($packages as $p)
-                                <div class="p-3.5 rounded-xl border flex justify-between items-center">
+                                <div class="p-3.5 rounded-xl border flex justify-between items-center gap-3">
                                     <div>
                                         <div class="font-extrabold text-sm">{{ $p->name }}</div>
                                         <div class="text-xs text-slate-500">{{ $p->lessons_count }} Ders · Kayıt Ücreti: {{ number_format($p->registration_fee, 0, ',', '.') }} ₺</div>
                                     </div>
-                                    <div class="text-xl font-extrabold text-indigo-700">{{ number_format($p->price, 0, ',', '.') }} ₺</div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-xl font-extrabold text-indigo-700">{{ number_format($p->price, 0, ',', '.') }} ₺</div>
+                                        <form action="{{ route('admin.packages.destroy', $p->id) }}" method="POST" onsubmit="return confirm('{{ $p->name }} paketini silmek istediğinize emin misiniz?')">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>
+                                        </form>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
                         <h4 class="font-extrabold text-xs uppercase text-slate-500 mb-2">Otomatik İndirim Kuralları</h4>
                         <div class="grid sm:grid-cols-3 gap-2.5">
                             @foreach($discountRules as $d)
-                                <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-900">
-                                    {{ $d->name }} (%{{ $d->percentage }})
+                                <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-900 flex justify-between items-center gap-2">
+                                    <span>{{ $d->name }} (%{{ $d->percentage }})</span>
+                                    <form action="{{ route('admin.discounts.destroy', $d->id) }}" method="POST" onsubmit="return confirm('{{ $d->name }} indirim kuralını silmek istediğinize emin misiniz?')">
+                                        @csrf
+                                        <button type="submit" class="text-rose-600 hover:text-rose-800 font-extrabold px-1">✕</button>
+                                    </form>
                                 </div>
                             @endforeach
                         </div>
@@ -621,11 +705,11 @@
             <!-- ========================================== -->
             <!-- 8. AİDAT, BORÇLANDIRMA VE TAHSİLAT         -->
             <!-- ========================================== -->
-            @if($activeTab === 'aidat')
+            @if($activeTab === 'aidat' && $currentRole === 'super_admin')
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold">💳 Aidat, Otomatik Borçlandırma ve Tahsilat</h2>
-                        <p class="text-xs text-slate-500">"Önce borç açılır, tahsilat ona bağlanır" mimarisi · Makbuz PDF ve WhatsApp gönderimi</p>
+                        <p class="text-xs text-slate-500">"Önce borç açılır, tahsilat ona bağlanır" mimarisi · Makbuz PDF, WhatsApp gönderimi ve kayıt silme</p>
                     </div>
                     <form action="{{ route('admin.invoices.generate') }}" method="POST" class="flex items-center gap-2">
                         @csrf
@@ -636,7 +720,7 @@
 
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Hızlı Tahsilat Girişi -->
-                    <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
                         <h3 class="text-base font-extrabold mb-3">➕ Tahsilat Gir & Makbuz Üret</h3>
                         <form action="{{ route('admin.payments.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
@@ -686,7 +770,7 @@
                                     <th class="p-2.5">Net Tutar</th>
                                     <th class="p-2.5">Ödenen / Kalan</th>
                                     <th class="p-2.5">Vade</th>
-                                    <th class="p-2.5 text-right">Makbuz / WhatsApp</th>
+                                    <th class="p-2.5 text-right">Makbuz & İşlem</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y">
@@ -702,10 +786,22 @@
                                             <span class="text-rose-600 font-extrabold">{{ number_format($inv->remaining_amount, 0, ',', '.') }} ₺</span>
                                         </td>
                                         <td class="p-2.5">{{ $inv->due_date->format('d.m.Y') }}</td>
-                                        <td class="p-2.5 text-right space-x-1">
-                                            @foreach($inv->payments as $p)
-                                                <a href="{{ route('public.receipt', $p->id) }}" target="_blank" class="inline-block px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">🧾 {{ $p->receipt_no }}</a>
-                                            @endforeach
+                                        <td class="p-2.5 text-right">
+                                            <div class="flex flex-wrap justify-end items-center gap-1.5">
+                                                @foreach($inv->payments as $p)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">
+                                                        <a href="{{ route('public.receipt', $p->id) }}" target="_blank">🧾 {{ $p->receipt_no }}</a>
+                                                        <form action="{{ route('admin.payments.destroy', $p->id) }}" method="POST" class="inline" onsubmit="return confirm('{{ $p->receipt_no }} tahsilat makbuzunu silmek istediğinize emin misiniz?')">
+                                                            @csrf
+                                                            <button type="submit" title="Tahsilatı Sil" class="text-rose-600 hover:text-rose-800 font-extrabold px-0.5">✕</button>
+                                                        </form>
+                                                    </span>
+                                                @endforeach
+                                                <form action="{{ route('admin.invoices.destroy', $inv->id) }}" method="POST" class="inline" onsubmit="return confirm('Bu aidat borç kaydını ve bağlı tahsilatları silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -733,7 +829,7 @@
                 </div>
 
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
                         <h3 class="text-base font-extrabold mb-3">➕ Yeni Gider veya Ürün Satışı (Mayo/Forma) Ekle</h3>
                         <form action="{{ route('admin.transactions.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
@@ -796,7 +892,7 @@
                                     <th class="p-2.5">Tarih</th>
                                     <th class="p-2.5">Kategori / Başlık</th>
                                     <th class="p-2.5">Hesap</th>
-                                    <th class="p-2.5 text-right">Tutar</th>
+                                    <th class="p-2.5 text-right">Tutar & İşlem</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y">
@@ -808,8 +904,16 @@
                                             <span class="text-[11px] text-slate-500">{{ $tx->category }} {{ $tx->is_recurring ? '· 🔄 Sabit Tekrarlı' : '' }}</span>
                                         </td>
                                         <td class="p-2.5">{{ $tx->cashAccount?->name }}</td>
-                                        <td class="p-2.5 text-right font-extrabold {{ $tx->direction === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
-                                            {{ $tx->direction === 'income' ? '+' : '-' }}{{ number_format($tx->amount, 2, ',', '.') }} ₺
+                                        <td class="p-2.5 text-right">
+                                            <div class="flex justify-end items-center gap-2">
+                                                <span class="font-extrabold {{ $tx->direction === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                                    {{ $tx->direction === 'income' ? '+' : '-' }}{{ number_format($tx->amount, 2, ',', '.') }} ₺
+                                                </span>
+                                                <form action="{{ route('admin.transactions.destroy', $tx->id) }}" method="POST" class="inline" onsubmit="return confirm('{{ $tx->title }} kasa hareketini silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -826,7 +930,7 @@
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Kabul Kriteri #5: Sekreter / Antrenör Hesabı Açma ve Kapatma -->
                     <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #5</span>
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kullanıcı & Personel Yönetimi</span>
                         <h3 class="text-lg font-extrabold mb-3">👤 Yeni Yönetici / Sekreter / Antrenör Ekle</h3>
                         <form action="{{ route('admin.staff.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
@@ -887,7 +991,7 @@
                             <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
                                 <div>
                                     <h3 class="text-base font-extrabold">🛡️ Yönetici, Sekreter & Antrenör Yetki Matrisi (Düzenle & Sil)</h3>
-                                    <p class="text-[11px] text-slate-500">Her personelin hangi ekranları görebileceğini, işlem yetkilerini, şifresini özelleştirin veya hesabını silin.</p>
+                                    <p class="text-[11px] text-slate-500">Sekreter ve Antrenör hesaplarında mali/finansal bilgiler, Excel ve yedek indirme tamamen kapalıdır.</p>
                                 </div>
                                 <a href="{{ route('admin.login') }}" class="text-xs font-bold text-indigo-600 underline">🔐 Giriş Ekranı: /panel/giris</a>
                             </div>
@@ -926,44 +1030,35 @@
 
                                             @if($u->role === 'super_admin')
                                                 <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
-                                                    👑 Süper Yönetici (Salon Sahibi) tüm 16 modüle, kasa/gider hesaplarına, personel yetkilerine ve veritabanı yedeğine tam erişime sahiptir.
+                                                    👑 Süper Yönetici (Salon Sahibi) tüm 16 modüle, kasa/gider hesaplarına, personel yetkilerine, Excel çıktısına ve veritabanı yedeğine tam erişime sahiptir.
                                                 </div>
                                             @else
+                                                <div class="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold">
+                                                    🔒 Mali bilgiler, aidat/tahsilat, kasa, gelir-gider Excel çıktısı ve veritabanı yedekleme bu rol için tamamen gizlidir.
+                                                </div>
                                                 <div class="grid sm:grid-cols-3 gap-2 pt-1">
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_collect_payment" value="1" {{ $u->hasPermission('collect_payment') ? 'checked' : '' }}>
-                                                        <span>💳 Aidat & Tahsilat Girebilsin</span>
-                                                    </label>
-                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_view_expenses" value="1" {{ $u->hasPermission('view_expenses') ? 'checked' : '' }}>
-                                                        <span>🏦 Kasa & Giderleri Görebilsin</span>
-                                                    </label>
-                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_view_reports" value="1" {{ $u->hasPermission('view_reports') ? 'checked' : '' }}>
-                                                        <span>📑 Finansal Raporları Görebilsin</span>
-                                                    </label>
-                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_send_whatsapp" value="1" {{ $u->hasPermission('send_whatsapp') ? 'checked' : '' }}>
+                                                        <input type="checkbox" name="perm_send_whatsapp" value="1" {{ $u->hasPermission('send_whatsapp', $u->role === 'secretary') ? 'checked' : '' }}>
                                                         <span>💬 WhatsApp Kuyruğu Gönderebilsin</span>
                                                     </label>
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_edit_content" value="1" {{ $u->hasPermission('edit_content') ? 'checked' : '' }}>
+                                                        <input type="checkbox" name="perm_edit_content" value="1" {{ $u->hasPermission('edit_content', $u->role === 'secretary') ? 'checked' : '' }}>
                                                         <span>🌐 Site İçeriği Düzenleyebilsin</span>
                                                     </label>
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_only_own_groups" value="1" {{ $u->hasPermission('only_own_groups') ? 'checked' : '' }}>
+                                                        <input type="checkbox" name="perm_only_own_groups" value="1" {{ $u->hasPermission('only_own_groups', $u->role === 'coach') ? 'checked' : '' }}>
                                                         <span>🎽 Yalnızca Kendi Gruplarını Görsün</span>
                                                     </label>
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_take_attendance" value="1" {{ $u->hasPermission('take_attendance') ? 'checked' : '' }}>
+                                                        <input type="checkbox" name="perm_take_attendance" value="1" {{ $u->hasPermission('take_attendance', true) ? 'checked' : '' }}>
                                                         <span>✅ Yoklama Alabilsin</span>
                                                     </label>
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_add_development" value="1" {{ $u->hasPermission('add_development') ? 'checked' : '' }}>
+                                                        <input type="checkbox" name="perm_add_development" value="1" {{ $u->hasPermission('add_development', true) ? 'checked' : '' }}>
                                                         <span>📈 Gelişim Karnesi Girebilsin</span>
                                                     </label>
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
-                                                        <input type="checkbox" name="perm_delete_student" value="1" {{ $u->hasPermission('delete_student') ? 'checked' : '' }}>
+                                                        <input type="checkbox" name="perm_delete_student" value="1" {{ $u->hasPermission('delete_student', true) ? 'checked' : '' }}>
                                                         <span>🗑️ Kayıt Silebilsin / Arşivlesin</span>
                                                     </label>
                                                 </div>
@@ -1031,9 +1126,9 @@
             @if($activeTab === 'mesajlar')
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
-                        <span class="text-[11px] font-bold uppercase text-emerald-700">Meta Doğrulaması Gerektirmeyen Pratik Çözüm · Kabul Kriteri #4</span>
+                        <span class="text-[11px] font-bold uppercase text-emerald-700">Meta Doğrulaması Gerektirmeyen Pratik Çözüm</span>
                         <h2 class="text-2xl font-extrabold">💬 WhatsApp Business Hazır Cevapları & Tıkla-Gönder Motoru</h2>
-                        <p class="text-xs text-slate-500">Şablon metinlerini ve gönderim saatlerini düzenleyin; günlük hatırlatma kuyruğunu tek tıkla WhatsApp Business'ta açıp gönderin.</p>
+                        <p class="text-xs text-slate-500">Şablon metinlerini ve gönderim saatlerini düzenleyin; günlük hatırlatma kuyruğunu tek tıkla WhatsApp Business'ta açıp gönderin veya silin.</p>
                     </div>
                     <form action="{{ route('admin.whatsapp.generate') }}" method="POST">
                         @csrf
@@ -1059,9 +1154,15 @@
                                     </div>
                                     <p class="text-xs text-slate-700 mt-1">{{ $msg->message_text }}</p>
                                 </div>
-                                <a href="{{ route('admin.whatsapp.send', $msg->id) }}" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0">
-                                    💬 WhatsApp Business'ta Aç & Gönder →
-                                </a>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <a href="{{ route('admin.whatsapp.send', $msg->id) }}" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+                                        💬 WhatsApp'ta Aç & Gönder →
+                                    </a>
+                                    <form action="{{ route('admin.whatsapp.destroy', $msg->id) }}" method="POST" onsubmit="return confirm('Bu WhatsApp kuyruk mesajını silmek istediğinize emin misiniz?')">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>
+                                    </form>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -1109,7 +1210,7 @@
             <!-- ========================================== -->
             @if($activeTab === 'etkinlikler' || $activeTab === 'gelisim')
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
                         <h3 class="text-lg font-extrabold mb-3">📈 Yeni Dönem Gelişim Karnesi Oluştur</h3>
                         <form action="{{ route('admin.development.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
@@ -1149,27 +1250,43 @@
                     <div class="lg:col-span-7 space-y-6">
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                             <h3 class="text-base font-extrabold mb-3">🎪 Etkinlikler, Gösteriler ve Yaz Okulu</h3>
-                            @foreach($events as $ev)
-                                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex justify-between items-center">
-                                    <div>
-                                        <span class="text-xs font-bold text-indigo-600">{{ $ev->event_date->format('d.m.Y') }} · {{ $ev->location }}</span>
-                                        <h4 class="font-extrabold text-sm">{{ $ev->title }}</h4>
-                                        <p class="text-xs text-slate-600">{{ $ev->description }} (Katılımcı: {{ $ev->participants->count() }}/{{ $ev->quota }})</p>
+                            <div class="space-y-2.5">
+                                @foreach($events as $ev)
+                                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
+                                        <div>
+                                            <span class="text-xs font-bold text-indigo-600">{{ $ev->event_date->format('d.m.Y') }} · {{ $ev->location }}</span>
+                                            <h4 class="font-extrabold text-sm">{{ $ev->title }}</h4>
+                                            <p class="text-xs text-slate-600">{{ $ev->description }} (Katılımcı: {{ $ev->participants->count() }}/{{ $ev->quota }})</p>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            @if($currentRole === 'super_admin')
+                                                <span class="font-extrabold text-indigo-700 text-sm">{{ number_format($ev->fee, 0, ',', '.') }} ₺</span>
+                                            @endif
+                                            <form action="{{ route('admin.events.destroy', $ev->id) }}" method="POST" onsubmit="return confirm('{{ $ev->title }} etkinliğini silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>
+                                            </form>
+                                        </div>
                                     </div>
-                                    <span class="font-extrabold text-indigo-700 text-sm">{{ number_format($ev->fee, 0, ',', '.') }} ₺</span>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                             <h3 class="text-base font-extrabold mb-3">🏅 Yayınlanan Gelişim Karneleri</h3>
                             @foreach($developmentRecords as $dev)
-                                <div class="p-3.5 rounded-xl border border-slate-200 mb-2.5 text-xs">
-                                    <div class="flex justify-between font-bold">
-                                        <span>{{ $dev->student?->full_name }} — {{ $dev->term_label }}</span>
-                                        <span class="text-indigo-600">{{ $dev->current_level }}</span>
+                                <div class="p-3.5 rounded-xl border border-slate-200 mb-2.5 text-xs flex justify-between items-start gap-3">
+                                    <div>
+                                        <div class="flex flex-wrap items-center gap-2 font-bold">
+                                            <span>{{ $dev->student?->full_name }} — {{ $dev->term_label }}</span>
+                                            <span class="text-indigo-600">({{ $dev->current_level }})</span>
+                                        </div>
+                                        <p class="text-slate-600 mt-1">Esneklik: {{ $dev->flexibility_score }} · Kuvvet: {{ $dev->strength_score }} · Denge: {{ $dev->balance_score }} · "{{ $dev->coach_comment }}"</p>
                                     </div>
-                                    <p class="text-slate-600 mt-1">Esneklik: {{ $dev->flexibility_score }} · Kuvvet: {{ $dev->strength_score }} · Denge: {{ $dev->balance_score }} · "{{ $dev->coach_comment }}"</p>
+                                    <form action="{{ route('admin.development.destroy', $dev->id) }}" method="POST" onsubmit="return confirm('Bu gelişim karnesi kaydını silmek istediğinize emin misiniz?')">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold shrink-0 transition">🗑️ Sil</button>
+                                    </form>
                                 </div>
                             @endforeach
                         </div>
@@ -1297,10 +1414,12 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="font-bold block mb-1">Kulüp IBAN Numarası (Veli Portalı & Aidat Ekranı İçin)</label>
-                                <input type="text" name="iban_number" value="{{ $settings['iban_number'] ?? '' }}" class="w-full border rounded-xl px-3 py-2 font-mono">
-                            </div>
+                            @if($currentRole === 'super_admin')
+                                <div>
+                                    <label class="font-bold block mb-1">Kulüp IBAN Numarası (Veli Portalı & Aidat Ekranı İçin)</label>
+                                    <input type="text" name="iban_number" value="{{ $settings['iban_number'] ?? '' }}" class="w-full border rounded-xl px-3 py-2 font-mono">
+                                </div>
+                            @endif
 
                             <!-- Bölüm Görünürlük Kontrolleri (Aç / Kapat) -->
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
@@ -1476,60 +1595,62 @@
                     </div>
                 </div>
 
-                <!-- 4. SİTEDEKİ EĞİTİM PAKETLERİ VE ÜCRET KARTLARINI YÖNET -->
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                    <h3 class="text-base font-extrabold border-b pb-2">🏷️ 4. Sitedeki Eğitim Paketleri ve Ücret Kartları ({{ $packages->count() }} Paket)</h3>
+                @if($currentRole === 'super_admin')
+                    <!-- 4. SİTEDEKİ EĞİTİM PAKETLERİ VE ÜCRET KARTLARINI YÖNET (Sadece Süper Yönetici) -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="text-base font-extrabold border-b pb-2">🏷️ 4. Sitedeki Eğitim Paketleri ve Ücret Kartları ({{ $packages->count() }} Paket)</h3>
 
-                    <!-- Yeni Paket Ekle -->
-                    <form action="{{ route('admin.packages.store') }}" method="POST" class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 grid sm:grid-cols-5 gap-2.5 text-xs items-end">
-                        @csrf
-                        <div class="sm:col-span-2">
-                            <label class="font-bold block mb-1">Paket Adı *</label>
-                            <input type="text" name="name" required placeholder="Ör: Haftada 2 Ders Aylık Paket" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
-                        </div>
-                        <div>
-                            <label class="font-bold block mb-1">Ücret (₺) *</label>
-                            <input type="number" name="price" required value="3200" class="w-full border rounded-xl px-3 py-2 bg-white font-extrabold text-emerald-700">
-                        </div>
-                        <div>
-                            <label class="font-bold block mb-1">Ders Sayısı</label>
-                            <input type="number" name="lessons_count" value="8" class="w-full border rounded-xl px-3 py-2 bg-white">
-                        </div>
-                        <div>
-                            <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Paket Ekle</button>
-                        </div>
-                        <div class="sm:col-span-5">
-                            <input type="text" name="description" placeholder="Paket alt açıklaması..." class="w-full border rounded-xl px-3 py-1.5 bg-white">
-                        </div>
-                    </form>
-
-                    <div class="grid md:grid-cols-3 gap-4">
-                        @foreach($packages as $pkg)
-                            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2 text-xs">
-                                <form action="{{ route('admin.packages.update', $pkg->id) }}" method="POST" class="space-y-2">
-                                    @csrf
-                                    <input type="text" name="name" value="{{ $pkg->name }}" class="w-full border rounded-xl px-3 py-1.5 bg-white font-extrabold">
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="text-[10px] font-bold text-slate-500">Fiyat (₺)</label>
-                                            <input type="number" name="price" value="{{ (int) $pkg->price }}" class="w-full border rounded-xl px-3 py-1.5 bg-white font-extrabold text-indigo-700">
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] font-bold text-slate-500">Ders Sayısı</label>
-                                            <input type="number" name="lessons_count" value="{{ $pkg->lessons_count }}" class="w-full border rounded-xl px-3 py-1.5 bg-white">
-                                        </div>
-                                    </div>
-                                    <textarea name="description" rows="2" class="w-full border rounded-xl p-2 bg-white">{{ $pkg->description }}</textarea>
-                                    <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Paketi Güncelle</button>
-                                </form>
-                                <form action="{{ route('admin.packages.destroy', $pkg->id) }}" method="POST" onsubmit="return confirm('Bu paketi silmek istediğinize emin misiniz?')" class="flex justify-end -mt-7">
-                                    @csrf
-                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold">🗑️ Sil</button>
-                                </form>
+                        <!-- Yeni Paket Ekle -->
+                        <form action="{{ route('admin.packages.store') }}" method="POST" class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 grid sm:grid-cols-5 gap-2.5 text-xs items-end">
+                            @csrf
+                            <div class="sm:col-span-2">
+                                <label class="font-bold block mb-1">Paket Adı *</label>
+                                <input type="text" name="name" required placeholder="Ör: Haftada 2 Ders Aylık Paket" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
                             </div>
-                        @endforeach
+                            <div>
+                                <label class="font-bold block mb-1">Ücret (₺) *</label>
+                                <input type="number" name="price" required value="3200" class="w-full border rounded-xl px-3 py-2 bg-white font-extrabold text-emerald-700">
+                            </div>
+                            <div>
+                                <label class="font-bold block mb-1">Ders Sayısı</label>
+                                <input type="number" name="lessons_count" value="8" class="w-full border rounded-xl px-3 py-2 bg-white">
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Paket Ekle</button>
+                            </div>
+                            <div class="sm:col-span-5">
+                                <input type="text" name="description" placeholder="Paket alt açıklaması..." class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                            </div>
+                        </form>
+
+                        <div class="grid md:grid-cols-3 gap-4">
+                            @foreach($packages as $pkg)
+                                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2 text-xs">
+                                    <form action="{{ route('admin.packages.update', $pkg->id) }}" method="POST" class="space-y-2">
+                                        @csrf
+                                        <input type="text" name="name" value="{{ $pkg->name }}" class="w-full border rounded-xl px-3 py-1.5 bg-white font-extrabold">
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-[10px] font-bold text-slate-500">Fiyat (₺)</label>
+                                                <input type="number" name="price" value="{{ (int) $pkg->price }}" class="w-full border rounded-xl px-3 py-1.5 bg-white font-extrabold text-indigo-700">
+                                            </div>
+                                            <div>
+                                                <label class="text-[10px] font-bold text-slate-500">Ders Sayısı</label>
+                                                <input type="number" name="lessons_count" value="{{ $pkg->lessons_count }}" class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                                            </div>
+                                        </div>
+                                        <textarea name="description" rows="2" class="w-full border rounded-xl p-2 bg-white">{{ $pkg->description }}</textarea>
+                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Paketi Güncelle</button>
+                                    </form>
+                                    <form action="{{ route('admin.packages.destroy', $pkg->id) }}" method="POST" onsubmit="return confirm('Bu paketi silmek istediğinize emin misiniz?')" class="flex justify-end -mt-7">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold">🗑️ Sil</button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <!-- 5. DUYURULAR & 6. SIKÇA SORULAN SORULAR (SSS) YÖNETİMİ -->
                 <div class="grid lg:grid-cols-12 gap-6">
@@ -1663,16 +1784,24 @@
             @if($activeTab === 'ayarlar' && $currentRole === 'super_admin')
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Kabul Kriteri #8</span>
-                        <h2 class="text-2xl font-extrabold">⚙️ Sistem Ayarları, Veritabanı Yedeği ve İşlem Günlüğü</h2>
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Sistem Yönetimi & Veri Temizliği</span>
+                        <h2 class="text-2xl font-extrabold">⚙️ Sistem Ayarları, Veritabanı Yedeği ve Test Kayıtlarını Temizleme</h2>
                     </div>
-                    <a href="{{ route('admin.backup.download') }}" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow">
-                        💾 Tam Veritabanı Yedeğini İndir (.JSON)
-                    </a>
+                    <div class="flex flex-wrap gap-2">
+                        <form action="{{ route('admin.demo.clear') }}" method="POST" onsubmit="return confirm('Sistemdeki tüm deneme/test kayıtlarını (adaylar, öğrenciler, gruplar, ders programı, yoklama, aidat ve kasa hareketleri) tek seferde temizlemek istediğinize emin misiniz?')">
+                            @csrf
+                            <button type="submit" class="px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow">
+                                🧹 Tüm Test / Deneme Kayıtlarını Temizle
+                            </button>
+                        </form>
+                        <a href="{{ route('admin.backup.download') }}" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow">
+                            💾 Tam Veritabanı Yedeğini İndir (.JSON)
+                        </a>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                    <h3 class="text-base font-extrabold mb-3">🛡️ İşlem Günlüğü (Audit Logs - Silme Yerine Arşivleme & Kritik İşlem Kayıtları)</h3>
+                    <h3 class="text-base font-extrabold mb-3">🛡️ İşlem Günlüğü (Audit Logs - Kritik İşlem Kayıtları)</h3>
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-50 border-b text-slate-600 uppercase">
                             <tr>
