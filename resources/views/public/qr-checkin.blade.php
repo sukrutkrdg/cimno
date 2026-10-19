@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen pb-24">
 
@@ -64,6 +65,28 @@
                 </div>
             </form>
         </div>
+
+        <!-- QR Kamera Okuyucu Alanı -->
+        @if($students->isNotEmpty())
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-[11px] font-bold uppercase text-indigo-700">2. Adım: Salon QR Kodunu Okutun</span>
+                    <h2 class="text-sm font-extrabold">Hızlı Yoklama İçin Kamerayı Açın</h2>
+                </div>
+                <span class="text-xl">📷</span>
+            </div>
+
+            <button type="button" id="start-camera-btn" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold flex justify-center items-center gap-2">
+                📷 Kamerayı Aç ve Salondaki QR'ı Okut
+            </button>
+
+            <div id="reader-container" class="hidden mt-3 rounded-xl overflow-hidden border-2 border-dashed border-slate-300">
+                <div id="reader" width="100%"></div>
+                <button type="button" id="stop-camera-btn" class="w-full py-2 bg-red-100 text-red-700 text-xs font-bold text-center">İptal Et / Kamerayı Kapat</button>
+            </div>
+        </div>
+        @endif
 
         <!-- Sporcu Kartları ve Tek Dokunuşla QR Yoklama Butonu -->
         <div class="space-y-3">
@@ -159,6 +182,110 @@
         const input = document.getElementById('parent-phone-input');
         if (input && input.value) {
             localStorage.setItem('enerjik_parent_phone', input.value);
+        }
+
+        // QR Okuma Mantığı
+        const startCameraBtn = document.getElementById('start-camera-btn');
+        const stopCameraBtn = document.getElementById('stop-camera-btn');
+        const readerContainer = document.getElementById('reader-container');
+        let html5QrcodeScanner = null;
+
+        if (startCameraBtn) {
+            startCameraBtn.addEventListener('click', function() {
+                readerContainer.classList.remove('hidden');
+                startCameraBtn.classList.add('hidden');
+
+                const html5QrCode = new Html5Qrcode("reader");
+                html5QrcodeScanner = html5QrCode;
+
+                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                    // QR kodu okundu, salon afiş URL'sini (qr-yoklama) kontrol et
+                    if (decodedText.includes('qr-yoklama') || decodedText.includes('mobil')) {
+                        html5QrCode.stop().then((ignore) => {
+                            // Kamerayı kapat
+                            readerContainer.classList.add('hidden');
+
+                            // Sayfadaki öğrencilerin gizli inputlarını bul ve yoklamayı gönder
+                            submitAttendanceViaAjax();
+                        }).catch((err) => {
+                            console.error("Kamera durdurulamadı.", err);
+                        });
+                    } else {
+                        alert("Lütfen salon girişindeki doğru QR kodu okutun.");
+                    }
+                };
+
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+                html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+                .catch((err) => {
+                    alert("Kamera başlatılamadı: " + err);
+                    readerContainer.classList.add('hidden');
+                    startCameraBtn.classList.remove('hidden');
+                });
+            });
+        }
+
+        if (stopCameraBtn) {
+            stopCameraBtn.addEventListener('click', function() {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then((ignore) => {
+                        readerContainer.classList.add('hidden');
+                        startCameraBtn.classList.remove('hidden');
+                    }).catch((err) => {
+                        console.error("Kamera durdurulamadı.", err);
+                    });
+                }
+            });
+        }
+
+        function submitAttendanceViaAjax() {
+            const studentInputs = document.querySelectorAll('input[name="student_id"]');
+            if (studentInputs.length === 0) {
+                alert("Yoklaması alınacak öğrenci bulunamadı.");
+                return;
+            }
+
+            // Kullanıcıya bilgi ver
+            startCameraBtn.classList.remove('hidden');
+            startCameraBtn.innerText = "⏳ Yoklamalar Sisteme İşleniyor...";
+            startCameraBtn.disabled = true;
+            startCameraBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+            startCameraBtn.classList.add('bg-amber-500');
+
+            const csrfToken = document.querySelector('input[name="_token"]').value;
+            let completedRequests = 0;
+
+            studentInputs.forEach(input => {
+                const studentId = input.value;
+                const formData = new FormData();
+                formData.append('_token', csrfToken);
+                formData.append('student_id', studentId);
+                formData.append('checkin_type', 'present');
+
+                fetch("{{ route('public.qr.checkin.submit') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json().catch(() => response))
+                .then(data => {
+                    completedRequests++;
+                    if (completedRequests === studentInputs.length) {
+                        // Tüm istekler bittiğinde sayfayı yenile
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    completedRequests++;
+                    if (completedRequests === studentInputs.length) {
+                        window.location.reload();
+                    }
+                });
+            });
         }
     </script>
 </body>
