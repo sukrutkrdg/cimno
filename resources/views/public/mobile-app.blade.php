@@ -209,19 +209,120 @@
                         @endif
 
                         @if($sekme === 'cocuklarim' || $sekme === 'karne')
-                            <!-- Gelişim Karnesi -->
-                            @foreach($st->developmentRecords as $dev)
-                                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs">
-                                    <div class="font-extrabold text-amber-950">🏅 {{ $dev->term_label }} ({{ $dev->current_level }})</div>
-                                    <div class="grid grid-cols-4 gap-1 text-center my-2 text-[11px]">
-                                        <div class="bg-white p-1 rounded border">Esn: <strong>{{ $dev->flexibility_score }}</strong></div>
-                                        <div class="bg-white p-1 rounded border">Kuv: <strong>{{ $dev->strength_score }}</strong></div>
-                                        <div class="bg-white p-1 rounded border">Den: <strong>{{ $dev->balance_score }}</strong></div>
-                                        <div class="bg-white p-1 rounded border">Dis: <strong>{{ $dev->discipline_score }}</strong></div>
+                            <!-- Gelişim Karnesi (Gamification) -->
+                            @forelse($st->developmentRecords as $dev)
+                                <div class="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 shadow-sm">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <div class="font-extrabold text-amber-900 text-sm">🏅 {{ $dev->term_label }}</div>
+                                        <span class="px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider">{{ $dev->current_level }}</span>
                                     </div>
-                                    <p class="text-[11px] text-slate-700 italic">"{{ $dev->coach_comment }}"</p>
+
+                                    <!-- İlerleme Çubukları -->
+                                    <div class="space-y-2 mb-4">
+                                        @php
+                                            $scores = [
+                                                ['label' => 'Esneklik', 'val' => $dev->flexibility_score, 'color' => 'bg-pink-500'],
+                                                ['label' => 'Kuvvet', 'val' => $dev->strength_score, 'color' => 'bg-orange-500'],
+                                                ['label' => 'Denge', 'val' => $dev->balance_score, 'color' => 'bg-blue-500'],
+                                                ['label' => 'Disiplin', 'val' => $dev->discipline_score, 'color' => 'bg-emerald-500'],
+                                            ];
+                                        @endphp
+                                        @foreach($scores as $score)
+                                            <div>
+                                                <div class="flex justify-between text-[10px] font-bold text-slate-600 mb-0.5">
+                                                    <span>{{ $score['label'] }}</span>
+                                                    <span>{{ $score['val'] }}%</span>
+                                                </div>
+                                                <div class="w-full bg-slate-200 rounded-full h-1.5">
+                                                    <div class="{{ $score['color'] }} h-1.5 rounded-full" style="width: {{ $score['val'] }}%"></div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <!-- Beceriler (Rozetler) -->
+                                    @if(is_array($dev->skills) && count($dev->skills) > 0)
+                                        <div class="mb-3">
+                                            <div class="text-[10px] font-extrabold text-slate-500 uppercase mb-1.5">Kazanılan Beceriler</div>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                @foreach($dev->skills as $skillName => $skillStatus)
+                                                    @php
+                                                        $badgeClass = 'bg-slate-100 text-slate-600';
+                                                        $icon = '⚪';
+                                                        if(stripos($skillStatus, 'başarılı') !== false || stripos($skillStatus, 'iyi') !== false) {
+                                                            $badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+                                                            $icon = '⭐';
+                                                        } elseif(stripos($skillStatus, 'gelişiyor') !== false || stripos($skillStatus, 'orta') !== false) {
+                                                            $badgeClass = 'bg-blue-100 text-blue-800 border border-blue-200';
+                                                            $icon = '🚀';
+                                                        }
+                                                    @endphp
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold {{ $badgeClass }}">
+                                                        <span>{{ $icon }}</span> {{ $skillName }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($dev->coach_comment)
+                                        <div class="mt-2 p-2.5 bg-white/60 rounded-lg text-xs italic text-slate-700 border border-amber-100 relative">
+                                            <span class="absolute -top-2 -left-1 text-xl opacity-20">"</span>
+                                            {{ $dev->coach_comment }}
+                                        </div>
+                                    @endif
                                 </div>
-                            @endforeach
+                            @empty
+                                <div class="text-center p-3 rounded-xl border border-dashed border-slate-300 text-xs text-slate-500">
+                                    Henüz girilmiş gelişim karnesi bulunmuyor.
+                                </div>
+                            @endforelse
+                        @endif
+
+                        @if($sekme === 'cocuklarim' || $sekme === 'telafi')
+                            <!-- Telafi Hakkı ve Self-Service Rezervasyon -->
+                            @if($st->makeup_credits > 0)
+                                <div class="p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="text-sm font-extrabold text-indigo-900">🔄 Telafi Ders Hakkınız Var!</div>
+                                        <span class="bg-indigo-600 text-white px-2.5 py-1 rounded-full text-xs font-bold">{{ $st->makeup_credits }} Ders</span>
+                                    </div>
+                                    <p class="text-xs text-indigo-700 mb-3">Çocuğunuzun devamsızlık yaptığı dersler için telafi hakkınız bulunmaktadır. Lütfen aşağıdan telafi yapmak istediğiniz uygun sınıfı seçerek randevunuzu onaylayın.</p>
+
+                                    <form action="{{ route('public.mobile.makeup.reserve') }}" method="POST" class="space-y-3">
+                                        @csrf
+                                        <input type="hidden" name="student_id" value="{{ $st->id }}">
+
+                                        <div>
+                                            <label class="block text-[11px] font-extrabold text-indigo-900 mb-1">Uygun Sınıflar (Kapasite Müsait)</label>
+                                            <select name="group_id" required class="w-full rounded-xl border border-indigo-300 px-3 py-2 text-xs font-bold text-slate-700 bg-white">
+                                                <option value="" disabled selected>Lütfen Sınıf Seçin</option>
+                                                @foreach($availableMakeupGroups as $mGroup)
+                                                    @php
+                                                        // Grupların ders programını basit bir metne çeviriyoruz
+                                                        $days = $mGroup->schedules->pluck('day_of_week')->join(', ');
+                                                        $time = $mGroup->schedules->first() ? substr($mGroup->schedules->first()->start_time, 0, 5) : '';
+                                                    @endphp
+                                                    <option value="{{ $mGroup->id }}">{{ $mGroup->name }} ({{ $days }} - {{ $time }}) - Antrenör: {{ $mGroup->coach?->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[11px] font-extrabold text-indigo-900 mb-1">Tarih</label>
+                                            <input type="date" name="attendance_date" required min="{{ today()->toDateString() }}" value="{{ today()->addDays(1)->toDateString() }}" class="w-full rounded-xl border border-indigo-300 px-3 py-2 text-xs font-bold text-slate-700 bg-white">
+                                        </div>
+
+                                        <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold shadow transition">
+                                            📅 Telafi Randevusunu Onayla
+                                        </button>
+                                    </form>
+                                </div>
+                            @elseif($sekme === 'telafi')
+                                <div class="text-center p-4 rounded-xl border border-dashed border-slate-300 text-xs text-slate-500">
+                                    Şu anda kullanılabilir telafi ders hakkınız (devamsızlığınız) bulunmuyor.
+                                </div>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -287,6 +388,10 @@
                     <span class="text-lg">🏅</span>
                     <span class="text-[11px]">Gelişim Karnesi</span>
                 </a>
+                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'telafi']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'telafi' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
+                    <span class="text-lg">🔄</span>
+                    <span class="text-[11px]">Telafi Randevu</span>
+                </a>
             </div>
         </nav>
     @endif
@@ -323,6 +428,21 @@
             const m = document.getElementById('install-modal');
             m.classList.add('hidden');
             m.classList.remove('flex');
+        }
+
+        // Basit Web Push İzin Alma Simülasyonu
+        if ('Notification' in window && 'serviceWorker' in navigator) {
+            document.addEventListener('DOMContentLoaded', function() {
+                if (Notification.permission === 'default') {
+                    setTimeout(() => {
+                        Notification.requestPermission().then(function(permission) {
+                            if (permission === 'granted') {
+                                console.log('Bildirim izni verildi. PushSubscription işlemi başlatılabilir.');
+                            }
+                        });
+                    }, 4000);
+                }
+            });
         }
     </script>
 </body>

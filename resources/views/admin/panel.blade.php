@@ -133,10 +133,16 @@
 
                 <!-- Özet Kartlar -->
                 <div class="grid sm:grid-cols-2 {{ $currentRole === 'super_admin' ? 'lg:grid-cols-4' : 'lg:grid-cols-2' }} gap-4">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-indigo-50 rounded-bl-full -z-10"></div>
                         <span class="text-xs font-bold text-slate-500">Aktif Kayıtlı Sporcu</span>
                         <div class="text-3xl font-extrabold text-indigo-700 mt-1">{{ $activeStudentsCount }}</div>
-                        <span class="text-[11px] text-emerald-600 font-semibold">{{ $groups->count() }} Aktif Grup</span>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-[11px] text-emerald-600 font-semibold">{{ $groups->count() }} Aktif Grup</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $analytics['dropout_rate'] > 15 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}" title="Ayrılma (Dropout) Oranı">
+                                %{{ $analytics['dropout_rate'] }} Ayrılma
+                            </span>
+                        </div>
                     </div>
                     @if($currentRole === 'super_admin')
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">

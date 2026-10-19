@@ -190,6 +190,30 @@ class AdminPanelController extends Controller
         $activeStudentsCount = Student::where('status', 'active')->count();
         $newLeadsCount = Lead::whereIn('status', ['new', 'trial_scheduled', 'thinking'])->count();
 
+        // --- Analitik: Retention (Elde Tutma) & Devamsızlık ---
+        // Toplam öğrenci ve pasif öğrenci sayıları üzerinden % Dropout (Ayrılma Oranı) hesabı
+        $totalEverStudentsCount = Student::count();
+        $dropoutRate = $totalEverStudentsCount > 0
+            ? round((Student::where('status', '!=', 'active')->count() / $totalEverStudentsCount) * 100, 1)
+            : 0;
+
+        // Son 30 günlük devamsızlık istatistiği
+        $thirtyDaysAgo = now()->subDays(30)->toDateString();
+        $recentAttendances = Attendance::where('attendance_date', '>=', $thirtyDaysAgo)->get();
+        $totalRecentAttendances = $recentAttendances->count();
+        $absentRecentCount = $recentAttendances->where('status', 'absent')->count();
+        $recentAbsentRate = $totalRecentAttendances > 0
+            ? round(($absentRecentCount / $totalRecentAttendances) * 100, 1)
+            : 0;
+
+        // Gruplara/Antrenörlere göre analiz için ek veriler
+        $analytics = [
+            'dropout_rate' => $dropoutRate,
+            'recent_absent_rate' => $recentAbsentRate,
+            'total_absences_30_days' => $absentRecentCount,
+        ];
+        // --- Analitik Bitiş ---
+
         // Antrenör sadece kendi gruplarını görsün mü?
         $restrictToCoachId = ($authUser->role === 'coach' && $authUser->hasPermission('only_own_groups', true))
             ? $authUser->id

@@ -69,4 +69,11 @@ class Student extends Model
     {
         return $this->belongsToMany(Student::class, 'student_siblings', 'student_id', 'sibling_student_id');
     }
+
+    // Öğrenciye özel Kiosk QR Datası üreten Accessor
+    public function getQrDataAttribute()
+    {
+        // Güvenlik için basit bir formatlama, örnek: ST-ID-5
+        return 'ST-ID-' . $this->id;
+    }
 }
