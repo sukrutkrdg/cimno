@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen pb-24">
 
@@ -40,6 +41,36 @@
             </div>
         @endif
 
+        <!-- Kiosk Modu: Öğrenci Kartı Okutma Alanı -->
+        <div class="bg-indigo-900 rounded-2xl p-4 border border-indigo-800 shadow-lg text-white space-y-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-[11px] font-bold uppercase text-indigo-300">Kiosk Modu / Hızlı Giriş</span>
+                    <h2 class="text-sm font-extrabold">Öğrenci QR Kartınızı Okutun</h2>
+                </div>
+                <span class="text-xl">📸</span>
+            </div>
+
+            <button type="button" id="start-kiosk-camera-btn" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-extrabold flex justify-center items-center gap-2 shadow">
+                Kamerayı Aç ve Kartı Göster
+            </button>
+
+            <div id="kiosk-reader-container" class="hidden mt-3 rounded-xl overflow-hidden border-2 border-dashed border-indigo-400 bg-white">
+                <div id="kiosk-reader" width="100%"></div>
+                <button type="button" id="stop-kiosk-camera-btn" class="w-full py-2 bg-slate-100 text-slate-700 text-xs font-bold text-center">İptal Et</button>
+            </div>
+
+            <div id="kiosk-success-message" class="hidden mt-2 p-3 bg-emerald-500 rounded-xl text-xs font-bold text-center animate-pulse">
+                <!-- Ajax success message here -->
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 my-2">
+            <div class="h-px bg-slate-300 flex-1"></div>
+            <span class="text-[11px] font-bold text-slate-400 uppercase">VEYA</span>
+            <div class="h-px bg-slate-300 flex-1"></div>
+        </div>
+
         <!-- Veli Telefon Seçimi / Girişi (Tarayıcıda Hatırlanır) -->
         <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
             <div class="flex justify-between items-center">
@@ -64,6 +95,28 @@
                 </div>
             </form>
         </div>
+
+        <!-- QR Kamera Okuyucu Alanı -->
+        @if($students->isNotEmpty())
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-[11px] font-bold uppercase text-indigo-700">2. Adım: Salon QR Kodunu Okutun</span>
+                    <h2 class="text-sm font-extrabold">Hızlı Yoklama İçin Kamerayı Açın</h2>
+                </div>
+                <span class="text-xl">📷</span>
+            </div>
+
+            <button type="button" id="start-camera-btn" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold flex justify-center items-center gap-2">
+                📷 Kamerayı Aç ve Salondaki QR'ı Okut
+            </button>
+
+            <div id="reader-container" class="hidden mt-3 rounded-xl overflow-hidden border-2 border-dashed border-slate-300">
+                <div id="reader" width="100%"></div>
+                <button type="button" id="stop-camera-btn" class="w-full py-2 bg-red-100 text-red-700 text-xs font-bold text-center">İptal Et / Kamerayı Kapat</button>
+            </div>
+        </div>
+        @endif
 
         <!-- Sporcu Kartları ve Tek Dokunuşla QR Yoklama Butonu -->
         <div class="space-y-3">
@@ -94,18 +147,11 @@
                             ✔ {{ $st->full_name }} bugün saat {{ $todayAtt->updated_at->format('H:i') }} itibarıyla derse giriş yaptı olarak kaydedildi.
                         </div>
                     @else
-                        <form action="{{ route('public.qr.checkin.submit') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            @csrf
+                        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-semibold text-center">
+                            Yoklamayı onaylamak için yukarıdaki <strong>Kamerayı Aç</strong> butonuna basıp salondaki afişi okutunuz.
+                            <!-- JS'in bulabilmesi için gizli input -->
                             <input type="hidden" name="student_id" value="{{ $st->id }}">
-                            <button type="submit" name="checkin_type" value="present" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/25">
-                                ✅ Salona Geldi (Yoklama Yap)
-                            </button>
-                            @if($st->makeup_credits > 0)
-                                <button type="submit" name="checkin_type" value="makeup" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs">
-                                    🔄 Telafi Dersi Olarak Giriş Yap ({{ $st->makeup_credits }} Hak)
-                                </button>
-                            @endif
-                        </form>
+                        </div>
                     @endif
                 </div>
             @empty
@@ -147,10 +193,6 @@
                 <span class="text-lg">🎽</span>
                 <span class="text-[11px]">Antrenör</span>
             </a>
-            <a href="{{ route('public.qr.poster') }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
-                <span class="text-lg">🏁</span>
-                <span class="text-[11px]">Salon QR Afiş</span>
-            </a>
         </div>
     </nav>
 
@@ -159,6 +201,220 @@
         const input = document.getElementById('parent-phone-input');
         if (input && input.value) {
             localStorage.setItem('enerjik_parent_phone', input.value);
+        }
+
+        // Kiosk Modu QR Okuma Mantığı
+        const startKioskCameraBtn = document.getElementById('start-kiosk-camera-btn');
+        const stopKioskCameraBtn = document.getElementById('stop-kiosk-camera-btn');
+        const kioskReaderContainer = document.getElementById('kiosk-reader-container');
+        const kioskSuccessMessage = document.getElementById('kiosk-success-message');
+        let html5KioskQrcodeScanner = null;
+
+        if (startKioskCameraBtn) {
+            startKioskCameraBtn.addEventListener('click', function() {
+                kioskReaderContainer.classList.remove('hidden');
+                startKioskCameraBtn.classList.add('hidden');
+                kioskSuccessMessage.classList.add('hidden');
+
+                const html5QrCode = new Html5Qrcode("kiosk-reader");
+                html5KioskQrcodeScanner = html5QrCode;
+
+                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                    if (decodedText.startsWith('ST-')) {
+                        html5QrCode.stop().then((ignore) => {
+                            kioskReaderContainer.classList.add('hidden');
+                            submitKioskAttendanceViaAjax(decodedText);
+                        }).catch((err) => {
+                            console.error("Kamera durdurulamadı.", err);
+                        });
+                    } else {
+                        alert("Geçersiz öğrenci kartı!");
+                    }
+                };
+
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+                .catch((err) => {
+                    alert("Kamera başlatılamadı: " + err);
+                    kioskReaderContainer.classList.add('hidden');
+                    startKioskCameraBtn.classList.remove('hidden');
+                });
+            });
+        }
+
+        if (stopKioskCameraBtn) {
+            stopKioskCameraBtn.addEventListener('click', function() {
+                if (html5KioskQrcodeScanner) {
+                    html5KioskQrcodeScanner.stop().then((ignore) => {
+                        kioskReaderContainer.classList.add('hidden');
+                        startKioskCameraBtn.classList.remove('hidden');
+                    });
+                }
+            });
+        }
+
+        function submitKioskAttendanceViaAjax(qrData) {
+            const formData = new FormData();
+            formData.append('_token', "{{ csrf_token() }}");
+            formData.append('qr_data', qrData);
+
+            fetch("{{ route('public.qr.checkin.kiosk') }}", {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    kioskSuccessMessage.innerHTML = '🎉 ' + data.message;
+                    kioskSuccessMessage.classList.remove('hidden');
+                    startKioskCameraBtn.classList.remove('hidden');
+                    // 3 saniye sonra sayfayı yenile
+                    setTimeout(() => window.location.reload(), 3000);
+                } else {
+                    alert(data.error || 'Bir hata oluştu.');
+                    startKioskCameraBtn.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("İşlem sırasında bir hata oluştu.");
+                startKioskCameraBtn.classList.remove('hidden');
+            });
+        }
+
+        // Veli (Afiş) QR Okuma Mantığı
+        document.addEventListener('DOMContentLoaded', function() {
+            const startCameraBtn = document.getElementById('start-camera-btn');
+            const stopCameraBtn = document.getElementById('stop-camera-btn');
+            const readerContainer = document.getElementById('reader-container');
+            let html5QrcodeScanner = null;
+
+            if (startCameraBtn) {
+                startCameraBtn.addEventListener('click', function() {
+                    // Kamera açılmadan önce güvenlik bağlamını kontrol et
+                    if (!window.isSecureContext) {
+                        alert("Güvenlik Uyarısı: Kamera erişimi için güvenli bir bağlantı (HTTPS) veya 'localhost' gereklidir. Aksi halde tarayıcı kamerayı engeller.");
+                    }
+
+                    readerContainer.classList.remove('hidden');
+                    startCameraBtn.classList.add('hidden');
+
+                    try {
+                        const html5QrCode = new Html5Qrcode("reader");
+                        html5QrcodeScanner = html5QrCode;
+
+                        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                            // QR kodu okundu, salon afiş URL'sini (qr-yoklama) kontrol et
+                            if (decodedText.includes('qr-yoklama') || decodedText.includes('mobil') || decodedText.includes('enerjikcimnastik')) {
+                                html5QrCode.stop().then((ignore) => {
+                                    // Kamerayı kapat
+                                    readerContainer.classList.add('hidden');
+
+                                    // Sayfadaki öğrencilerin gizli inputlarını bul ve yoklamayı gönder
+                                    submitAttendanceViaAjax();
+                                }).catch((err) => {
+                                    console.error("Kamera durdurulamadı.", err);
+                                });
+                            } else {
+                                alert("Lütfen salon girişindeki size gösterilen geçerli 'Enerjik Cimnastik Afişi' üzerindeki QR kodu okutun.");
+                            }
+                        };
+
+                        // Mobilde daha iyi okuma için esnek ayarlar
+                        const config = {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        };
+
+                        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+                        .catch((err) => {
+                            console.error("Kamera Hatası:", err);
+                            let errorMsg = "Kamera başlatılamadı. Lütfen tarayıcınızın veya telefonunuzun ayarlarından kamera iznini verdiğinizden emin olun.";
+                            if(err && err.message && err.message.includes("NotAllowedError")) {
+                                errorMsg = "Kamera izni reddedildi. Yoklama alabilmek için lütfen adres çubuğundaki ayarlar menüsünden (kilit simgesi) kameraya izin verin.";
+                            }
+                            alert(errorMsg);
+                            readerContainer.classList.add('hidden');
+                            startCameraBtn.classList.remove('hidden');
+                        });
+                    } catch (e) {
+                        alert("QR Okuyucu yüklenirken bir hata oluştu: " + e.message);
+                        readerContainer.classList.add('hidden');
+                        startCameraBtn.classList.remove('hidden');
+                    }
+                });
+            }
+
+            if (stopCameraBtn) {
+                stopCameraBtn.addEventListener('click', function() {
+                    if (html5QrcodeScanner) {
+                        html5QrcodeScanner.stop().then((ignore) => {
+                            readerContainer.classList.add('hidden');
+                            startCameraBtn.classList.remove('hidden');
+                        }).catch((err) => {
+                            console.error("Kamera durdurulamadı.", err);
+                        });
+                    } else {
+                        readerContainer.classList.add('hidden');
+                        startCameraBtn.classList.remove('hidden');
+                    }
+                });
+            }
+        });
+
+        function submitAttendanceViaAjax() {
+            const studentInputs = document.querySelectorAll('input[name="student_id"]');
+            if (studentInputs.length === 0) {
+                alert("Yoklaması alınacak öğrenci bulunamadı.");
+                return;
+            }
+
+            // Kullanıcıya bilgi ver
+            const btn = document.getElementById('start-camera-btn');
+            if(btn) {
+                btn.classList.remove('hidden');
+                btn.innerText = "⏳ Yoklamalar Sisteme İşleniyor...";
+                btn.disabled = true;
+                btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                btn.classList.add('bg-amber-500');
+            }
+
+            const csrfToken = "{{ csrf_token() }}";
+            let completedRequests = 0;
+
+            studentInputs.forEach(input => {
+                const studentId = input.value;
+                const formData = new FormData();
+                formData.append('_token', csrfToken);
+                formData.append('student_id', studentId);
+                formData.append('checkin_type', 'present');
+
+                fetch("{{ route('public.qr.checkin.submit') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    completedRequests++;
+                    if (completedRequests === studentInputs.length) {
+                        // Tüm istekler bittiğinde sayfayı yenile
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('AJAX Yoklama Hatası:', error);
+                    completedRequests++;
+                    if (completedRequests === studentInputs.length) {
+                        window.location.reload();
+                    }
+                });
+            });
         }
     </script>
 </body>

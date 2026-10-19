@@ -34,3 +34,30 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/mobil')))
   );
 });
+
+// Push Notification (Web Push) Altyapısı
+self.addEventListener('push', function(event) {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body || 'Enerjik Cimnastik\'ten yeni bir mesajınız var.',
+      icon: '/icons/logo.jpg',
+      badge: '/icons/logo.jpg',
+      vibrate: [100, 50, 100],
+      data: {
+        dateOfArrival: Date.now(),
+        primaryKey: '2'
+      }
+    };
+    event.waitUntil(
+      self.registration.showNotification(data.title || 'Enerjik Cimnastik', options)
+    );
+  }
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow('/mobil')
+  );
+});
