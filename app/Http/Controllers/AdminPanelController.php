@@ -221,7 +221,7 @@ class AdminPanelController extends Controller
 
         // Veriler
         $branches = Branch::withCount('students')->orderBy('sort_order')->get();
-        $groupsQuery = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents');
+        $groupsQuery = Group::with(['branch', 'coach', 'schedules'])->withCount(['students as active_students_count' => fn($q) => $q->where('status', 'active')]);
         if ($restrictToCoachId) {
             $groupsQuery->where('coach_id', $restrictToCoachId);
         }

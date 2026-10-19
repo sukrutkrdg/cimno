@@ -77,6 +77,12 @@
                     </div>
                 @endif
 
+                @if(session('loginSuccess'))
+                    <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold animate-pulse">
+                        {{ session('loginSuccess') }}
+                    </div>
+                @endif
+
                 <form method="GET" action="{{ route('public.mobile.pwa') }}" class="space-y-3">
                     <div>
                         <label class="block text-xs font-extrabold text-slate-700 mb-1">Salonda Kayıtlı Cep Telefonu Numaranız</label>

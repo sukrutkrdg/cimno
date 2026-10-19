@@ -73,7 +73,9 @@ class Student extends Model
     // Öğrenciye özel Kiosk QR Datası üreten Accessor
     public function getQrDataAttribute()
     {
-        // Güvenlik için basit bir formatlama, örnek: ST-ID-5
-        return 'ST-ID-' . $this->id;
+        // Tahmin edilemez güvenli bir QR token üretimi (IDOR/Tahmin engelleme)
+        $salt = config('app.key', 'enerjik_secure_salt_2024');
+        $hash = substr(hash('sha256', $this->id . $salt), 0, 16);
+        return 'ST-' . $this->id . '-' . $hash;
     }
 }

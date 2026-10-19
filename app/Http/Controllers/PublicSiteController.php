@@ -28,7 +28,7 @@ class PublicSiteController extends Controller
     {
         $settings = SiteSetting::pluck('value', 'key')->toArray();
         $branches = Branch::where('is_active', true)->orderBy('sort_order')->get();
-        $groups = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents')->where('is_active', true)->get();
+        $groups = Group::with(['branch', 'coach', 'schedules'])->withCount(['students' => fn($q) => $q->where('status', 'active')])->where('is_active', true)->get();
         $packages = Package::where('is_active', true)->where('show_on_site', true)->get();
         $coaches = User::where('role', 'coach')->where('is_active', true)->get();
         $announcements = Announcement::whereIn('target_audience', ['all', 'public_site'])->orderByDesc('is_pinned')->latest()->take(4)->get();
@@ -150,8 +150,8 @@ class PublicSiteController extends Controller
             if (request()->query('sekme') === 'telafi' && $students->sum('makeup_credits') > 0) {
                 $availableMakeupGroups = \App\Models\Group::with(['schedules', 'coach'])
                     ->where('is_active', true)
-                    ->withCount('activeStudents')
-                    ->having('active_students_count', '<', 15)
+                    ->withCount(['students' => fn($q) => $q->where('status', 'active')])
+                    ->having('students_count', '<', 15)
                     ->get();
             }
         }
@@ -159,13 +159,14 @@ class PublicSiteController extends Controller
         $sekme = $request->query('sekme', 'cocuklarim'); // cocuklarim, aidat, karne, duyurular
         $announcements = Announcement::whereIn('target_audience', ['all', 'parents'])->latest()->take(6)->get();
 
-        return view('public.mobile-app', compact('students', 'activePhone', 'loginError', 'sekme', 'announcements', 'settings', 'availableMakeupGroups'));
+        return view('public.mobile-app', compact(
+            'students',
             'activePhone',
             'loginError',
-            'students',
             'sekme',
+            'announcements',
             'settings',
-            'announcements'
+            'availableMakeupGroups'
         ));
     }
 
@@ -202,17 +203,30 @@ class PublicSiteController extends Controller
 
     public function submitKioskCheckin(Request $request)
     {
-        $qrData = $request->input('qr_data'); // Örn: ST-ID-5
+        $qrData = $request->input('qr_data'); // Örn: ST-5-a1b2c3d4...
 
-        if (!$qrData || !str_starts_with($qrData, 'ST-ID-')) {
+        if (!$qrData || !str_starts_with($qrData, 'ST-')) {
             return response()->json(['error' => 'Geçersiz QR Kod formatı.'], 400);
         }
 
-        $studentId = str_replace('ST-ID-', '', $qrData);
+        // Tokeni parçala: ST - {ID} - {HASH}
+        $parts = explode('-', $qrData);
+        if (count($parts) !== 3) {
+            return response()->json(['error' => 'Hatalı veya bozuk QR kod okutuldu.'], 400);
+        }
+
+        $studentId = (int)$parts[1];
         $student = Student::with('group')->find($studentId);
 
         if (!$student) {
             return response()->json(['error' => 'Öğrenci bulunamadı.'], 404);
+        }
+
+        // Hash Doğrulaması (Tahmin Edilebilirliği Engelleme)
+        $salt = config('app.key', 'enerjik_secure_salt_2024');
+        $expectedHash = substr(hash('sha256', $student->id . $salt), 0, 16);
+        if (!hash_equals($expectedHash, $parts[2])) {
+            return response()->json(['error' => 'Yetkisiz veya sahte QR kod.'], 403);
         }
 
         $groupId = $student->group_id ?? \App\Models\Group::first()?->id;
@@ -275,12 +289,26 @@ class PublicSiteController extends Controller
             $student->id
         );
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "✅ {$student->full_name} için salon giriş yoklaması başarıyla alındı!"
+            ]);
+        }
+
         return redirect()->route('public.qr.checkin', ['phone' => $student->parent_phone])
             ->with('checkin_success', "✅ {$student->full_name} için bugünkü (" . today()->format('d.m.Y') . " - Saat " . now()->format('H:i') . ") salon giriş yoklaması başarıyla alındı! Antrenör ekranına iletildi. İyi antrenmanlar dileriz! 🤸");
     }
 
     public function reserveMakeup(Request $request)
     {
+        // Yetki (IDOR) Kontrolü: Bu oturumda (session) telefon numarası kayıtlı mı?
+        $loggedPhone = session('logged_parent_phone');
+        if (!$loggedPhone) {
+            return back()->with('loginError', 'Lütfen önce veli girişi yapın.');
+        }
+        $cleanPhone = preg_replace('/\D+/', '', $loggedPhone);
+
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'group_id' => 'required|exists:groups,id',
@@ -289,8 +317,22 @@ class PublicSiteController extends Controller
 
         $student = Student::findOrFail($validated['student_id']);
 
+        // Güvenlik (IDOR): Öğrencinin velisi bu oturumdaki kişi mi?
+        $isParent = (str_contains(preg_replace('/\D+/', '', (string)$student->parent_phone), substr($cleanPhone, -9)) ||
+                     str_contains(preg_replace('/\D+/', '', (string)$student->secondary_parent_phone), substr($cleanPhone, -9)));
+
+        if (!$isParent) {
+            return back()->with('loginError', 'Yetkisiz işlem. Bu öğrenci üzerinde işlem yapma yetkiniz yok.');
+        }
+
         if ($student->makeup_credits <= 0) {
             return back()->with('loginError', 'Kullanılabilir telafi hakkınız bulunmamaktadır.');
+        }
+
+        // Backend Kapasite Kontrolü
+        $group = \App\Models\Group::with('coach')->withCount(['students' => fn($q) => $q->where('status', 'active')])->find($validated['group_id']);
+        if (!$group || $group->students_count >= 15) {
+            return back()->with('loginError', 'Seçilen sınıfın kapasitesi doludur. Lütfen başka bir sınıf seçin.');
         }
 
         // Aynı gün ve aynı grupta mükerrer telafi kaydı kontrolü
@@ -306,8 +348,6 @@ class PublicSiteController extends Controller
         // Telafi hakkını 1 azalt ve randevu oluştur
         $student->decrement('makeup_credits');
 
-        $group = \App\Models\Group::with('coach')->find($validated['group_id']);
-
         Attendance::create([
             'group_id' => $group->id,
             'student_id' => $student->id,
@@ -317,7 +357,7 @@ class PublicSiteController extends Controller
             'note' => 'Veli self-service telafi rezervasyonu.',
         ]);
 
-        return back()->with('loginError', '✅ Telafi randevunuz başarıyla oluşturuldu! Belirtilen gün ve saatte salonda olabilirsiniz.')->withInput(['phone' => $student->parent_phone]);
+        return back()->with('loginSuccess', '✅ Telafi randevunuz başarıyla oluşturuldu! Belirtilen gün ve saatte salonda olabilirsiniz.')->withInput(['phone' => $student->parent_phone]);
     }
 
     public function syncMobileAttendance(Request $request)

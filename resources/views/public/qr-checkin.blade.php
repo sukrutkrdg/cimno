@@ -220,7 +220,7 @@
                 html5KioskQrcodeScanner = html5QrCode;
 
                 const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                    if (decodedText.startsWith('ST-ID-')) {
+                    if (decodedText.startsWith('ST-')) {
                         html5QrCode.stop().then((ignore) => {
                             kioskReaderContainer.classList.add('hidden');
                             submitKioskAttendanceViaAjax(decodedText);
@@ -284,59 +284,85 @@
         }
 
         // Veli (Afiş) QR Okuma Mantığı
-        const startCameraBtn = document.getElementById('start-camera-btn');
-        const stopCameraBtn = document.getElementById('stop-camera-btn');
-        const readerContainer = document.getElementById('reader-container');
-        let html5QrcodeScanner = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            const startCameraBtn = document.getElementById('start-camera-btn');
+            const stopCameraBtn = document.getElementById('stop-camera-btn');
+            const readerContainer = document.getElementById('reader-container');
+            let html5QrcodeScanner = null;
 
-        if (startCameraBtn) {
-            startCameraBtn.addEventListener('click', function() {
-                readerContainer.classList.remove('hidden');
-                startCameraBtn.classList.add('hidden');
+            if (startCameraBtn) {
+                startCameraBtn.addEventListener('click', function() {
+                    // Kamera açılmadan önce güvenlik bağlamını kontrol et
+                    if (!window.isSecureContext) {
+                        alert("Güvenlik Uyarısı: Kamera erişimi için güvenli bir bağlantı (HTTPS) veya 'localhost' gereklidir. Aksi halde tarayıcı kamerayı engeller.");
+                    }
 
-                const html5QrCode = new Html5Qrcode("reader");
-                html5QrcodeScanner = html5QrCode;
+                    readerContainer.classList.remove('hidden');
+                    startCameraBtn.classList.add('hidden');
 
-                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                    // QR kodu okundu, salon afiş URL'sini (qr-yoklama) kontrol et
-                    if (decodedText.includes('qr-yoklama') || decodedText.includes('mobil')) {
-                        html5QrCode.stop().then((ignore) => {
-                            // Kamerayı kapat
+                    try {
+                        const html5QrCode = new Html5Qrcode("reader");
+                        html5QrcodeScanner = html5QrCode;
+
+                        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                            // QR kodu okundu, salon afiş URL'sini (qr-yoklama) kontrol et
+                            if (decodedText.includes('qr-yoklama') || decodedText.includes('mobil') || decodedText.includes('enerjikcimnastik')) {
+                                html5QrCode.stop().then((ignore) => {
+                                    // Kamerayı kapat
+                                    readerContainer.classList.add('hidden');
+
+                                    // Sayfadaki öğrencilerin gizli inputlarını bul ve yoklamayı gönder
+                                    submitAttendanceViaAjax();
+                                }).catch((err) => {
+                                    console.error("Kamera durdurulamadı.", err);
+                                });
+                            } else {
+                                alert("Lütfen salon girişindeki size gösterilen geçerli 'Enerjik Cimnastik Afişi' üzerindeki QR kodu okutun.");
+                            }
+                        };
+
+                        // Mobilde daha iyi okuma için esnek ayarlar
+                        const config = {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        };
+
+                        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+                        .catch((err) => {
+                            console.error("Kamera Hatası:", err);
+                            let errorMsg = "Kamera başlatılamadı. Lütfen tarayıcınızın veya telefonunuzun ayarlarından kamera iznini verdiğinizden emin olun.";
+                            if(err && err.message && err.message.includes("NotAllowedError")) {
+                                errorMsg = "Kamera izni reddedildi. Yoklama alabilmek için lütfen adres çubuğundaki ayarlar menüsünden (kilit simgesi) kameraya izin verin.";
+                            }
+                            alert(errorMsg);
                             readerContainer.classList.add('hidden');
+                            startCameraBtn.classList.remove('hidden');
+                        });
+                    } catch (e) {
+                        alert("QR Okuyucu yüklenirken bir hata oluştu: " + e.message);
+                        readerContainer.classList.add('hidden');
+                        startCameraBtn.classList.remove('hidden');
+                    }
+                });
+            }
 
-                            // Sayfadaki öğrencilerin gizli inputlarını bul ve yoklamayı gönder
-                            submitAttendanceViaAjax();
+            if (stopCameraBtn) {
+                stopCameraBtn.addEventListener('click', function() {
+                    if (html5QrcodeScanner) {
+                        html5QrcodeScanner.stop().then((ignore) => {
+                            readerContainer.classList.add('hidden');
+                            startCameraBtn.classList.remove('hidden');
                         }).catch((err) => {
                             console.error("Kamera durdurulamadı.", err);
                         });
                     } else {
-                        alert("Lütfen salon girişindeki doğru QR kodu okutun.");
-                    }
-                };
-
-                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-                html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-                .catch((err) => {
-                    alert("Kamera başlatılamadı: " + err);
-                    readerContainer.classList.add('hidden');
-                    startCameraBtn.classList.remove('hidden');
-                });
-            });
-        }
-
-        if (stopCameraBtn) {
-            stopCameraBtn.addEventListener('click', function() {
-                if (html5QrcodeScanner) {
-                    html5QrcodeScanner.stop().then((ignore) => {
                         readerContainer.classList.add('hidden');
                         startCameraBtn.classList.remove('hidden');
-                    }).catch((err) => {
-                        console.error("Kamera durdurulamadı.", err);
-                    });
-                }
-            });
-        }
+                    }
+                });
+            }
+        });
 
         function submitAttendanceViaAjax() {
             const studentInputs = document.querySelectorAll('input[name="student_id"]');
@@ -346,11 +372,14 @@
             }
 
             // Kullanıcıya bilgi ver
-            startCameraBtn.classList.remove('hidden');
-            startCameraBtn.innerText = "⏳ Yoklamalar Sisteme İşleniyor...";
-            startCameraBtn.disabled = true;
-            startCameraBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-            startCameraBtn.classList.add('bg-amber-500');
+            const btn = document.getElementById('start-camera-btn');
+            if(btn) {
+                btn.classList.remove('hidden');
+                btn.innerText = "⏳ Yoklamalar Sisteme İşleniyor...";
+                btn.disabled = true;
+                btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                btn.classList.add('bg-amber-500');
+            }
 
             const csrfToken = "{{ csrf_token() }}";
             let completedRequests = 0;
@@ -367,9 +396,10 @@
                     body: formData,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
                     }
                 })
-                .then(response => response.json().catch(() => response))
+                .then(response => response.json())
                 .then(data => {
                     completedRequests++;
                     if (completedRequests === studentInputs.length) {
@@ -378,7 +408,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.error('AJAX Yoklama Hatası:', error);
                     completedRequests++;
                     if (completedRequests === studentInputs.length) {
                         window.location.reload();
