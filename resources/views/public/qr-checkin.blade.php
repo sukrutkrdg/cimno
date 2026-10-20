@@ -156,7 +156,7 @@
 
     <!-- Alt Mobil Bar -->
     <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 shadow-lg">
-        <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2">
+        <div class="max-w-lg mx-auto grid grid-cols-3 text-center py-2">
             <a href="{{ route('public.mobile.pwa', ['rol' => 'veli', 'phone' => $phone]) }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
                 <span class="text-lg">👨‍👩‍👧</span>
                 <span class="text-[11px]">Veli Ekranı</span>
@@ -168,10 +168,6 @@
             <a href="{{ route('public.mobile.pwa', ['rol' => 'antrenor']) }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
                 <span class="text-lg">🎽</span>
                 <span class="text-[11px]">Antrenör</span>
-            </a>
-            <a href="{{ route('public.qr.poster') }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
-                <span class="text-lg">🏁</span>
-                <span class="text-[11px]">Salon QR Afiş</span>
             </a>
         </div>
     </nav>
