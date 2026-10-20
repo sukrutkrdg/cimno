@@ -306,6 +306,11 @@
                                         <td class="p-2.5">
                                             <div>{{ $st->parent_name }}</div>
                                             <div class="font-mono text-[11px]">{{ $st->parent_phone }}</div>
+                                            <div class="mt-1">
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-mono text-[11px] font-extrabold" title="Veli Portalı (/mobil) giriş PIN'i — telefon numarasıyla birlikte kullanılır">
+                                                    🔑 PIN: {{ $st->portal_pin ?? '—' }}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td class="p-2.5">
                                             <span class="block text-[11px]">{{ $st->photo_consent ? '📸 Foto İzinli' : '🚫 Foto İzinsiz' }}</span>
@@ -405,6 +410,12 @@
                                                     <div>
                                                         <label class="font-bold block mb-0.5">Sağlık Notu</label>
                                                         <input type="text" name="health_notes" value="{{ $st->health_notes }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-wrap justify-between items-center gap-2 pt-1 border-t mt-1">
+                                                    <div class="flex items-center gap-2 text-[11px]">
+                                                        <span class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono font-extrabold">🔑 Veli Portalı PIN: {{ $st->portal_pin ?? '—' }}</span>
+                                                        <label class="flex items-center gap-1 text-slate-600"><input type="checkbox" name="regenerate_pin" value="1"> Yeni PIN oluştur (eskisi geçersiz olur)</label>
                                                     </div>
                                                 </div>
                                                 <div class="flex flex-wrap justify-between items-center pt-1">

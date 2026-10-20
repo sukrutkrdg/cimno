@@ -148,6 +148,11 @@ trait ManagesStudents
         if ($request->filled('group_id')) {
             $this->assertCoachOwnsGroup((int) $request->input('group_id'));
         }
+        $pinRegenerated = $request->boolean('regenerate_pin');
+        $newPin = $pinRegenerated
+            ? str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT)
+            : ($student->portal_pin ?: Student::portalPinFor($student->parent_phone));
+
         $student->update([
             'full_name' => $request->input('full_name', $student->full_name),
             'birth_date' => $request->input('birth_date') ?: $student->birth_date,
@@ -165,12 +170,22 @@ trait ManagesStudents
             'health_notes' => $request->input('health_notes', $student->health_notes),
             'photo_consent' => $request->boolean('photo_consent', $student->photo_consent),
             'status' => $request->input('status', $student->status),
-            'portal_pin' => $request->boolean('regenerate_pin')
-                ? str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT)
-                : ($student->portal_pin ?: Student::portalPinFor($student->parent_phone)),
+            'portal_pin' => $newPin,
         ]);
+
+        // Yeni PIN veliye iletilmezse veli portalına giremez kalır; otomatik bildir.
+        if ($pinRegenerated) {
+            WhatsappMessage::create([
+                'student_id' => $student->id,
+                'recipient_name' => $student->parent_name,
+                'recipient_phone' => $student->parent_phone,
+                'message_text' => "Sayın {$student->parent_name}, {$student->full_name} için veli portalı PIN kodunuz yenilendi. Yeni PIN: {$newPin} (Telefon: {$student->parent_phone}). Giriş: " . url('/mobil'),
+                'status' => 'queued',
+            ]);
+        }
+
         AuditLog::record('ogrenci_guncellendi', "{$student->full_name} sporcu/veli bilgileri güncellendi.", 'Student', $student->id);
-        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "'{$student->full_name}' sporcu bilgileri başarıyla güncellendi!");
+        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "'{$student->full_name}' sporcu bilgileri başarıyla güncellendi!" . ($pinRegenerated ? ' Yeni PIN WhatsApp kuyruğuna eklendi.' : ''));
     }
 
     // Öğrenci Durum Değiştirme (Dondurma / Ayrılma / Arşivleme)
