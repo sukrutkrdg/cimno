@@ -24,7 +24,7 @@ try {
 
     $sqliteTmp = '/tmp/database.sqlite';
     $sqliteSeed = __DIR__ . '/../database/vercel.sqlite';
-    $needsMigrate = false;
+    $isFreshDatabase = false;
 
     if (!file_exists($sqliteTmp) || filesize($sqliteTmp) < 1024) {
         if (file_exists($sqliteSeed) && filesize($sqliteSeed) > 1024) {
@@ -33,7 +33,7 @@ try {
         } else {
             @touch($sqliteTmp);
             @chmod($sqliteTmp, 0666);
-            $needsMigrate = true;
+            $isFreshDatabase = true;
         }
     }
 
@@ -77,9 +77,19 @@ try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
     $app->useStoragePath($tmpDir);
 
-    if ($needsMigrate) {
-        $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+    // ÖNEMLİ: database/vercel.sqlite deploy'da committed/dondurulmuş bir "tohum"
+    // dosyasıdır. Her yeni migration eklendiğinde bu dosyayı yeniden üretip commit
+    // etmeyi unutmak kolaydır — önceden bu durumda /tmp'deki veritabanı sonsuza
+    // kadar eski şemada kalıyordu (örn. "no column named portal_pin" 500 hatası).
+    // Artık her soğuk başlangıçta bekleyen migration'lar varsa otomatik uygulanır;
+    // zaten uygulanmış migration'lar için bu çağrı no-op'tur, bu yüzden her istekte
+    // çalıştırmak güvenli ve ucuzdur. Gerçek kullanıcı verisini SİLMEZ (migrate:fresh
+    // DEĞİL, sade migrate).
+    $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+    if ($isFreshDatabase) {
         $kernel->call('migrate:fresh', ['--seed' => true, '--force' => true]);
+    } else {
+        $kernel->call('migrate', ['--force' => true]);
     }
 
     $request = \Illuminate\Http\Request::capture();
