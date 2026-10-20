@@ -74,6 +74,12 @@ trait ManagesPackagesAndDiscounts
     // CMS & Modül 7: Eğitim Paketi & Ücret Kartı Ekle / Güncelle / Sil
     public function storePackage(Request $request)
     {
+        $request->validate([
+            'billing_cycle' => 'nullable|in:monthly,quarterly,lesson_pack,event',
+            'lessons_count' => 'nullable|integer|min:1',
+            'price' => 'nullable|numeric|min:0',
+            'registration_fee' => 'nullable|numeric|min:0',
+        ]);
         $pkg = Package::create([
             'name' => $request->input('name', 'Yeni Eğitim Paketi'),
             'billing_cycle' => $request->input('billing_cycle', 'monthly'),

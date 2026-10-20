@@ -24,6 +24,28 @@ class Payment extends Model
         return URL::temporarySignedRoute('public.receipt', now()->addDays(180), ['payment' => $this->id]);
     }
 
+    /**
+     * Önceki yöntem "Payment::count() + 1" idi: iki tahsilat aynı anda girilirse
+     * ikisi de aynı receipt_no'yu hesaplayıp ikincisi unique constraint hatasıyla
+     * (500) başarısız oluyordu — kasadaki para alınmış ama kayıt düşmemiş gibi
+     * görünüyordu. Veritabanının kendi auto-increment ID'si (gerçekten eşzamanlılığa
+     * dayanıklı, çakışması imkânsız) temel alınarak yarış durumu tamamen ortadan
+     * kaldırılır: kayıt önce geçici benzersiz bir UUID ile oluşturulur, sonra ID
+     * biliniyorken makbuz no'su buna göre güncellenir.
+     */
+    public static function createWithReceiptNo(array $attributes): self
+    {
+        $payment = static::create(array_merge($attributes, [
+            'receipt_no' => 'TMP-' . \Illuminate\Support\Str::uuid(),
+        ]));
+
+        $payment->update([
+            'receipt_no' => 'MKB-' . now()->format('Ym') . '-' . str_pad((string) $payment->id, 4, '0', STR_PAD_LEFT),
+        ]);
+
+        return $payment;
+    }
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yönetim Paneli (16 Modül) | Enerjik Cimnastik</title>
+    <title>Yönetim Paneli (15 Modül) | Enerjik Cimnastik</title>
     <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -42,7 +42,7 @@
             <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-10 h-10 rounded-full object-cover border-2 border-purple-400 shadow">
             <div>
                 <h1 class="font-extrabold text-sm sm:text-base leading-none">Tekirdağ Enerjik Cimnastik · Yönetim Paneli</h1>
-                <span class="text-[11px] text-slate-400">Tek Veritabanı · 16 Modül · WhatsApp Business Hazır Cevap Motoru</span>
+                <span class="text-[11px] text-slate-400">Tek Veritabanı · 15 Modül · WhatsApp Business Hazır Cevap Motoru</span>
             </div>
         </div>
 
@@ -83,7 +83,7 @@
     </header>
 
     <div class="flex-1 flex flex-col lg:flex-row">
-        <!-- Sol Menü: 16 Modül (Yetkiye Göre Filtrelenir) -->
+        <!-- Sol Menü: 15 Modül (Yetkiye Göre Filtrelenir) -->
         <aside class="w-full lg:w-64 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-3 shrink-0">
             <div class="flex items-center justify-between px-3 py-1.5">
                 <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Menü Modülleri ({{ count($allowedTabs) }})</span>

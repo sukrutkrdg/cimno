@@ -74,6 +74,7 @@ trait ManagesLeads
             'package_id' => $package?->id,
             'parent_name' => $lead->parent_name,
             'parent_phone' => $lead->parent_phone,
+            'portal_pin' => Student::portalPinFor($lead->parent_phone),
             'medical_report_expires_at' => now()->addYear()->toDateString(),
             'billing_day' => 1,
             'status' => 'active',
@@ -103,7 +104,7 @@ trait ManagesLeads
             'student_id' => $student->id,
             'recipient_name' => $student->parent_name,
             'recipient_phone' => $student->parent_phone,
-            'message_text' => "Hoş geldiniz Sayın {$student->parent_name}! 🌟 Sporcumuz {$student->full_name} kesin kaydı '{$group?->name}' grubuna yapılmıştır. Veli portalı ve mobil uygulamamıza telefon numaranızla ({$student->parent_phone}) giriş yapabilirsiniz. 🤸",
+            'message_text' => "Hoş geldiniz Sayın {$student->parent_name}! 🌟 Sporcumuz {$student->full_name} kesin kaydı '{$group?->name}' grubuna yapılmıştır. Veli portalı giriş bilgileriniz — Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
             'status' => 'queued',
         ]);
 

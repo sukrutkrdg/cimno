@@ -61,9 +61,12 @@
                                     <p class="text-xs text-slate-700 mt-1">{{ $msg->message_text }}</p>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <a href="{{ route('admin.whatsapp.send', $msg->id) }}" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
-                                        💬 WhatsApp'ta Aç & Gönder →
-                                    </a>
+                                    <form action="{{ route('admin.whatsapp.send', $msg->id) }}" method="POST" target="_blank" class="inline">
+                                        @csrf
+                                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+                                            💬 WhatsApp'ta Aç & Gönder →
+                                        </button>
+                                    </form>
                                     <form action="{{ route('admin.whatsapp.destroy', $msg->id) }}" method="POST" onsubmit="return confirm('Bu WhatsApp kuyruk mesajını silmek istediğinize emin misiniz?')">
                                         @csrf
                                         <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>

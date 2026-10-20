@@ -24,27 +24,6 @@ use App\Models\WhatsappTemplate;
 
 trait ManagesSystem
 {
-    public function clearAllDemoData()
-    {
-        // Yetki kontrolü route middleware'inde (admin.permission:role:super_admin) merkezi olarak yapılır.
-        Attendance::query()->delete();
-        DevelopmentRecord::query()->delete();
-        Payment::query()->delete();
-        Invoice::query()->delete();
-        FinancialTransaction::query()->delete();
-        WhatsappMessage::query()->delete();
-        Lead::query()->delete();
-        Student::query()->forceDelete();
-        Schedule::query()->delete();
-        Group::query()->delete();
-        Event::query()->delete();
-        CashAccount::query()->update(['balance' => 0]);
-
-        AuditLog::record('demo_veriler_temizlendi', 'Tüm test/deneme kayıtları (adaylar, öğrenciler, gruplar, ders programı, aidatlar, yoklamalar) sıfırlandı.');
-
-        return redirect()->route('admin.index', ['tab' => 'pano'])->with('success', 'Tüm deneme/test kayıtları (adaylar, öğrenciler, gruplar, ders programları, yoklamalar ve aidat hareketleri) tertemiz sıfırlandı!');
-    }
-
     // MODÜL 16: Veritabanı Yedeğini İndirme (Kabul Kriteri #8 - Yalnız Süper Yönetici)
     public function downloadDatabaseBackup()
     {

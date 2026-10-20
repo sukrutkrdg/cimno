@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 trait ManagesStaff
 {
@@ -22,10 +23,12 @@ trait ManagesStaff
             'compensation_type' => 'required|in:fixed,per_lesson,both,none',
             'base_salary' => 'nullable|numeric|min:0',
             'per_lesson_rate' => 'nullable|numeric|min:0',
-            'password' => 'nullable|string|min:4|max:60',
+            'password' => 'nullable|string|min:6|max:60',
         ]);
 
-        $plainPassword = $request->filled('password') ? $request->input('password') : 'enerjik2026';
+        // Alan boş bırakılırsa, tüm yeni hesaplar için ortak/tahmin edilebilir sabit
+        // bir şifre yerine rastgele güçlü bir şifre üretilir; admin'e ekranda gösterilir.
+        $plainPassword = $request->filled('password') ? $request->input('password') : Str::password(10, true, true, false, false);
 
         $user = User::create([
             'name' => $validated['name'],

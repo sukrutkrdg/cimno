@@ -1,15 +1,9 @@
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Sistem Yönetimi & Veri Temizliği</span>
-                        <h2 class="text-2xl font-extrabold">⚙️ Sistem Ayarları, Veritabanı Yedeği ve Test Kayıtlarını Temizleme</h2>
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Sistem Yönetimi</span>
+                        <h2 class="text-2xl font-extrabold">⚙️ Sistem Ayarları ve Veritabanı Yedeği</h2>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <form action="{{ route('admin.demo.clear') }}" method="POST" onsubmit="return confirm('Sistemdeki tüm deneme/test kayıtlarını (adaylar, öğrenciler, gruplar, ders programı, yoklama, aidat ve kasa hareketleri) tek seferde temizlemek istediğinize emin misiniz?')">
-                            @csrf
-                            <button type="submit" class="px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow">
-                                🧹 Tüm Test / Deneme Kayıtlarını Temizle
-                            </button>
-                        </form>
                         <a href="{{ route('admin.backup.download') }}" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow">
                             💾 Tam Veritabanı Yedeğini İndir (.JSON)
                         </a>

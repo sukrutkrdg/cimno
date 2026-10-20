@@ -64,6 +64,12 @@
             </div>
         @endif
 
+        @if(session('checkin_error') || $loginError)
+            <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
+                ⚠️ {{ session('checkin_error') ?? $loginError }}
+            </div>
+        @endif
+
         <!-- Kamera ile Salon QR Afişini Okutma -->
         <button type="button" id="qrScanBtn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-orange-600 text-white font-extrabold text-sm shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2">
             📷 Kamerayı Aç ve Salon QR Afişini Okut
@@ -82,15 +88,15 @@
             <form method="GET" action="{{ route('public.qr.checkin') }}" class="space-y-2.5" id="phone-lookup-form">
                 <div class="flex gap-2">
                     <input type="tel" name="phone" id="parent-phone-input" value="{{ $phone }}" placeholder="05XX XXX XX XX" class="flex-1 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-bold">
+                    <input type="tel" inputmode="numeric" maxlength="4" name="pin" placeholder="PIN" class="w-20 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-bold text-center tracking-[0.2em]">
                     <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-extrabold">
                         Sporcumu Bul
                     </button>
                 </div>
-                <div class="flex flex-wrap gap-1.5 pt-1">
-                    <span class="text-[11px] text-slate-400">Hızlı Demo Veli Seç:</span>
-                    <a href="{{ route('public.qr.checkin', ['phone' => '05332223344']) }}" class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Murat Arslan (Elif & Kerem)</a>
-                    <a href="{{ route('public.qr.checkin', ['phone' => '05354445566']) }}" class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Zeynep Çelik (Defne)</a>
-                </div>
+                <p class="text-[11px] text-slate-400">PIN kodunuzu bilmiyorsanız salon sekreterliğimizden öğrenebilirsiniz.</p>
+                @if(app()->environment(['local', 'testing']))
+                    <p class="text-[11px] text-amber-600">⚠️ Geliştirme ortamı: 0533 222 33 44 / PIN 8178 (Murat Arslan)</p>
+                @endif
             </form>
         </div>
 

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin\Concerns;
 
 use App\Models\Attendance;
 use App\Models\AuditLog;
+use App\Models\Group;
 use App\Models\Student;
-use App\Models\User;
 use App\Models\WhatsappMessage;
 use Illuminate\Http\Request;
 
@@ -20,6 +20,11 @@ trait ManagesAttendance
         $statuses = $request->input('statuses', []);
         $notes = $request->input('notes', []);
 
+        // Yoklamayı kaydeden kişi her zaman "bir" antrenör değil (sekreter de
+        // alabilir); devamsızlık uyarısı ve antrenör hakediş hesabı için doğru
+        // sahip, grubun ATANMIŞ antrenörüdür — ilk bulunan antrenör değil.
+        $coachId = Group::find($groupId)?->coach_id ?? $this->getAuthenticatedStaff()?->id;
+
         foreach ($statuses as $studentId => $status) {
             Attendance::updateOrCreate(
                 [
@@ -28,7 +33,7 @@ trait ManagesAttendance
                     'attendance_date' => $date,
                 ],
                 [
-                    'coach_id' => User::where('role', 'coach')->value('id'),
+                    'coach_id' => $coachId,
                     'status' => $status,
                     'note' => $notes[$studentId] ?? null,
                 ]

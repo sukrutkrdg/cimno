@@ -149,7 +149,15 @@ trait ManagesCms
         ]);
 
         $file = $request->file('image_file');
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+        // Dosya adını istemcinin gönderdiği uzantıya (getClientOriginalExtension)
+        // GÜVENME: biri "resim.jpg" içeriğini "zararlı.html" adıyla yükleyip
+        // tarayıcıda HTML/script olarak servis edilmesini sağlayabilir. Uzantıyı
+        // dosya İÇERİĞİNDEN (MIME sniffing) tahmin edip sabit bir izin listesiyle
+        // eşleştiriyoruz.
+        $safeExtensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        $extension = $safeExtensions[$file->getMimeType()] ?? 'jpg';
+        $filename = Str::uuid() . '.' . $extension;
         $destination = public_path('uploads/gallery');
         if (!is_dir($destination)) {
             mkdir($destination, 0755, true);

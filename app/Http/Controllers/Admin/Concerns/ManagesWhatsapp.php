@@ -74,6 +74,16 @@ trait ManagesWhatsapp
                 if (!$inv->student) {
                     continue;
                 }
+                // Bu buton elle birden çok kez tıklanabilir; aynı gün içinde aynı
+                // öğrenci için ikinci bir hatırlatma kuyruğa eklenmesini önler.
+                $alreadyQueuedToday = WhatsappMessage::where('template_id', $tplOverdue->id)
+                    ->where('student_id', $inv->student->id)
+                    ->whereDate('created_at', today())
+                    ->exists();
+                if ($alreadyQueuedToday) {
+                    continue;
+                }
+
                 $text = str_replace(
                     ['{veli_adi}', '{ogrenci_adi}', '{donem}', '{tutar}', '{vade}'],
                     [$inv->student->parent_name, $inv->student->full_name, $inv->period_label, number_format((float) $inv->remaining_amount, 2, ',', '.'), $inv->due_date->format('d.m.Y')],

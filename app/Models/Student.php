@@ -69,4 +69,24 @@ class Student extends Model
     {
         return $this->belongsToMany(Student::class, 'student_siblings', 'student_id', 'sibling_student_id');
     }
+
+    /**
+     * Veli portalı girişi için 4 haneli PIN üretir/bulur. Aynı telefon numarasına
+     * kayıtlı bir kardeş zaten varsa onun PIN'i tekrar kullanılır, böylece aile
+     * tek bir PIN ile tüm çocuklarını görebilir.
+     */
+    public static function portalPinFor(?string $parentPhone): string
+    {
+        $clean = preg_replace('/\D+/', '', (string) $parentPhone);
+        if (strlen($clean) >= 9) {
+            $existing = static::where('parent_phone', 'like', '%' . substr($clean, -9) . '%')
+                ->whereNotNull('portal_pin')
+                ->value('portal_pin');
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        return str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+    }
 }

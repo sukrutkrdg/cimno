@@ -96,41 +96,50 @@ class PublicSiteController extends Controller
     }
 
     // 2. VELİ GİRİŞİ VE VELİYE ÖZEL MOBİL UYGULAMA EKRANI (/mobil)
+    // Telefon numarası TEK BAŞINA giriş için yeterli değildir: numarayı bilen/tahmin
+    // eden herkesin çocuğun finansal/sağlık bilgilerine erişebilmesini önlemek için
+    // kayıt sırasında aileye verilen 4 haneli PIN de doğrulanır (bkz. Student::portal_pin).
     public function mobilePwa(Request $request)
     {
         $settings = SiteSetting::pluck('value', 'key')->toArray();
 
         // Çıkış yapılmak istendiyse
         if ($request->boolean('cikis')) {
-            session()->forget('logged_parent_phone');
+            session()->forget(['logged_parent_phone', 'logged_parent_pin']);
             return redirect()->route('public.mobile.pwa');
         }
 
-        // Telefon numarası formdan veya URL'den geldiyse doğrula
+        // Telefon + PIN formdan geldiyse doğrula ve oturuma yaz
         $inputPhone = $request->input('phone');
         $loginError = null;
 
         if ($inputPhone !== null) {
             $cleanInput = preg_replace('/\D+/', '', $inputPhone);
-            if (strlen($cleanInput) >= 9) {
-                $matchedCount = Student::where('parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
-                    ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
-                    ->count();
+            $cleanPin = preg_replace('/\D+/', '', (string) $request->input('pin'));
 
-                if ($matchedCount > 0) {
-                    session(['logged_parent_phone' => $inputPhone]);
-                } else {
-                    $loginError = 'Bu telefon numarasına bağlı aktif bir öğrenci kaydı bulunamadı. Lütfen salon sekreterliğimizle iletişime geçin.';
-                }
-            } else {
+            if (strlen($cleanInput) < 9) {
                 $loginError = 'Lütfen geçerli bir cep telefonu numarası girin (Ör: 0533 222 33 44).';
+            } elseif (strlen($cleanPin) !== 4) {
+                $loginError = 'Lütfen kayıt sırasında size verilen 4 haneli PIN kodunu girin.';
+            } else {
+                $matched = Student::where(function ($q) use ($cleanInput) {
+                    $q->where('parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
+                      ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanInput, -9) . '%');
+                })->where('portal_pin', $cleanPin)->exists();
+
+                if ($matched) {
+                    session(['logged_parent_phone' => $inputPhone, 'logged_parent_pin' => $cleanPin]);
+                } else {
+                    $loginError = 'Telefon numarası veya PIN kodu hatalı. PIN kodunuzu salon sekreterliğinden öğrenebilirsiniz.';
+                }
             }
         }
 
-        $activePhone = $inputPhone && !$loginError ? $inputPhone : session('logged_parent_phone');
+        $activePhone = session('logged_parent_phone');
+        $activePin = session('logged_parent_pin');
         $students = collect();
 
-        if ($activePhone) {
+        if ($activePhone && $activePin) {
             $cleanPhone = preg_replace('/\D+/', '', $activePhone);
             $students = Student::with([
                 'branch',
@@ -141,9 +150,10 @@ class PublicSiteController extends Controller
                 'attendances' => fn($q) => $q->latest('attendance_date')->take(10),
                 'invoices.payments',
                 'developmentRecords.coach',
-            ])->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-              ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-              ->get();
+            ])->where(function ($q) use ($cleanPhone) {
+                $q->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
+                  ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%');
+            })->where('portal_pin', $activePin)->get();
         }
 
         $sekme = $request->query('sekme', 'cocuklarim'); // cocuklarim, aidat, karne, duyurular
@@ -160,22 +170,45 @@ class PublicSiteController extends Controller
     }
 
     // 3. VELİ SALONA GELDİĞİNDE QR OKUTUP YOKLAMA YAPMA EKRANI (/qr-yoklama)
+    // Burada da telefon + PIN birlikte doğrulanmadan hiçbir öğrenci bilgisi
+    // gösterilmez (bkz. mobilePwa() üstündeki not).
     public function qrCheckinPage(Request $request)
     {
-        $phone = $request->query('phone', session('logged_parent_phone', ''));
+        $loginError = null;
+        $queryPhone = $request->query('phone');
+        $queryPin = $request->query('pin');
+
+        if ($queryPhone !== null && $queryPin !== null) {
+            $cleanInput = preg_replace('/\D+/', '', $queryPhone);
+            $cleanPin = preg_replace('/\D+/', '', (string) $queryPin);
+
+            if (strlen($cleanInput) >= 9 && strlen($cleanPin) === 4) {
+                $matched = Student::where(function ($q) use ($cleanInput) {
+                    $q->where('parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
+                      ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanInput, -9) . '%');
+                })->where('portal_pin', $cleanPin)->exists();
+
+                if ($matched) {
+                    session(['logged_parent_phone' => $queryPhone, 'logged_parent_pin' => $cleanPin]);
+                } else {
+                    $loginError = 'Telefon numarası veya PIN kodu hatalı.';
+                }
+            } else {
+                $loginError = 'Lütfen geçerli bir telefon numarası ve 4 haneli PIN kodu girin.';
+            }
+        }
+
+        $phone = session('logged_parent_phone', '');
+        $pin = session('logged_parent_pin', '');
         $cleanPhone = preg_replace('/\D+/', '', (string) $phone);
-        $studentId = $request->query('student_id');
 
         $students = collect();
-        if ($studentId) {
+        if (strlen($cleanPhone) >= 9 && strlen((string) $pin) === 4) {
             $students = Student::with(['branch', 'group.coach', 'group.schedules', 'attendances' => fn($q) => $q->whereDate('attendance_date', today())])
-                ->where('id', $studentId)
-                ->get();
-        } elseif (strlen($cleanPhone) >= 9) {
-            $students = Student::with(['branch', 'group.coach', 'group.schedules', 'attendances' => fn($q) => $q->whereDate('attendance_date', today())])
-                ->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-                ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-                ->get();
+                ->where(function ($q) use ($cleanPhone) {
+                    $q->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
+                      ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%');
+                })->where('portal_pin', $pin)->get();
         }
 
         $todayCheckins = Attendance::with(['student', 'group'])
@@ -187,7 +220,7 @@ class PublicSiteController extends Controller
 
         $settings = SiteSetting::pluck('value', 'key')->toArray();
 
-        return view('public.qr-checkin', compact('students', 'phone', 'todayCheckins', 'settings'));
+        return view('public.qr-checkin', compact('students', 'phone', 'loginError', 'todayCheckins', 'settings'));
     }
 
     public function submitQrCheckin(Request $request)
@@ -197,7 +230,27 @@ class PublicSiteController extends Controller
             'checkin_type' => 'nullable|in:present,makeup',
         ]);
 
-        $student = Student::with('group')->findOrFail($validated['student_id']);
+        // Yoklama yalnızca doğrulanmış (telefon+PIN oturumu açık) bir veli tarafından
+        // yapılabilir ve sadece KENDİ çocuğu için — rastgele bir student_id denenemez.
+        $phone = preg_replace('/\D+/', '', (string) session('logged_parent_phone', ''));
+        $pin = session('logged_parent_pin', '');
+        if (strlen($phone) < 9 || strlen((string) $pin) !== 4) {
+            return redirect()->route('public.qr.checkin')->with('checkin_error', 'Yoklama yapabilmek için önce telefon numaranız ve PIN kodunuzla giriş yapmalısınız.');
+        }
+
+        $student = Student::with('group')
+            ->where('id', $validated['student_id'])
+            ->where(function ($q) use ($phone) {
+                $q->where('parent_phone', 'like', '%' . substr($phone, -9) . '%')
+                  ->orWhere('secondary_parent_phone', 'like', '%' . substr($phone, -9) . '%');
+            })
+            ->where('portal_pin', $pin)
+            ->first();
+
+        if (!$student) {
+            return redirect()->route('public.qr.checkin')->with('checkin_error', 'Bu sporcu için yoklama yapma yetkiniz yok.');
+        }
+
         $groupId = $student->group_id ?? Group::first()?->id;
         $status = $validated['checkin_type'] ?? 'present';
 

@@ -90,7 +90,7 @@
                     </span>
                     <h2 class="text-xl font-extrabold text-slate-900">👨‍👩‍👧 Veli Girişi</h2>
                     <p class="text-xs text-slate-600 leading-relaxed">
-                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız</strong> otomatik olarak öğrencinize tanımlanır. Kayıtlı telefon numaranızı girerek öğrencinizin ders programını, yoklamasını, aidat makbuzlarını ve gelişim karnesini görüntüleyebilirsiniz.
+                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız ve 4 haneli PIN kodunuz</strong> WhatsApp ile tarafınıza gönderilir. Bu ikisini birlikte girerek öğrencinizin ders programını, yoklamasını, aidat makbuzlarını ve gelişim karnesini görüntüleyebilirsiniz.
                     </p>
                 </div>
 
@@ -104,6 +104,11 @@
                     <div>
                         <label class="block text-xs font-extrabold text-slate-700 mb-1">Salonda Kayıtlı Cep Telefonu Numaranız</label>
                         <input type="tel" name="phone" required placeholder="05XX XXX XX XX" class="w-full rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:outline-none px-4 py-3 text-base font-extrabold tracking-wide">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-700 mb-1">4 Haneli PIN Kodunuz</label>
+                        <input type="tel" inputmode="numeric" maxlength="4" name="pin" required placeholder="••••" class="w-full rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:outline-none px-4 py-3 text-base font-extrabold tracking-[0.3em] text-center">
+                        <p class="text-[11px] text-slate-500 mt-1">PIN kodunuzu bilmiyorsanız salon sekreterliğimizden öğrenebilirsiniz.</p>
                     </div>
                     <button type="submit" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/25 transition">
                         🔓 Giriş Yap ve Öğrencimi Göster
@@ -121,26 +126,14 @@
                     </button>
                 </div>
 
-                <!-- Demo / Test İçin Örnek Veli Numaraları -->
-                <div class="pt-3 border-t border-slate-200 space-y-2">
-                    <span class="block text-[11px] font-extrabold uppercase text-slate-400">Hızlı Test İçin Örnek Kayıtlı Veliler:</span>
-                    <div class="grid grid-cols-1 gap-2">
-                        <a href="{{ route('public.mobile.pwa', ['phone' => '05332223344']) }}" class="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 flex justify-between items-center text-xs">
-                            <div>
-                                <strong class="block text-slate-900">👨‍👩‍👧‍👦 Veli: Murat Arslan (0533 222 33 44)</strong>
-                                <span class="text-[11px] text-slate-500">2 Kardeş Sporcu: Elif Arslan & Kerem Arslan</span>
-                            </div>
-                            <span class="text-indigo-600 font-extrabold">Giriş →</span>
-                        </a>
-                        <a href="{{ route('public.mobile.pwa', ['phone' => '05354445566']) }}" class="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 flex justify-between items-center text-xs">
-                            <div>
-                                <strong class="block text-slate-900">👩 Veli: Zeynep Çelik (0535 444 55 66)</strong>
-                                <span class="text-[11px] text-slate-500">Sporcu: Defne Çelik (Ritmik Cimnastik)</span>
-                            </div>
-                            <span class="text-indigo-600 font-extrabold">Giriş →</span>
-                        </a>
+                @if(app()->environment(['local', 'testing']))
+                    <!-- GÜVENLİK: Gerçek görünümlü veli adı/telefonu içerdiği için yalnızca
+                         local/testing ortamında görünür; production'da KVKK gereği gösterilmez. -->
+                    <div class="pt-3 border-t border-slate-200 space-y-2">
+                        <span class="block text-[11px] font-extrabold uppercase text-slate-400">⚠️ Sadece Geliştirme Ortamı: Örnek Veli Girişi</span>
+                        <p class="text-[11px] text-slate-500">PIN: 8178 (Murat Arslan) · PIN: 4219 (Zeynep Çelik)</p>
                     </div>
-                </div>
+                @endif
             </div>
         @else
 

@@ -48,6 +48,7 @@ trait ManagesStudents
             'group_id' => $validated['group_id'],
             'package_id' => $validated['package_id'],
             'discount_rule_id' => $validated['discount_rule_id'] ?? null,
+            'portal_pin' => Student::portalPinFor($validated['parent_phone']),
             'parent_name' => $validated['parent_name'],
             'parent_phone' => $validated['parent_phone'],
             'emergency_contact_name' => $validated['emergency_contact_name'] ?? $validated['parent_name'],
@@ -61,6 +62,15 @@ trait ManagesStudents
             'health_data_consent' => $request->boolean('health_data_consent', true),
             'photo_consent' => $request->boolean('photo_consent', true),
             'marketing_consent' => $request->boolean('marketing_consent', false),
+        ]);
+
+        // Veli Portalı Giriş Bilgisi (Telefon + PIN) WhatsApp ile Gönderilir
+        WhatsappMessage::create([
+            'student_id' => $student->id,
+            'recipient_name' => $student->parent_name,
+            'recipient_phone' => $student->parent_phone,
+            'message_text' => "Sayın {$student->parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
+            'status' => 'queued',
         ]);
 
         // Otomatik Borç Hesaplama
@@ -94,9 +104,7 @@ trait ManagesStudents
                 ? CashAccount::find($validated['cash_account_id'])
                 : CashAccount::first();
 
-            $receiptNo = 'MKB-' . now()->format('Ym') . '-' . str_pad((string) (Payment::count() + 1), 4, '0', STR_PAD_LEFT);
-            $payment = Payment::create([
-                'receipt_no' => $receiptNo,
+            $payment = Payment::createWithReceiptNo([
                 'invoice_id' => $invoice->id,
                 'student_id' => $student->id,
                 'cash_account_id' => $cashAcc->id,
@@ -105,6 +113,7 @@ trait ManagesStudents
                 'payment_date' => today(),
                 'description' => "{$student->full_name} İlk Kayıt Tahsilatı",
             ]);
+            $receiptNo = $payment->receipt_no;
             $cashAcc->increment('balance', $paid);
 
             // Makbuz WhatsApp Mesajı Kuyruğa Ekle
@@ -156,6 +165,9 @@ trait ManagesStudents
             'health_notes' => $request->input('health_notes', $student->health_notes),
             'photo_consent' => $request->boolean('photo_consent', $student->photo_consent),
             'status' => $request->input('status', $student->status),
+            'portal_pin' => $request->boolean('regenerate_pin')
+                ? str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT)
+                : ($student->portal_pin ?: Student::portalPinFor($student->parent_phone)),
         ]);
         AuditLog::record('ogrenci_guncellendi', "{$student->full_name} sporcu/veli bilgileri güncellendi.", 'Student', $student->id);
         return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "'{$student->full_name}' sporcu bilgileri başarıyla güncellendi!");

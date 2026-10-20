@@ -28,10 +28,7 @@ trait ManagesFinance
         $cashAccount = CashAccount::findOrFail($validated['cash_account_id']);
         $amount = (float) $validated['amount'];
 
-        $receiptNo = 'MKB-' . now()->format('Ym') . '-' . str_pad((string) (Payment::count() + 1), 4, '0', STR_PAD_LEFT);
-
-        $payment = Payment::create([
-            'receipt_no' => $receiptNo,
+        $payment = Payment::createWithReceiptNo([
             'invoice_id' => $invoice->id,
             'student_id' => $invoice->student_id,
             'cash_account_id' => $cashAccount->id,
@@ -41,6 +38,7 @@ trait ManagesFinance
             'payment_date' => today(),
             'description' => $validated['description'] ?? ($invoice->student->full_name . ' - ' . $invoice->period_label),
         ]);
+        $receiptNo = $payment->receipt_no;
 
         $newPaid = $invoice->paid_amount + $amount;
         $newRemaining = max(0, $invoice->net_amount - $newPaid);
@@ -69,9 +67,24 @@ trait ManagesFinance
 
     public function destroyPayment(Payment $payment)
     {
+        // Silme işlemi kasa bakiyesini ve ilgili aidat borcunun kalan tutarını
+        // GERİ ALMALI, aksi hâlde bakiye kalıcı olarak yanlış kalır.
+        $payment->cashAccount?->decrement('balance', $payment->amount);
+
+        $invoice = $payment->invoice;
+        if ($invoice) {
+            $newPaid = max(0, $invoice->paid_amount - $payment->amount);
+            $newRemaining = max(0, $invoice->net_amount - $newPaid);
+            $invoice->update([
+                'paid_amount' => $newPaid,
+                'remaining_amount' => $newRemaining,
+                'status' => $newRemaining <= 0 ? 'paid' : ($newPaid > 0 ? 'partial' : 'unpaid'),
+            ]);
+        }
+
         $payment->delete();
-        AuditLog::record('tahsilat_silindi', 'Tahsilat makbuz kaydı silindi.');
-        return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Tahsilat kaydı silindi.');
+        AuditLog::record('tahsilat_silindi', "Tahsilat makbuz kaydı silindi, kasa bakiyesi ve aidat borcu geri alındı ({$payment->amount} TL).", 'Payment', $payment->id);
+        return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Tahsilat kaydı silindi, kasa bakiyesi ve borç durumu güncellendi.');
     }
 
     // Aylık Otomatik Aidat Borçlandırma Motoru
@@ -215,24 +228,52 @@ trait ManagesFinance
             'amount' => 'nullable|numeric|min:0',
             'transaction_date' => 'nullable|date',
         ]);
+
+        // Eski tutarın eski kasa hesabı üzerindeki etkisini geri al, güncellemeyi
+        // yap, sonra yeni tutarı yeni (veya aynı) kasa hesabına uygula. Aksi hâlde
+        // bir hareketi düzenlemek bakiyeyi kalıcı olarak yanlış bırakır.
+        if ($transaction->direction === 'income') {
+            $transaction->cashAccount?->decrement('balance', $transaction->amount);
+        } else {
+            $transaction->cashAccount?->increment('balance', $transaction->amount);
+        }
+
+        $newDirection = $request->input('direction', $transaction->direction);
+        $newAmount = (float) $request->input('amount', $transaction->amount);
+        $newCashAccountId = $request->input('cash_account_id', $transaction->cash_account_id);
+
         $transaction->update([
-            'direction' => $request->input('direction', $transaction->direction),
+            'direction' => $newDirection,
             'category' => $request->input('category', $transaction->category),
             'title' => $request->input('title', $transaction->title),
-            'amount' => (float) $request->input('amount', $transaction->amount),
+            'amount' => $newAmount,
             'transaction_date' => $request->input('transaction_date', $transaction->transaction_date?->toDateString()),
-            'cash_account_id' => $request->input('cash_account_id', $transaction->cash_account_id),
+            'cash_account_id' => $newCashAccountId,
         ]);
+
+        $newAccount = CashAccount::find($newCashAccountId);
+        if ($newAccount) {
+            $newDirection === 'income' ? $newAccount->increment('balance', $newAmount) : $newAccount->decrement('balance', $newAmount);
+        }
+
         AuditLog::record('kasa_hareketi_guncellendi', "Kasa hareketi güncellendi: {$transaction->title}", 'FinancialTransaction', $transaction->id);
-        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$transaction->title}' kasa hareketi güncellendi!");
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$transaction->title}' kasa hareketi güncellendi, bakiye yeniden hesaplandı!");
     }
 
     public function destroyTransaction(FinancialTransaction $transaction)
     {
         $title = $transaction->title;
+
+        // Silme işlemi kasa bakiyesindeki etkisini GERİ ALMALI.
+        if ($transaction->direction === 'income') {
+            $transaction->cashAccount?->decrement('balance', $transaction->amount);
+        } else {
+            $transaction->cashAccount?->increment('balance', $transaction->amount);
+        }
+
         $transaction->delete();
-        AuditLog::record('kasa_hareketi_silindi', "Kasa hareketi silindi: {$title}");
-        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$title}' kasa hareketi silindi.");
+        AuditLog::record('kasa_hareketi_silindi', "Kasa hareketi silindi, bakiye geri alındı: {$title} ({$transaction->amount} TL)");
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$title}' kasa hareketi silindi, bakiye güncellendi.");
     }
 
     // MODÜL 9: Kasa / Banka / POS Hesabı Ekle, Düzenle, Sil
@@ -270,6 +311,13 @@ trait ManagesFinance
 
     public function destroyCashAccount(CashAccount $cashAccount)
     {
+        // payments.cash_account_id FK'si cascadeOnDelete olduğundan bu hesabı silmek
+        // o hesaba ait TÜM tahsilat makbuzlarını da (soft-delete'i atlayarak) kalıcı
+        // olarak siler. Geçmiş ödeme kaydı varken silmeye izin vermiyoruz.
+        if (Payment::where('cash_account_id', $cashAccount->id)->exists()) {
+            return redirect()->route('admin.index', ['tab' => 'kasa'])->with('error', "'{$cashAccount->name}' hesabına ait tahsilat/makbuz kayıtları olduğu için silinemez. Bunun yerine hesabı pasif/kullanım dışı bırakabilirsiniz.");
+        }
+
         $name = $cashAccount->name;
         FinancialTransaction::where('cash_account_id', $cashAccount->id)->delete();
         $cashAccount->delete();

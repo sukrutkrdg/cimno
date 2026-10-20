@@ -48,8 +48,9 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="font-bold block mb-1">Giriş Şifresi *</label>
-                                <input type="text" name="password" required value="enerjik2026" placeholder="Giriş şifresi belirleyin" class="w-full border rounded-xl px-3 py-2 font-mono font-bold">
+                                <label class="font-bold block mb-1">Giriş Şifresi</label>
+                                <input type="password" name="password" minlength="6" placeholder="Boş bırakırsanız otomatik güçlü şifre üretilir" class="w-full border rounded-xl px-3 py-2 font-mono font-bold">
+                                <p class="text-[11px] text-slate-500 mt-1">En az 6 karakter. Boş bırakırsanız sistem rastgele güçlü bir şifre üretir ve ekranda gösterir.</p>
                             </div>
                             <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
                                 ➕ Yeni Kullanıcı Hesabını Aç

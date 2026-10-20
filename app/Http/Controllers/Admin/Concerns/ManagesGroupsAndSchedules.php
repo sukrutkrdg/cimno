@@ -11,8 +11,17 @@ use Illuminate\Http\Request;
 trait ManagesGroupsAndSchedules
 {
     // MODÜL 4 & 5: Yeni Grup Açıp Ders Programına Ekleme (Kabul Kriteri #2)
+    // Not: Grup oluşturma antrenöre açık değildir — update/destroy/storeSchedule gibi
+    // mevcut gruplar üzerindeki işlemler assertCoachOwnsGroup() ile korunuyordu, ama
+    // "yeni grup aç" bir sahiplik kontrolüne tabi olamayacağından (henüz grup yok)
+    // burada ayrıca engellenir.
     public function storeGroupAndSchedule(Request $request)
     {
+        $authUser = $this->getAuthenticatedStaff();
+        if ($authUser->role === 'coach' && $authUser->hasPermission('only_own_groups', true)) {
+            return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('error', 'Yeni grup açma yetkiniz yok, lütfen sekreterliğe başvurun.');
+        }
+
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
             'coach_id' => 'nullable|exists:users,id',

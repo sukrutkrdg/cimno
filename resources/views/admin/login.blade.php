@@ -82,7 +82,7 @@
                     <button type="button" onclick="fillCredentials('yonetici@enerjikcimnastik.com', 'enerjik2026')" class="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 flex justify-between items-center">
                         <div>
                             <strong class="block text-slate-900">👑 Süper Yönetici (Salon Sahibi)</strong>
-                            <span class="text-[11px] text-slate-500">Tüm 16 modül, finans, kasa, raporlar ve yetki ayarları</span>
+                            <span class="text-[11px] text-slate-500">Tüm 15 modül, finans, kasa, raporlar ve yetki ayarları</span>
                         </div>
                         <span class="text-indigo-600 font-extrabold">Seç →</span>
                     </button>

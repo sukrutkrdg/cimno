@@ -126,6 +126,7 @@
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Sol Kolon: Yeni Grup Aç & Mevcut Gruba Yeni Ders Saati Ekle -->
                     <div class="lg:col-span-5 space-y-6">
+                        @if($currentRole !== 'coach')
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                             <span class="text-[11px] font-bold uppercase text-indigo-600">Eğitim Planlama</span>
                             <h3 class="text-lg font-extrabold mb-3">➕ Yeni Grup Aç & Eğitim Programına Ekle</h3>
@@ -206,6 +207,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
 
                         <!-- Mevcut Gruba Yeni Eğitim Programı (Ders Günü & Saati) Ekleme -->
                         <div class="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm">

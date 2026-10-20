@@ -65,6 +65,16 @@ Artisan::command('enerjik:daily-tasks', function () {
                 [$inv->student->parent_name, $inv->student->full_name, $inv->period_label, number_format((float)$inv->remaining_amount, 2, ',', '.'), $inv->due_date->format('d.m.Y')],
                 $tplApproaching->message_template
             );
+            // Aynı gün içinde cron birden fazla kez tetiklenirse (paylaşımlı hosting'de
+            // yaygın) aynı hatırlatmanın tekrar kuyruğa eklenmesini önler.
+            $alreadyQueuedToday = WhatsappMessage::where('template_id', $tplApproaching->id)
+                ->where('student_id', $inv->student->id)
+                ->whereDate('created_at', today())
+                ->exists();
+            if ($alreadyQueuedToday) {
+                continue;
+            }
+
             WhatsappMessage::create([
                 'template_id' => $tplApproaching->id,
                 'student_id' => $inv->student->id,

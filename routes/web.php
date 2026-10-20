@@ -7,8 +7,12 @@ use Illuminate\Support\Facades\Route;
 // 1. Ön Yüz (Veli & Aday Veli Web Sitesi + Mobil Web Kısayol Uygulaması + Veli QR Yoklama)
 Route::get('/', [PublicSiteController::class, 'home'])->name('public.home');
 Route::post('/on-kayit', [PublicSiteController::class, 'submitTrialLead'])->middleware('throttle:10,1')->name('public.trial.submit');
-Route::get('/mobil', [PublicSiteController::class, 'mobilePwa'])->name('public.mobile.pwa');
-Route::get('/qr-yoklama', [PublicSiteController::class, 'qrCheckinPage'])->name('public.qr.checkin');
+// throttle:30,1: PIN ile telefon+PIN eşleşmesi burada kontrol edildiği için (bkz.
+// PublicSiteController@mobilePwa), bu rotalar aynı zamanda PIN deneme/kaba kuvvet
+// yüzeyidir. 30/dk, normal sekme gezinmesine yetecek kadar cömert ama PIN taramasını
+// pratik olmaktan çıkarır.
+Route::get('/mobil', [PublicSiteController::class, 'mobilePwa'])->middleware('throttle:30,1')->name('public.mobile.pwa');
+Route::get('/qr-yoklama', [PublicSiteController::class, 'qrCheckinPage'])->middleware('throttle:30,1')->name('public.qr.checkin');
 Route::post('/qr-yoklama', [PublicSiteController::class, 'submitQrCheckin'])->middleware('throttle:20,1')->name('public.qr.checkin.submit');
 Route::get('/veli-portali', [PublicSiteController::class, 'parentPortal'])->name('public.parent.portal');
 Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.qr.poster');
@@ -77,7 +81,10 @@ Route::prefix('panel')->group(function () {
             Route::post('/whatsapp-sablon/{template}/sil', [AdminPanelController::class, 'destroyWhatsappTemplate'])->name('admin.whatsapp.template.destroy');
             Route::post('/whatsapp-mesaj', [AdminPanelController::class, 'storeWhatsappMessage'])->name('admin.whatsapp.message.store');
             Route::post('/whatsapp-kuyruk-uret', [AdminPanelController::class, 'generateDailyWhatsappQueue'])->name('admin.whatsapp.generate');
-            Route::get('/whatsapp-gonder/{message}', [AdminPanelController::class, 'markWhatsappSent'])->name('admin.whatsapp.send');
+            // Durum değiştiren bir işlem olduğu için GET değil POST (bağlantı
+            // önizleyiciler/taraycılar GET'i "ziyaret ederek" yanlışlıkla mesajı
+            // gönderilmiş işaretleyebiliyordu).
+            Route::post('/whatsapp-gonder/{message}', [AdminPanelController::class, 'markWhatsappSent'])->name('admin.whatsapp.send');
             Route::post('/whatsapp-mesaj/{message}/sil', [AdminPanelController::class, 'destroyWhatsappMessage'])->name('admin.whatsapp.destroy');
         });
 
@@ -125,7 +132,6 @@ Route::prefix('panel')->group(function () {
             Route::post('/site-ayarlari', [AdminPanelController::class, 'updateSiteSettings'])->name('admin.settings.update');
             Route::get('/raporlar/excel-indir', [AdminPanelController::class, 'exportFinancialReportCsv'])->name('admin.reports.csv');
             Route::get('/ayarlar/yedek-indir', [AdminPanelController::class, 'downloadDatabaseBackup'])->name('admin.backup.download');
-            Route::post('/ayarlar/demo-temizle', [AdminPanelController::class, 'clearAllDemoData'])->name('admin.demo.clear');
         });
     });
 });

@@ -6,7 +6,6 @@ use App\Models\AuditLog;
 use App\Models\DevelopmentRecord;
 use App\Models\Event;
 use App\Models\Student;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 trait ManagesEventsAndDevelopment
@@ -70,11 +69,14 @@ trait ManagesEventsAndDevelopment
             'coach_comment' => 'nullable|string',
         ]);
 
-        $this->assertCoachOwnsGroup(Student::find($validated['student_id'])?->group_id);
+        $student = Student::with('group')->find($validated['student_id']);
+        $this->assertCoachOwnsGroup($student?->group_id);
 
         DevelopmentRecord::create([
             'student_id' => $validated['student_id'],
-            'coach_id' => User::where('role', 'coach')->value('id'),
+            // Hangi antrenörün kaydettiği değil, öğrencinin GRUBUNUN atanmış
+            // antrenörü — ilk bulunan rastgele antrenör değil.
+            'coach_id' => $student?->group?->coach_id ?? $this->getAuthenticatedStaff()?->id,
             'term_label' => $validated['term_label'],
             'current_level' => $validated['current_level'],
             'flexibility_score' => $validated['flexibility_score'],

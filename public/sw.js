@@ -1,14 +1,30 @@
-const CACHE_NAME = 'enerjik-cimnastik-pwa-v1';
-const OFFLINE_URLS = [
-  '/mobil',
+const CACHE_NAME = 'enerjik-cimnastik-pwa-v2';
+
+// Yalnızca gerçekten statik, kişiye özel olmayan varlıklar önbelleğe alınır ve
+// önceden yüklenir. Önceki sürüm TÜM GET isteklerini (veli bakiyesi, yoklama,
+// gelişim karnesi gibi oturuma özel /mobil ve /qr-yoklama sayfaları dâhil)
+// önbelleğe alıyordu; paylaşılan bir aile cihazında bir velinin verisi, cihaz
+// çevrimdışıyken başka bir kullanıcıya servis edilebiliyordu. Artık /mobil,
+// /qr-yoklama, /panel/* ve /makbuz/* hiçbir zaman önbelleğe yazılmaz.
+const PRECACHE_URLS = [
   '/',
   '/manifest.json',
-  '/icons/icon.svg'
+  '/icons/icon.svg',
 ];
+
+function isCacheableStaticAsset(url) {
+  const sameOrigin = url.origin === self.location.origin;
+  if (!sameOrigin) return false;
+  // Kişiye/oturuma özel tüm yollar önbellek dışı bırakılır.
+  if (/^\/(mobil|qr-yoklama|panel|makbuz)(\/|$)/.test(url.pathname)) return false;
+  // Sadece statik varlık uzantıları önbelleğe alınır.
+  return /\.(css|js|svg|png|jpg|jpeg|webp|ico|woff2?)$/.test(url.pathname)
+    || url.pathname === '/manifest.json';
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
   self.skipWaiting();
 });
@@ -24,6 +40,13 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  if (!isCacheableStaticAsset(url)) {
+    // Kişiye özel/dinamik sayfalar: doğrudan ağdan, önbellek okuma/yazma yok.
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -31,6 +54,6 @@ self.addEventListener('fetch', (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/mobil')))
+      .catch(() => caches.match(event.request))
   );
 });

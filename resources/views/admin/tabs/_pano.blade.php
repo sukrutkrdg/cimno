@@ -7,10 +7,6 @@
                         <div class="flex flex-wrap gap-2">
                             <a href="{{ route('admin.reports.csv') }}" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">📥 Gelir-Gider Excel İndir</a>
                             <a href="{{ route('admin.backup.download') }}" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">💾 Veritabanı Yedeği İndir</a>
-                            <form action="{{ route('admin.demo.clear') }}" method="POST" class="inline" onsubmit="return confirm('Tüm deneme/test kayıtlarını (adaylar, öğrenciler, gruplar, ders programı, yoklama, aidat ve kasa hareketleri) temizlemek istediğinize emin misiniz?')">
-                                @csrf
-                                <button type="submit" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">🧹 Deneme Kayıtlarını Temizle</button>
-                            </form>
                         </div>
                     @endif
                 </div>
@@ -90,7 +86,10 @@
                                     <strong class="block">{{ $msg->recipient_name }}</strong>
                                     <span class="text-[11px] text-slate-600">{{ Str::limit($msg->message_text, 55) }}</span>
                                 </div>
-                                <a href="{{ route('admin.whatsapp.send', $msg->id) }}" target="_blank" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">Gönder →</a>
+                                <form action="{{ route('admin.whatsapp.send', $msg->id) }}" method="POST" target="_blank" class="shrink-0">
+                                    @csrf
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">Gönder →</button>
+                                </form>
                             </div>
                         @endforeach
                     </div>
