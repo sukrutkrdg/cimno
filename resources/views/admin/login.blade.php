@@ -6,6 +6,30 @@
     <title>Yönetici & Personel Girişi | Tekirdağ Enerjik Cimnastik</title>
     <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Yönetim paneli teması: tek sakin aksan (teal/lacivert). Durum renkleri
+        // (emerald/amber/rose) değiştirilmedi — sadece "indigo/purple" marka
+        // rengi, dünyadaki kulüp yazılımlarındaki (iClassPro, Gymdesk) sakin
+        // paletle uyumlu hâle getirildi.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        indigo: {
+                            50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4',
+                            400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e',
+                            800: '#115e59', 900: '#134e4a', 950: '#042f2e',
+                        },
+                        purple: {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+                            400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+                            800: '#1e293b', 900: '#0f172a', 950: '#020617',
+                        },
+                    },
+                },
+            },
+        };
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>

@@ -4,6 +4,29 @@
     <meta charset="UTF-8">
     <title>Tahsilat Makbuzu {{ $payment->receipt_no }} | Enerjik Cimnastik</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Veli/ziyaretçi teması: tek sıcak marka rengi (bordo-eflatun), Mindbody'nin
+        // "tek güçlü renk" refleksinden esinlenildi. Durum renkleri (emerald/amber/
+        // rose) değiştirilmedi — sadece "indigo/purple" marka rengi güncellendi.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        indigo: {
+                            50: '#fdf2f6', 100: '#fce7ee', 200: '#fbd0dd', 300: '#f4a3c0',
+                            400: '#e8689a', 500: '#c23572', 600: '#9d174d', 700: '#831440',
+                            800: '#6b1035', 900: '#4a0a24', 950: '#2e0616',
+                        },
+                        purple: {
+                            50: '#fdf2f6', 100: '#fbe4ec', 200: '#f4c2d4', 300: '#e592ae',
+                            400: '#c85c82', 500: '#a13a5c', 600: '#7d2945', 700: '#5f1f35',
+                            800: '#451726', 900: '#2e0f19', 950: '#1a0810',
+                        },
+                    },
+                },
+            },
+        };
+    </script>
 </head>
 <body class="bg-slate-100 p-6">
     <div class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-300 p-8 shadow-lg">
