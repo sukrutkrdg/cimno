@@ -448,7 +448,6 @@
                         <a href="{{ route('public.mobile.pwa') }}" class="hover:text-slate-300">👨‍👩‍👧 Veli Girişi</a>
                         <a href="{{ route('public.qr.checkin') }}" class="hover:text-slate-300">📷 Salon QR Yoklama</a>
                         <a href="{{ route('public.qr.poster') }}" class="hover:text-slate-300">🏁 QR Afiş</a>
-                        <a href="{{ route('admin.index') }}" class="hover:text-slate-300">⚙️ Yönetici & Antrenör Girişi</a>
                     </div>
                 </div>
             </div>
