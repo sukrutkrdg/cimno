@@ -2,10 +2,26 @@
 
 use App\Models\Invoice;
 use App\Models\Student;
+use App\Models\User;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappTemplate;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schedule;
+
+// Acil Durum: Personel Şifresi Sıfırlama (e-posta/SMTP kurulana kadar tek kurtarma yolu)
+// Sunucuda SSH/cPanel Terminal üzerinden çalıştırılır: php artisan admin:sifre-sifirla eposta@ornek.com YeniSifre123
+Artisan::command('admin:sifre-sifirla {email} {sifre}', function (string $email, string $sifre) {
+    $user = User::where('email', strtolower(trim($email)))->first();
+    if (!$user) {
+        $this->error("'{$email}' adresiyle kayıtlı bir personel bulunamadı.");
+        return self::FAILURE;
+    }
+
+    $user->update(['password' => Hash::make($sifre)]);
+    $this->info("{$user->name} ({$user->roleLabel()}) için şifre başarıyla güncellendi.");
+    return self::SUCCESS;
+})->purpose('Yönetim paneli için bir personelin şifresini sunucu erişimiyle sıfırlar (acil kurtarma)');
 
 // Natro cPanel Paylaşımlı Hosting Zamanlayıcı Görevleri (cron * * * * * php artisan schedule:run)
 Artisan::command('enerjik:daily-tasks', function () {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\URL;
 
 class Payment extends Model
 {
@@ -13,6 +14,15 @@ class Payment extends Model
     protected $casts = [
         'payment_date' => 'date',
     ];
+
+    /**
+     * Dijital makbuz linki imzalıdır: ardışık ID tahmin edilerek başka bir ailenin
+     * ödeme/finansal bilgisine erişilmesini önler. Link 180 gün geçerlidir.
+     */
+    public function receiptUrl(): string
+    {
+        return URL::temporarySignedRoute('public.receipt', now()->addDays(180), ['payment' => $this->id]);
+    }
 
     public function invoice()
     {

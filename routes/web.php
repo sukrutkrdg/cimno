@@ -6,20 +6,19 @@ use Illuminate\Support\Facades\Route;
 
 // 1. Ön Yüz (Veli & Aday Veli Web Sitesi + Mobil Web Kısayol Uygulaması + Veli QR Yoklama)
 Route::get('/', [PublicSiteController::class, 'home'])->name('public.home');
-Route::post('/on-kayit', [PublicSiteController::class, 'submitTrialLead'])->name('public.trial.submit');
+Route::post('/on-kayit', [PublicSiteController::class, 'submitTrialLead'])->middleware('throttle:10,1')->name('public.trial.submit');
 Route::get('/mobil', [PublicSiteController::class, 'mobilePwa'])->name('public.mobile.pwa');
-Route::post('/mobil/yoklama-senkron', [PublicSiteController::class, 'syncMobileAttendance'])->name('public.mobile.attendance.sync');
 Route::get('/qr-yoklama', [PublicSiteController::class, 'qrCheckinPage'])->name('public.qr.checkin');
-Route::post('/qr-yoklama', [PublicSiteController::class, 'submitQrCheckin'])->name('public.qr.checkin.submit');
+Route::post('/qr-yoklama', [PublicSiteController::class, 'submitQrCheckin'])->middleware('throttle:20,1')->name('public.qr.checkin.submit');
 Route::get('/veli-portali', [PublicSiteController::class, 'parentPortal'])->name('public.parent.portal');
 Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.qr.poster');
-Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->name('public.receipt');
+Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->name('public.receipt')->middleware('signed');
 
 // 2. Yönetim Paneli (Yetkili Giriş + 16 Modül: Salon Sahibi, Sekreter, Antrenör)
 Route::prefix('panel')->group(function () {
     // Giriş / Çıkış: oturum olmadan erişilebilmesi gerektiği için admin.auth dışında kalır.
     Route::get('/giris', [AdminPanelController::class, 'loginForm'])->name('admin.login');
-    Route::post('/giris', [AdminPanelController::class, 'loginSubmit'])->name('admin.login.submit');
+    Route::post('/giris', [AdminPanelController::class, 'loginSubmit'])->middleware('throttle:6,1')->name('admin.login.submit');
     Route::match(['get', 'post'], '/cikis', [AdminPanelController::class, 'logout'])->name('admin.logout');
 
     // Bu noktadan sonraki TÜM rotalar için merkezi oturum zorunluluğu.

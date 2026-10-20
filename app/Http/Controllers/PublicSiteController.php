@@ -230,26 +230,6 @@ class PublicSiteController extends Controller
             ->with('checkin_success', "✅ {$student->full_name} için bugünkü (" . today()->format('d.m.Y') . " - Saat " . now()->format('H:i') . ") salon giriş yoklaması başarıyla alındı! Antrenör ekranına iletildi. İyi antrenmanlar dileriz! 🤸");
     }
 
-    public function syncMobileAttendance(Request $request)
-    {
-        $records = $request->input('records', []);
-        $coachId = User::where('role', 'coach')->value('id');
-        foreach ($records as $rec) {
-            Attendance::updateOrCreate(
-                [
-                    'group_id' => $rec['group_id'],
-                    'student_id' => $rec['student_id'],
-                    'attendance_date' => $rec['attendance_date'] ?? today()->toDateString(),
-                ],
-                [
-                    'coach_id' => $coachId,
-                    'status' => $rec['status'] ?? 'present',
-                ]
-            );
-        }
-        return response()->json(['success' => true, 'count' => count($records)]);
-    }
-
     public function qrPoster()
     {
         $settings = SiteSetting::pluck('value', 'key')->toArray();

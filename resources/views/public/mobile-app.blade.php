@@ -199,7 +199,7 @@
                                             @foreach($inv->payments as $pay)
                                                 <div class="mt-2 pt-2 border-t border-slate-200/70 flex justify-between items-center text-[11px]">
                                                     <span>🧾 {{ $pay->receipt_no }} ({{ number_format($pay->amount, 0, ',', '.') }} ₺)</span>
-                                                    <a href="{{ route('public.receipt', $pay->id) }}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold">Makbuz PDF</a>
+                                                    <a href="{{ $pay->receiptUrl() }}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold">Makbuz PDF</a>
                                                 </div>
                                             @endforeach
                                         </div>
