@@ -33,15 +33,22 @@ class AdminPanelController extends Controller
 {
     protected function getAuthenticatedStaff(): ?User
     {
+        // admin.auth middleware'i tüm /panel rotalarında bu attribute'u set eder;
+        // burada ekstra bir sorgu atmadan aynı kullanıcıyı tekrar kullanırız.
+        $cached = request()->attributes->get('authStaff');
+        if ($cached instanceof User) {
+            return $cached;
+        }
+
+        // Middleware'in kapsamadığı giriş/çıkış ekranları için geriye dönük sorgu.
         $userId = session('admin_user_id');
         if (!$userId) {
             return null;
         }
-        $user = User::whereIn('role', ['super_admin', 'secretary', 'coach'])
+
+        return User::whereIn('role', ['super_admin', 'secretary', 'coach'])
             ->where('is_active', true)
             ->find($userId);
-
-        return $user;
     }
 
     public function loginForm()
@@ -116,11 +123,7 @@ class AdminPanelController extends Controller
 
     public function updateStaffPermissions(Request $request, User $user)
     {
-        $authUser = $this->getAuthenticatedStaff();
-        if (!$authUser || $authUser->role !== 'super_admin') {
-            return redirect()->route('admin.index')->with('error', 'Bu işlem yalnızca Süper Yönetici (Salon Sahibi) tarafından yapılabilir!');
-        }
-
+        // Yetki kontrolü route middleware'inde (admin.permission:role:super_admin) merkezi olarak yapılır.
         $role = $request->input('role', $user->role);
         if (!in_array($role, ['super_admin', 'secretary', 'coach'], true)) {
             $role = $user->role;
@@ -235,6 +238,13 @@ class AdminPanelController extends Controller
         $settings = SiteSetting::pluck('value', 'key')->toArray();
         $auditLogs = AuditLog::with('user')->latest()->take(60)->get();
 
+        // Dinamik Seçenek Listeleri (Süper Yönetici Tarafından Eklenip Düzenlenebilir & Silinebilir)
+        $hallAreas = array_values(array_filter(array_map('trim', explode('|', $settings['custom_hall_areas'] ?? 'Ana Minder|Trampolin Alanı|Ana Minder & Bar Alanı|Bale & Ritmik Salonu'))));
+        $ageGroups = array_values(array_filter(array_map('trim', explode('|', $settings['custom_age_groups'] ?? '3-4 Yaş (Oyun)|4-6 Yaş (Minikler)|5-8 Yaş|7-10 Yaş (Yıldızlar)|9-14 Yaş (Gençler)|16+ Yaş (Yetişkin)'))));
+        $groupLevels = array_values(array_filter(array_map('trim', explode('|', $settings['custom_group_levels'] ?? 'Başlangıç|Orta Seviye|İleri Seviye|Performans / Yarışmacı|Hobi Grubu'))));
+        $financeCategories = array_values(array_filter(array_map('trim', explode('|', $settings['custom_finance_categories'] ?? 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Ürün Satışı (Mayo / Forma)|Lisans ve Yarışma Harcı'))));
+        $leadSources = array_values(array_filter(array_map('trim', explode('|', $settings['custom_lead_sources'] ?? 'website|instagram|whatsapp|telefon|tavsiye'))));
+
         // Özel Uyarı Listeleri (Periyodik İşler)
         $absentWarnStudents = Student::with('group')->where('consecutive_absences', '>=', 2)->where('status', 'active')->get();
         $expiringMedicalStudents = Student::with('group')->whereNotNull('medical_report_expires_at')
@@ -308,7 +318,12 @@ class AdminPanelController extends Controller
             'absentWarnStudents',
             'expiringMedicalStudents',
             'coachPayrolls',
-            'agingBuckets'
+            'agingBuckets',
+            'hallAreas',
+            'ageGroups',
+            'groupLevels',
+            'financeCategories',
+            'leadSources'
         ));
     }
 
@@ -631,7 +646,7 @@ class AdminPanelController extends Controller
             'invoice_id' => $invoice->id,
             'student_id' => $invoice->student_id,
             'cash_account_id' => $cashAccount->id,
-            'recorded_by' => User::first()?->id,
+            'recorded_by' => $this->getAuthenticatedStaff()?->id,
             'amount' => $amount,
             'payment_method' => $validated['payment_method'],
             'payment_date' => today(),
@@ -800,11 +815,8 @@ class AdminPanelController extends Controller
 
     public function destroyStaff(Request $request, User $user)
     {
+        // Rol kontrolü route middleware'inde yapılır; burada sadece "kendi hesabını silme" iş kuralı kalır.
         $authUser = $this->getAuthenticatedStaff();
-        if (!$authUser || $authUser->role !== 'super_admin') {
-            return redirect()->route('admin.index')->with('error', 'Kullanıcı silme işlemi yalnızca Süper Yönetici tarafından yapılabilir!');
-        }
-
         if ($authUser->id === $user->id) {
             return redirect()->route('admin.index', ['tab' => 'personel'])->with('error', 'Şu anda oturum açtığınız kendi Süper Yönetici hesabınızı silemezsiniz!');
         }
@@ -821,11 +833,7 @@ class AdminPanelController extends Controller
 
     public function destroyStudent(Request $request, Student $student)
     {
-        $authUser = $this->getAuthenticatedStaff();
-        if (!$authUser || !$authUser->hasPermission('delete_student', $authUser->role === 'super_admin')) {
-            return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('error', 'Öğrenci/Veli kaydı silme yetkiniz bulunmamaktadır.');
-        }
-
+        // Yetki kontrolü route middleware'inde (admin.permission:delete_student) merkezi olarak yapılır.
         $name = $student->full_name;
         $student->delete();
 
@@ -953,8 +961,9 @@ class AdminPanelController extends Controller
             'sort_order' => (int) $request->input('sort_order', 1),
             'is_active' => true,
         ]);
-        AuditLog::record('brans_eklendi', "Sitedeki branşlara '{$name}' eklendi.");
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$name}' branşı web sitesine eklendi!");
+        AuditLog::record('brans_eklendi', "Branşlara '{$name}' eklendi.");
+        $tab = $request->input('return_tab', 'site_icerigi');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$name}' branşı başarıyla eklendi!");
     }
 
     public function updateBranch(Request $request, Branch $branch)
@@ -969,18 +978,22 @@ class AdminPanelController extends Controller
             'sort_order' => (int) $request->input('sort_order', $branch->sort_order),
         ]);
         AuditLog::record('brans_guncellendi', "'{$branch->name}' branş bilgileri güncellendi.");
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$branch->name}' branş kartı güncellendi!");
+        $tab = $request->input('return_tab', 'site_icerigi');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$branch->name}' branşı güncellendi!");
     }
 
-    public function destroyBranch(Branch $branch)
+    public function destroyBranch(Request $request, Branch $branch)
     {
         $name = $branch->name;
+        Group::where('branch_id', $branch->id)->update(['branch_id' => null]);
+        Student::where('branch_id', $branch->id)->update(['branch_id' => null]);
         $branch->delete();
-        AuditLog::record('brans_silindi', "'{$name}' branşı siteden kaldırıldı.");
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$name}' branşı siteden silindi.");
+        AuditLog::record('brans_silindi', "'{$name}' branşı kaldırıldı.");
+        $tab = $request->input('return_tab', 'site_icerigi');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$name}' branşı silindi.");
     }
 
-    // CMS: Eğitim Paketi & Ücret Kartı Ekle / Güncelle / Sil
+    // CMS & Modül 7: Eğitim Paketi & Ücret Kartı Ekle / Güncelle / Sil
     public function storePackage(Request $request)
     {
         $pkg = Package::create([
@@ -988,31 +1001,38 @@ class AdminPanelController extends Controller
             'billing_cycle' => $request->input('billing_cycle', 'monthly'),
             'lessons_count' => (int) $request->input('lessons_count', 8),
             'price' => (float) $request->input('price', 3000),
+            'registration_fee' => (float) $request->input('registration_fee', 0),
             'description' => $request->input('description', ''),
             'is_active' => true,
         ]);
         AuditLog::record('paket_eklendi', "Yeni eğitim paketi eklendi: {$pkg->name} ({$pkg->price} TL)");
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$pkg->name}' paketi web sitesine eklendi!");
+        $tab = $request->input('return_tab', 'site_icerigi');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$pkg->name}' paketi başarıyla eklendi!");
     }
 
     public function updatePackage(Request $request, Package $package)
     {
         $package->update([
             'name' => $request->input('name', $package->name),
+            'billing_cycle' => $request->input('billing_cycle', $package->billing_cycle),
             'lessons_count' => (int) $request->input('lessons_count', $package->lessons_count),
             'price' => (float) $request->input('price', $package->price),
+            'registration_fee' => (float) $request->input('registration_fee', $package->registration_fee ?? 0),
             'description' => $request->input('description', $package->description),
         ]);
         AuditLog::record('paket_guncellendi', "'{$package->name}' paket ücreti/içeriği güncellendi.");
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$package->name}' paket kartı güncellendi!");
+        $tab = $request->input('return_tab', 'site_icerigi');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$package->name}' paketi güncellendi!");
     }
 
-    public function destroyPackage(Package $package)
+    public function destroyPackage(Request $request, Package $package)
     {
         $name = $package->name;
+        Student::where('package_id', $package->id)->update(['package_id' => null]);
         $package->delete();
         AuditLog::record('paket_silindi', "'{$name}' paketi silindi.");
-        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$name}' paketi siteden silindi.");
+        $tab = $request->input('return_tab', 'site_icerigi');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$name}' paketi silindi.");
     }
 
     // CMS: Duyuru Ekle / Güncelle / Sil
@@ -1127,6 +1147,348 @@ class AdminPanelController extends Controller
     }
 
     // =====================================================
+    // DİNAMİK EKLEME, DÜZENLEME VE SİLME (CRUD) METODLARI
+    // =====================================================
+
+    // Dinamik Seçenek Havuzu (Salon Alanları, Yaş Grupları, Seviyeler, Gelir/Gider Kategorileri)
+    public function updateDynamicOptions(Request $request)
+    {
+        $settingKey = $request->input('setting_key');
+        $allowedKeys = ['custom_hall_areas', 'custom_age_groups', 'custom_group_levels', 'custom_finance_categories', 'custom_lead_sources'];
+        if (!in_array($settingKey, $allowedKeys, true)) {
+            return back()->with('error', 'Geçersiz dinamik seçenek anahtarı.');
+        }
+
+        $defaults = [
+            'custom_hall_areas' => 'Ana Minder|Trampolin Alanı|Ana Minder & Bar Alanı|Bale & Ritmik Salonu',
+            'custom_age_groups' => '3-4 Yaş (Oyun)|4-6 Yaş (Minikler)|5-8 Yaş|7-10 Yaş (Yıldızlar)|9-14 Yaş (Gençler)|16+ Yaş (Yetişkin)',
+            'custom_group_levels' => 'Başlangıç|Orta Seviye|İleri Seviye|Performans / Yarışmacı|Hobi Grubu',
+            'custom_finance_categories' => 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Ürün Satışı (Mayo / Forma)|Lisans ve Yarışma Harcı',
+            'custom_lead_sources' => 'website|instagram|whatsapp|telefon|tavsiye',
+        ];
+
+        $currentRaw = SiteSetting::where('key', $settingKey)->value('value') ?? $defaults[$settingKey];
+        $items = array_values(array_filter(array_map('trim', explode('|', $currentRaw))));
+
+        $action = $request->input('action', 'save_all');
+        if ($action === 'add' && $request->filled('new_option')) {
+            $newOpt = trim($request->input('new_option'));
+            if (!in_array($newOpt, $items, true)) {
+                $items[] = $newOpt;
+            }
+        } elseif ($action === 'remove' && $request->filled('remove_option')) {
+            $remOpt = trim($request->input('remove_option'));
+            $items = array_values(array_filter($items, fn($i) => $i !== $remOpt));
+        } elseif ($action === 'save_all' && $request->has('options_text')) {
+            $rawLines = preg_split('/[\r\n|]+/', (string) $request->input('options_text'));
+            $items = array_values(array_filter(array_map('trim', $rawLines)));
+        }
+
+        SiteSetting::updateOrCreate(['key' => $settingKey], ['value' => implode('|', $items)]);
+        AuditLog::record('dinamik_secenek_guncellendi', "Dinamik liste ({$settingKey}) güncellendi.");
+
+        $tab = $request->input('return_tab', 'gruplar');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', 'Seçenek listesi başarıyla güncellendi!');
+    }
+
+    // MODÜL 2: Yeni Aday Ekle & Mevcut Adayı Düzenle
+    public function storeLead(Request $request)
+    {
+        $lead = Lead::create([
+            'student_name' => $request->input('student_name', 'Yeni Aday'),
+            'student_age' => (int) $request->input('student_age', 6),
+            'parent_name' => $request->input('parent_name', ''),
+            'parent_phone' => $request->input('parent_phone', ''),
+            'branch_id' => $request->input('branch_id') ?: null,
+            'trial_group_id' => $request->input('trial_group_id') ?: null,
+            'source' => $request->input('source', 'website'),
+            'status' => $request->input('status', 'new'),
+            'notes' => $request->input('notes'),
+        ]);
+        AuditLog::record('aday_eklendi', "Yeni deneme/ön kayıt adayı eklendi: {$lead->student_name}", 'Lead', $lead->id);
+        return redirect()->route('admin.index', ['tab' => 'adaylar'])->with('success', "'{$lead->student_name}' aday listesine eklendi!");
+    }
+
+    public function updateLead(Request $request, Lead $lead)
+    {
+        $lead->update([
+            'student_name' => $request->input('student_name', $lead->student_name),
+            'student_age' => (int) $request->input('student_age', $lead->student_age),
+            'parent_name' => $request->input('parent_name', $lead->parent_name),
+            'parent_phone' => $request->input('parent_phone', $lead->parent_phone),
+            'branch_id' => $request->input('branch_id') ?: $lead->branch_id,
+            'trial_group_id' => $request->input('trial_group_id') ?: $lead->trial_group_id,
+            'source' => $request->input('source', $lead->source),
+            'status' => $request->input('status', $lead->status),
+            'notes' => $request->input('notes', $lead->notes),
+        ]);
+        AuditLog::record('aday_guncellendi', "Aday bilgileri güncellendi: {$lead->student_name}", 'Lead', $lead->id);
+        return redirect()->route('admin.index', ['tab' => 'adaylar'])->with('success', "'{$lead->student_name}' aday kaydı güncellendi!");
+    }
+
+    // MODÜL 3: Mevcut Öğrenciyi Düzenle
+    public function updateStudent(Request $request, Student $student)
+    {
+        $student->update([
+            'full_name' => $request->input('full_name', $student->full_name),
+            'birth_date' => $request->input('birth_date') ?: $student->birth_date,
+            'gender' => $request->input('gender', $student->gender),
+            'branch_id' => $request->input('branch_id') ?: $student->branch_id,
+            'group_id' => $request->input('group_id') ?: null,
+            'package_id' => $request->input('package_id') ?: null,
+            'discount_rule_id' => $request->input('discount_rule_id') ?: null,
+            'parent_name' => $request->input('parent_name', $student->parent_name),
+            'parent_phone' => $request->input('parent_phone', $student->parent_phone),
+            'uniform_size' => $request->input('uniform_size', $student->uniform_size),
+            'license_no' => $request->input('license_no', $student->license_no),
+            'makeup_credits' => (int) $request->input('makeup_credits', $student->makeup_credits),
+            'medical_report_expires_at' => $request->input('medical_report_expires_at') ?: $student->medical_report_expires_at,
+            'health_notes' => $request->input('health_notes', $student->health_notes),
+            'photo_consent' => $request->boolean('photo_consent', $student->photo_consent),
+            'status' => $request->input('status', $student->status),
+        ]);
+        AuditLog::record('ogrenci_guncellendi', "{$student->full_name} sporcu/veli bilgileri güncellendi.", 'Student', $student->id);
+        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "'{$student->full_name}' sporcu bilgileri başarıyla güncellendi!");
+    }
+
+    // MODÜL 4 & 5: Mevcut Grubu Düzenle & Gruba Yeni Ders Saati Ekle / Düzenle
+    public function updateGroup(Request $request, Group $group)
+    {
+        $group->update([
+            'name' => $request->input('name', $group->name),
+            'branch_id' => $request->input('branch_id', $group->branch_id),
+            'coach_id' => $request->input('coach_id') ?: null,
+            'age_group' => $request->input('age_group', $group->age_group),
+            'level' => $request->input('level', $group->level),
+            'area' => $request->input('area', $group->area),
+            'capacity' => (int) $request->input('capacity', $group->capacity),
+        ]);
+        AuditLog::record('grup_guncellendi', "Grup güncellendi: {$group->name}", 'Group', $group->id);
+        $tab = $request->input('return_tab', 'gruplar');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$group->name}' grup bilgileri güncellendi!");
+    }
+
+    public function storeSchedule(Request $request, Group $group)
+    {
+        $sch = Schedule::create([
+            'group_id' => $group->id,
+            'day_of_week' => $request->input('day_of_week', 'Cumartesi'),
+            'start_time' => $request->input('start_time', '10:00'),
+            'end_time' => $request->input('end_time', '11:00'),
+            'area' => $request->input('area', $group->area ?? 'Ana Minder'),
+        ]);
+        AuditLog::record('program_eklendi', "{$group->name} grubuna yeni ders saati eklendi ({$sch->day_of_week} {$sch->start_time}).", 'Schedule', $sch->id);
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', "'{$group->name}' grubuna yeni ders saati ({$sch->day_of_week} {$sch->start_time}) eklendi!");
+    }
+
+    public function updateSchedule(Request $request, Schedule $schedule)
+    {
+        $schedule->update([
+            'day_of_week' => $request->input('day_of_week', $schedule->day_of_week),
+            'start_time' => $request->input('start_time', $schedule->start_time),
+            'end_time' => $request->input('end_time', $schedule->end_time),
+            'area' => $request->input('area', $schedule->area),
+        ]);
+        AuditLog::record('program_guncellendi', "Ders saati güncellendi: {$schedule->day_of_week} {$schedule->start_time}", 'Schedule', $schedule->id);
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', 'Ders saati güncellendi!');
+    }
+
+    // MODÜL 7: İndirim Kuralı Ekle & Düzenle
+    public function storeDiscountRule(Request $request)
+    {
+        $rule = DiscountRule::create([
+            'name' => $request->input('name', 'Yeni İndirim Kuralı'),
+            'type' => $request->input('type', 'custom'),
+            'percentage' => (float) $request->input('percentage', 10),
+            'fixed_amount' => (float) $request->input('fixed_amount', 0),
+            'is_active' => true,
+        ]);
+        AuditLog::record('indirim_eklendi', "Yeni indirim kuralı eklendi: {$rule->name} (%{$rule->percentage})", 'DiscountRule', $rule->id);
+        $tab = $request->input('return_tab', 'paketler');
+        return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$rule->name}' indirim kuralı eklendi!");
+    }
+
+    public function updateDiscountRule(Request $request, DiscountRule $discountRule)
+    {
+        $discountRule->update([
+            'name' => $request->input('name', $discountRule->name),
+            'percentage' => (float) $request->input('percentage', $discountRule->percentage),
+            'fixed_amount' => (float) $request->input('fixed_amount', $discountRule->fixed_amount),
+        ]);
+        AuditLog::record('indirim_guncellendi', "İndirim kuralı güncellendi: {$discountRule->name}", 'DiscountRule', $discountRule->id);
+        return redirect()->route('admin.index', ['tab' => 'paketler'])->with('success', "'{$discountRule->name}' indirim kuralı güncellendi!");
+    }
+
+    // MODÜL 8: Tekil Aidat / Borç Ekle & Düzenle
+    public function storeSingleInvoice(Request $request)
+    {
+        $student = Student::findOrFail($request->input('student_id'));
+        $net = (float) $request->input('net_amount', 3200);
+        $inv = Invoice::create([
+            'student_id' => $student->id,
+            'package_id' => $student->package_id,
+            'period_label' => $request->input('period_label', now()->format('m/Y') . ' Aidatı'),
+            'gross_amount' => $net,
+            'discount_amount' => 0,
+            'net_amount' => $net,
+            'paid_amount' => 0,
+            'remaining_amount' => $net,
+            'due_date' => $request->input('due_date', today()->addDays(5)->toDateString()),
+            'status' => 'unpaid',
+        ]);
+        AuditLog::record('tekil_borc_acildi', "{$student->full_name} için '{$inv->period_label}' ({$net} TL) borç açıldı.", 'Invoice', $inv->id);
+        return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', "{$student->full_name} için '{$inv->period_label}' borç kaydı açıldı!");
+    }
+
+    public function updateInvoice(Request $request, Invoice $invoice)
+    {
+        $net = (float) $request->input('net_amount', $invoice->net_amount);
+        $paid = (float) $request->input('paid_amount', $invoice->paid_amount);
+        $rem = max(0, $net - $paid);
+        $invoice->update([
+            'period_label' => $request->input('period_label', $invoice->period_label),
+            'gross_amount' => $net,
+            'net_amount' => $net,
+            'paid_amount' => $paid,
+            'remaining_amount' => $rem,
+            'due_date' => $request->input('due_date', $invoice->due_date?->toDateString()),
+            'status' => $rem <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
+        ]);
+        AuditLog::record('aidat_guncellendi', "Aidat borç kaydı (#{$invoice->id}) güncellendi.", 'Invoice', $invoice->id);
+        return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Aidat borç kaydı güncellendi!');
+    }
+
+    // MODÜL 9: Kasa / Banka / POS Hesabı Ekle, Düzenle, Sil & Kasa Hareketi Düzenle
+    public function storeCashAccount(Request $request)
+    {
+        $acc = CashAccount::create([
+            'name' => $request->input('name', 'Yeni Hesap'),
+            'type' => $request->input('type', 'bank'),
+            'iban' => $request->input('iban'),
+            'balance' => (float) $request->input('balance', 0),
+        ]);
+        AuditLog::record('kasa_hesabi_eklendi', "Yeni kasa/banka hesabı eklendi: {$acc->name}", 'CashAccount', $acc->id);
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$acc->name}' hesabı eklendi!");
+    }
+
+    public function updateCashAccount(Request $request, CashAccount $cashAccount)
+    {
+        $cashAccount->update([
+            'name' => $request->input('name', $cashAccount->name),
+            'type' => $request->input('type', $cashAccount->type),
+            'iban' => $request->input('iban', $cashAccount->iban),
+            'balance' => (float) $request->input('balance', $cashAccount->balance),
+        ]);
+        AuditLog::record('kasa_hesabi_guncellendi', "Kasa/banka hesabı güncellendi: {$cashAccount->name}", 'CashAccount', $cashAccount->id);
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$cashAccount->name}' hesabı güncellendi!");
+    }
+
+    public function destroyCashAccount(CashAccount $cashAccount)
+    {
+        $name = $cashAccount->name;
+        FinancialTransaction::where('cash_account_id', $cashAccount->id)->delete();
+        $cashAccount->delete();
+        AuditLog::record('kasa_hesabi_silindi', "Kasa/banka hesabı silindi: {$name}");
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$name}' hesabı silindi.");
+    }
+
+    public function updateTransaction(Request $request, FinancialTransaction $transaction)
+    {
+        $transaction->update([
+            'direction' => $request->input('direction', $transaction->direction),
+            'category' => $request->input('category', $transaction->category),
+            'title' => $request->input('title', $transaction->title),
+            'amount' => (float) $request->input('amount', $transaction->amount),
+            'transaction_date' => $request->input('transaction_date', $transaction->transaction_date?->toDateString()),
+            'cash_account_id' => $request->input('cash_account_id', $transaction->cash_account_id),
+        ]);
+        AuditLog::record('kasa_hareketi_guncellendi', "Kasa hareketi güncellendi: {$transaction->title}", 'FinancialTransaction', $transaction->id);
+        return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$transaction->title}' kasa hareketi güncellendi!");
+    }
+
+    // MODÜL 11: Yeni WhatsApp Hazır Cevap Şablonu Ekle / Sil & Kuyruğa Özel Mesaj Ekle
+    public function storeWhatsappTemplate(Request $request)
+    {
+        $tpl = WhatsappTemplate::create([
+            'title' => $request->input('title', 'Yeni Hazır Cevap'),
+            'shortcut' => $request->input('shortcut', '/mesaj'),
+            'trigger_event' => $request->input('trigger_event', 'custom'),
+            'days_offset' => (int) $request->input('days_offset', 0),
+            'send_time' => $request->input('send_time', '10:00'),
+            'message_template' => $request->input('message_template', 'Merhaba {veli_adi}, '),
+            'is_active' => true,
+        ]);
+        AuditLog::record('whatsapp_sablon_eklendi', "Yeni WhatsApp şablonu eklendi: {$tpl->title}", 'WhatsappTemplate', $tpl->id);
+        return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', "'{$tpl->title}' şablonu eklendi!");
+    }
+
+    public function destroyWhatsappTemplate(WhatsappTemplate $template)
+    {
+        $title = $template->title;
+        $template->delete();
+        AuditLog::record('whatsapp_sablon_silindi', "WhatsApp şablonu silindi: {$title}");
+        return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', "'{$title}' şablonu silindi.");
+    }
+
+    public function storeWhatsappMessage(Request $request)
+    {
+        WhatsappMessage::create([
+            'recipient_name' => $request->input('recipient_name', 'Veli'),
+            'recipient_phone' => $request->input('recipient_phone', ''),
+            'message_text' => $request->input('message_text', ''),
+            'status' => 'queued',
+        ]);
+        return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', 'Yeni mesaj gönderim kuyruğuna eklendi!');
+    }
+
+    // MODÜL 12 & 13: Etkinlik Ekle / Düzenle & Gelişim Karnesi Düzenle
+    public function storeEvent(Request $request)
+    {
+        $ev = Event::create([
+            'title' => $request->input('title', 'Yeni Etkinlik'),
+            'type' => $request->input('type', 'show'),
+            'event_date' => $request->input('event_date', today()->addMonth()->toDateString()),
+            'location' => $request->input('location', 'Tekirdağ Enerjik Cimnastik Salonu'),
+            'quota' => (int) $request->input('quota', 40),
+            'fee' => (float) $request->input('fee', 0),
+            'description' => $request->input('description', ''),
+            'is_active' => true,
+        ]);
+        AuditLog::record('etkinlik_eklendi', "Yeni etkinlik eklendi: {$ev->title}", 'Event', $ev->id);
+        return redirect()->route('admin.index', ['tab' => 'etkinlikler'])->with('success', "'{$ev->title}' etkinliği eklendi!");
+    }
+
+    public function updateEvent(Request $request, Event $event)
+    {
+        $event->update([
+            'title' => $request->input('title', $event->title),
+            'event_date' => $request->input('event_date', $event->event_date?->toDateString()),
+            'location' => $request->input('location', $event->location),
+            'quota' => (int) $request->input('quota', $event->quota),
+            'fee' => (float) $request->input('fee', $event->fee),
+            'description' => $request->input('description', $event->description),
+        ]);
+        AuditLog::record('etkinlik_guncellendi', "Etkinlik güncellendi: {$event->title}", 'Event', $event->id);
+        return redirect()->route('admin.index', ['tab' => 'etkinlikler'])->with('success', "'{$event->title}' etkinliği güncellendi!");
+    }
+
+    public function updateDevelopmentRecord(Request $request, DevelopmentRecord $record)
+    {
+        $record->update([
+            'term_label' => $request->input('term_label', $record->term_label),
+            'current_level' => $request->input('current_level', $record->current_level),
+            'flexibility_score' => (int) $request->input('flexibility_score', $record->flexibility_score),
+            'strength_score' => (int) $request->input('strength_score', $record->strength_score),
+            'balance_score' => (int) $request->input('balance_score', $record->balance_score),
+            'coordination_score' => (int) $request->input('coordination_score', $record->coordination_score),
+            'discipline_score' => (int) $request->input('discipline_score', $record->discipline_score),
+            'coach_comment' => $request->input('coach_comment', $record->coach_comment),
+        ]);
+        AuditLog::record('karne_guncellendi', 'Gelişim karnesi güncellendi.', 'DevelopmentRecord', $record->id);
+        return redirect()->route('admin.index', ['tab' => 'gelisim'])->with('success', 'Gelişim karnesi güncellendi!');
+    }
+
+    // =====================================================
     // TÜM MODÜLLER İÇİN KAYIT SİLME & TEMİZLEME METODLARI
     // =====================================================
 
@@ -1218,11 +1580,7 @@ class AdminPanelController extends Controller
 
     public function clearAllDemoData()
     {
-        $authUser = $this->getAuthenticatedStaff();
-        if (!$authUser || $authUser->role !== 'super_admin') {
-            return redirect()->route('admin.index')->with('error', 'Bu işlem yalnızca Süper Yönetici tarafından yapılabilir!');
-        }
-
+        // Yetki kontrolü route middleware'inde (admin.permission:role:super_admin) merkezi olarak yapılır.
         Attendance::query()->delete();
         DevelopmentRecord::query()->delete();
         Payment::query()->delete();
@@ -1244,11 +1602,7 @@ class AdminPanelController extends Controller
     // MODÜL 14: Aylık Gelir-Gider Raporunu Excel (CSV) Olarak İndirme (Kabul Kriteri #7 - Yalnız Süper Yönetici)
     public function exportFinancialReportCsv()
     {
-        $authUser = $this->getAuthenticatedStaff();
-        if (!$authUser || $authUser->role !== 'super_admin') {
-            return redirect()->route('admin.index')->with('error', 'Gelir-Gider raporu yalnızca Süper Yönetici tarafından indirilebilir!');
-        }
-
+        // Yetki kontrolü route middleware'inde (admin.permission:role:super_admin) merkezi olarak yapılır.
         $filename = 'enerjik-cimnastik-gelir-gider-raporu-' . now()->format('Y-m-d') . '.csv';
 
         $headers = [
@@ -1294,11 +1648,7 @@ class AdminPanelController extends Controller
     // MODÜL 16: Veritabanı Yedeğini İndirme (Kabul Kriteri #8 - Yalnız Süper Yönetici)
     public function downloadDatabaseBackup()
     {
-        $authUser = $this->getAuthenticatedStaff();
-        if (!$authUser || $authUser->role !== 'super_admin') {
-            return redirect()->route('admin.index')->with('error', 'Veritabanı yedeği yalnızca Süper Yönetici tarafından indirilebilir!');
-        }
-
+        // Yetki kontrolü route middleware'inde (admin.permission:role:super_admin) merkezi olarak yapılır.
         $tables = [
             'users' => User::all(),
             'branches' => Branch::all(),

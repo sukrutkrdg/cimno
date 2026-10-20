@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Salon Giriş QR Yoklama | Enerjik Cimnastik</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1E1B4B">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,6 +40,11 @@
                 <p class="text-xs text-emerald-50">{{ session('checkin_success') }}</p>
             </div>
         @endif
+
+        <!-- Kamera ile Salon QR Afişini Okutma -->
+        <button type="button" id="qrScanBtn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-orange-600 text-white font-extrabold text-sm shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2">
+            📷 Kamerayı Aç ve Salon QR Afişini Okut
+        </button>
 
         <!-- Veli Telefon Seçimi / Girişi (Tarayıcıda Hatırlanır) -->
         <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
@@ -94,7 +100,7 @@
                             ✔ {{ $st->full_name }} bugün saat {{ $todayAtt->updated_at->format('H:i') }} itibarıyla derse giriş yaptı olarak kaydedildi.
                         </div>
                     @else
-                        <form action="{{ route('public.qr.checkin.submit') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <form action="{{ route('public.qr.checkin.submit') }}" method="POST" class="qr-checkin-form grid grid-cols-1 sm:grid-cols-2 gap-2">
                             @csrf
                             <input type="hidden" name="student_id" value="{{ $st->id }}">
                             <button type="submit" name="checkin_type" value="present" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/25">
@@ -132,6 +138,22 @@
 
     </main>
 
+    <!-- Kamera ile QR Okutma Tam Ekran Katmanı -->
+    <div id="qrScanOverlay" class="fixed inset-0 z-[60] bg-black hidden flex-col">
+        <div class="flex items-center justify-between p-3 bg-black/70">
+            <span class="text-white text-xs font-extrabold">📷 Salon Giriş QR Kodunu Okutun</span>
+            <button type="button" id="qrScanClose" class="text-white text-xl font-extrabold px-3 leading-none">✕</button>
+        </div>
+        <div class="relative flex-1 flex items-center justify-center overflow-hidden bg-black">
+            <video id="qrScanVideo" class="absolute inset-0 w-full h-full object-cover" playsinline muted autoplay></video>
+            <div class="relative w-56 h-56 border-4 border-emerald-400 rounded-2xl" style="box-shadow:0 0 0 2000px rgba(0,0,0,0.5)"></div>
+        </div>
+        <div id="qrScanStatus" class="p-4 bg-black/85 text-center text-emerald-300 text-xs font-bold min-h-[3.5rem] leading-relaxed">
+            Kamera açılıyor, lütfen izin verin...
+        </div>
+    </div>
+    <canvas id="qrScanCanvas" class="hidden"></canvas>
+
     <!-- Alt Mobil Bar -->
     <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 shadow-lg">
         <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2">
@@ -160,6 +182,141 @@
         if (input && input.value) {
             localStorage.setItem('enerjik_parent_phone', input.value);
         }
+    </script>
+
+    <!-- Kamera ile Canlı QR Okuma (jsQR) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+    (function () {
+        const openBtn = document.getElementById('qrScanBtn');
+        const overlay = document.getElementById('qrScanOverlay');
+        const closeBtn = document.getElementById('qrScanClose');
+        const video = document.getElementById('qrScanVideo');
+        const canvas = document.getElementById('qrScanCanvas');
+        const statusEl = document.getElementById('qrScanStatus');
+
+        // Salon QR afişinin (qr-afis) ürettiği linkte bulunması gereken doğrulama işareti.
+        const EXPECTED_PATH = '/qr-yoklama';
+        const EXPECTED_MARKER = 'kaynak=afis';
+
+        let mediaStream = null;
+        let scanning = false;
+        let rafId = null;
+
+        async function openScanner() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusEl.textContent = '⚠️ Bu tarayıcı kamera erişimini desteklemiyor. Lütfen Chrome veya Safari kullanın.';
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                return;
+            }
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            statusEl.textContent = 'Kamera açılıyor, lütfen izin verin...';
+
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = mediaStream;
+                await video.play();
+                scanning = true;
+                statusEl.textContent = 'Salon girişindeki QR afişini çerçeve içine getirin.';
+                rafId = requestAnimationFrame(tick);
+            } catch (err) {
+                statusEl.textContent = '⚠️ Kameraya erişilemedi. Tarayıcı izinlerini ve HTTPS bağlantısını kontrol edin.';
+            }
+        }
+
+        function closeScanner() {
+            scanning = false;
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(function (t) { t.stop(); });
+                mediaStream = null;
+            }
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+        function tick() {
+            if (!scanning) return;
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = window.jsQR ? window.jsQR(imageData.data, imageData.width, imageData.height) : null;
+
+                if (code && code.data) {
+                    handleScan(code.data);
+                    return;
+                }
+            }
+
+            rafId = requestAnimationFrame(tick);
+        }
+
+        function handleScan(text) {
+            const isValid = text.indexOf(EXPECTED_PATH) !== -1 && text.indexOf(EXPECTED_MARKER) !== -1;
+
+            if (!isValid) {
+                statusEl.textContent = '⚠️ Bu QR kodu salon girişi için geçerli değil. Lütfen salondaki orijinal afişi okutun.';
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+
+            statusEl.textContent = '✅ Salon QR kodu doğrulandı! Yoklamanız işleniyor...';
+            scanning = false;
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(function (t) { t.stop(); });
+                mediaStream = null;
+            }
+            submitPendingCheckins();
+        }
+
+        async function submitPendingCheckins() {
+            const forms = document.querySelectorAll('form.qr-checkin-form');
+            const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const token = tokenMeta ? tokenMeta.content : '';
+
+            if (forms.length === 0) {
+                statusEl.textContent = '✅ Salon QR kodu doğrulandı! Lütfen telefon numaranızı girip sporcunuzu bulun.';
+                setTimeout(closeScanner, 2200);
+                return;
+            }
+
+            for (const form of forms) {
+                const data = new FormData(form);
+                data.set('checkin_type', 'present');
+                try {
+                    await fetch(form.action, {
+                        method: 'POST',
+                        body: data,
+                        headers: { 'X-CSRF-TOKEN': token },
+                        credentials: 'same-origin',
+                    });
+                } catch (e) {
+                    // Sessizce yut; sayfa yenilendiğinde gerçek durum zaten görünecek.
+                }
+            }
+
+            statusEl.textContent = '🎉 Yoklamanız alındı! Sayfa yenileniyor...';
+            setTimeout(function () { window.location.reload(); }, 1200);
+        }
+
+        if (openBtn) openBtn.addEventListener('click', openScanner);
+        if (closeBtn) closeBtn.addEventListener('click', closeScanner);
+
+        // Veli ekranından "?kamera=1" ile gelindiyse kamerayı otomatik aç.
+        if (new URLSearchParams(window.location.search).get('kamera') === '1') {
+            openScanner();
+        }
+    })();
     </script>
 </body>
 </html>

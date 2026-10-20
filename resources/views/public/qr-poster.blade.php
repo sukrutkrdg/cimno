@@ -29,11 +29,12 @@
                 <h2 class="text-xl font-extrabold text-emerald-950">📷 1. Salon Giriş QR Yoklama</h2>
                 <p class="text-xs text-slate-600">Salona geldiğinizde kameranızla okutun ve tek dokunuşla <strong>"✅ Salona Geldi"</strong> yoklamasını onaylayın.</p>
                 <div class="inline-block p-4 bg-white rounded-2xl border border-emerald-200 shadow-sm">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode(url('/qr-yoklama')) }}" alt="QR Yoklama" class="w-48 h-48 mx-auto">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode(url('/qr-yoklama?kaynak=afis')) }}" alt="QR Yoklama" class="w-48 h-48 mx-auto">
                     <span class="block text-[11px] font-mono font-bold text-emerald-700 mt-2">{{ url('/qr-yoklama') }}</span>
                 </div>
+                <p class="text-[11px] text-slate-500">📱 Veli ekranındaki <strong>"Kamerayı Aç ve Salon QR Afişini Okut"</strong> butonuyla bu afişi doğrudan uygulama içinden okutabilirsiniz.</p>
                 <div>
-                    <a href="{{ route('public.qr.checkin') }}" class="inline-block px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold print:hidden">
+                    <a href="{{ route('public.qr.checkin', ['kamera' => 1]) }}" class="inline-block px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold print:hidden">
                         📷 QR Yoklama Ekranını Aç →
                     </a>
                 </div>

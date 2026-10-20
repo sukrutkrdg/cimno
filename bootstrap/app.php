@@ -12,6 +12,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->alias([
+            'admin.auth' => \App\Http\Middleware\EnsureAdminAuthenticated::class,
+            'admin.permission' => \App\Http\Middleware\EnsureAdminPermission::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

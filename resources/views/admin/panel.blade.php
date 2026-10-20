@@ -217,9 +217,53 @@
             <!-- 2. ADAYLAR (ÖN KAYIT & DENEME DERSİ)       -->
             <!-- ========================================== -->
             @if($activeTab === 'adaylar')
-                <div>
-                    <h2 class="text-2xl font-extrabold">🎯 Adaylar (Ön Kayıt & Deneme Dersi Talepleri)</h2>
-                    <p class="text-xs text-slate-500">Web sitesinden veya Instagram'dan gelen adayları tek tıkla kesin kayda dönüştürün veya deneme kayıtlarını silin</p>
+                <div class="flex flex-wrap justify-between items-center gap-3">
+                    <div>
+                        <h2 class="text-2xl font-extrabold">🎯 Adaylar (Ön Kayıt & Deneme Dersi Talepleri)</h2>
+                        <p class="text-xs text-slate-500">Web sitesinden, telefonla veya Instagram'dan gelen adayları ekleyin, düzenleyin, kesin kayda dönüştürün veya silin</p>
+                    </div>
+                </div>
+
+                <!-- Yeni Aday / Deneme Dersi Kaydı Ekleme Formu -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <h3 class="text-sm font-extrabold text-indigo-900 mb-3">➕ Manuel Yeni Aday / Deneme Dersi Talebi Ekle</h3>
+                    <form action="{{ route('admin.leads.store') }}" method="POST" class="grid sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs items-end">
+                        @csrf
+                        <div>
+                            <label class="font-bold block mb-1">Aday Sporcu Adı *</label>
+                            <input type="text" name="student_name" required placeholder="Ör: Zeynep Kaya" class="w-full border rounded-xl px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Yaşı *</label>
+                            <input type="number" name="student_age" required value="6" min="2" max="50" class="w-full border rounded-xl px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Veli Adı Soyadı *</label>
+                            <input type="text" name="parent_name" required placeholder="Ör: Selin Kaya" class="w-full border rounded-xl px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Veli Telefon *</label>
+                            <input type="text" name="parent_phone" required placeholder="0532XXXXXXX" class="w-full border rounded-xl px-3 py-2 font-mono">
+                        </div>
+                        <div>
+                            <label class="font-bold block mb-1">Branş & Kaynak</label>
+                            <div class="flex gap-1.5">
+                                <select name="branch_id" class="w-1/2 border rounded-xl px-2 py-2 bg-white">
+                                    @foreach($branches as $b)
+                                        <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                    @endforeach
+                                </select>
+                                <select name="source" class="w-1/2 border rounded-xl px-2 py-2 bg-white">
+                                    @foreach($leadSources as $src)
+                                        <option value="{{ $src }}">{{ $src }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow">➕ Aday Ekle</button>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -244,17 +288,62 @@
                                             {{ $lead->status }}
                                         </span>
                                     </td>
-                                    <td class="p-3.5 text-right flex flex-wrap justify-end gap-2">
-                                        <a href="https://wa.me/90{{ substr(preg_replace('/\D+/', '', $lead->parent_phone), -10) }}?text={{ urlencode('Merhaba ' . $lead->parent_name . ', Enerjik Cimnastik deneme dersi randevunuz için yazıyoruz.') }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold">💬 WhatsApp</a>
-                                        @if($lead->status !== 'converted')
-                                            <form action="{{ route('admin.leads.convert', $lead->id) }}" method="POST">
+                                    <td class="p-3.5 text-right">
+                                        <div class="flex flex-wrap justify-end gap-1.5">
+                                            <a href="https://wa.me/90{{ substr(preg_replace('/\D+/', '', $lead->parent_phone), -10) }}?text={{ urlencode('Merhaba ' . $lead->parent_name . ', Enerjik Cimnastik deneme dersi randevunuz için yazıyoruz.') }}" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-bold">💬 WhatsApp</a>
+                                            <button type="button" onclick="document.getElementById('edit-lead-{{ $lead->id }}').classList.toggle('hidden')" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold">✏️ Düzenle</button>
+                                            @if($lead->status !== 'converted')
+                                                <form action="{{ route('admin.leads.convert', $lead->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">✨ Kayda Dönüştür</button>
+                                                </form>
+                                            @endif
+                                            <form action="{{ route('admin.leads.destroy', $lead->id) }}" method="POST" onsubmit="return confirm('{{ $lead->student_name }} deneme / aday kaydını silmek istediğinize emin misiniz?')">
                                                 @csrf
-                                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">✨ Tek Tıkla Kesin Kayda Dönüştür</button>
+                                                <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
                                             </form>
-                                        @endif
-                                        <form action="{{ route('admin.leads.destroy', $lead->id) }}" method="POST" onsubmit="return confirm('{{ $lead->student_name }} deneme / aday kaydını silmek istediğinize emin misiniz?')">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr id="edit-lead-{{ $lead->id }}" class="hidden bg-indigo-50/50">
+                                    <td colspan="5" class="p-4">
+                                        <form action="{{ route('admin.leads.update', $lead->id) }}" method="POST" class="grid sm:grid-cols-2 lg:grid-cols-7 gap-2 items-end text-xs">
                                             @csrf
-                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
+                                            <div>
+                                                <label class="font-bold block mb-1">Sporcu Adı</label>
+                                                <input type="text" name="student_name" value="{{ $lead->student_name }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Yaş</label>
+                                                <input type="number" name="student_age" value="{{ $lead->student_age }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Veli Adı</label>
+                                                <input type="text" name="parent_name" value="{{ $lead->parent_name }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Veli Telefon</label>
+                                                <input type="text" name="parent_phone" value="{{ $lead->parent_phone }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-mono">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Branş</label>
+                                                <select name="branch_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                    @foreach($branches as $b)
+                                                        <option value="{{ $b->id }}" {{ $lead->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Durum</label>
+                                                <select name="status" class="w-full border rounded-lg px-2 py-1.5 bg-white font-bold">
+                                                    <option value="trial_scheduled" {{ $lead->status === 'trial_scheduled' ? 'selected' : '' }}>Deneme Planlandı</option>
+                                                    <option value="new" {{ $lead->status === 'new' ? 'selected' : '' }}>Yeni Başvuru</option>
+                                                    <option value="converted" {{ $lead->status === 'converted' ? 'selected' : '' }}>Kesin Kayıt Oldu</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Güncelle</button>
+                                            </div>
                                         </form>
                                     </td>
                                 </tr>
@@ -268,9 +357,158 @@
             <!-- 3. ÖĞRENCİLER & YENİ KAYIT                 -->
             <!-- ========================================== -->
             @if($activeTab === 'ogrenciler')
+                @if($currentRole === 'super_admin')
+                    <!-- Süper Yönetici İçin: Kayıt Formundaki Seçenekleri (Grup, Eğitim Programı/Paket, Branş, İndirim) Anında Ekleme / Güncelleme / Silme -->
+                    <details class="bg-indigo-950 text-white rounded-2xl border border-indigo-800 p-4 shadow-sm">
+                        <summary class="cursor-pointer font-extrabold text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
+                            <span>🎛️ Kayıt Formu Dinamik Seçenek Yönetimi (Yeni Grup, Eğitim Programı/Paket, Branş veya İndirim Ekle · Güncelle · Sil)</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-extrabold">⚡ Tıkla Aç / Kapat</span>
+                        </summary>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
+                            <!-- 1. Hızlı Grup & Ders Programı Ekle/Sil -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1.5">👥 Grup Seçenekleri ({{ $groups->count() }})</div>
+                                <form action="{{ route('admin.groups.store') }}" method="POST" class="space-y-1.5">
+                                    @csrf
+                                    <input type="hidden" name="return_tab" value="ogrenciler">
+                                    <input type="text" name="name" required placeholder="Yeni Grup Adı (Ör: D Grubu)" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <select name="branch_id" class="border rounded-lg px-2 py-1.5 bg-white">
+                                            @foreach($branches as $b)
+                                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <select name="coach_id" class="border rounded-lg px-2 py-1.5 bg-white">
+                                            @foreach($staff->where('role', 'coach') as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <input type="text" name="age_group" value="5-8 Yaş" placeholder="Yaş" class="border rounded-lg px-2 py-1">
+                                        <input type="text" name="level" value="Başlangıç" placeholder="Seviye" class="border rounded-lg px-2 py-1">
+                                        <input type="number" name="capacity" value="12" placeholder="Kişi" class="border rounded-lg px-2 py-1">
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <select name="day_of_week" class="border rounded-lg px-1.5 py-1 bg-white">
+                                            @foreach(['Cumartesi','Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma'] as $d)
+                                                <option value="{{ $d }}">{{ $d }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="time" name="start_time" value="10:00" class="border rounded-lg px-1.5 py-1">
+                                        <input type="time" name="end_time" value="11:00" class="border rounded-lg px-1.5 py-1">
+                                    </div>
+                                    <input type="hidden" name="area" value="{{ $hallAreas[0] ?? 'Ana Minder' }}">
+                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">➕ Yeni Grup Ekle</button>
+                                </form>
+                                <div class="max-h-28 overflow-y-auto space-y-1 pt-1 border-t">
+                                    @foreach($groups as $g)
+                                        <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
+                                            <span class="truncate font-semibold">{{ $g->name }}</span>
+                                            <form action="{{ route('admin.groups.destroy', $g->id) }}" method="POST" onsubmit="return confirm('{{ $g->name }} grubunu silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- 2. Hızlı Eğitim Programı / Paket Ekle & Güncelle -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1.5">📦 Eğitim Programı / Paketler ({{ $packages->count() }})</div>
+                                <form action="{{ route('admin.packages.store') }}" method="POST" class="space-y-1.5">
+                                    @csrf
+                                    <input type="hidden" name="return_tab" value="ogrenciler">
+                                    <input type="text" name="name" required placeholder="Yeni Paket Adı (Ör: Haftada 3 Gün)" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <input type="number" name="price" required placeholder="Fiyat (₺)" value="4200" class="border rounded-lg px-2 py-1.5 font-bold">
+                                        <input type="number" name="lessons_count" required placeholder="Ders Sayısı" value="12" class="border rounded-lg px-2 py-1.5">
+                                    </div>
+                                    <input type="hidden" name="duration_months" value="1">
+                                    <input type="hidden" name="registration_fee" value="0">
+                                    <input type="text" name="description" placeholder="Kısa açıklama..." class="w-full border rounded-lg px-2.5 py-1">
+                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Yeni Paket Ekle</button>
+                                </form>
+                                <div class="max-h-28 overflow-y-auto space-y-1 pt-1 border-t">
+                                    @foreach($packages as $p)
+                                        <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
+                                            <span class="truncate font-semibold">{{ $p->name }} ({{ number_format($p->price, 0, ',', '.') }} ₺)</span>
+                                            <form action="{{ route('admin.packages.destroy', $p->id) }}" method="POST" onsubmit="return confirm('{{ $p->name }} paketini silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- 3. Hızlı Branş Ekle & Sil -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1.5">🤸 Branş Seçenekleri ({{ $branches->count() }})</div>
+                                <form action="{{ route('admin.branches.store') }}" method="POST" class="space-y-1.5">
+                                    @csrf
+                                    <input type="hidden" name="return_tab" value="ogrenciler">
+                                    <div class="grid grid-cols-4 gap-1">
+                                        <input type="text" name="icon" value="🤸" class="border rounded-lg px-2 py-1.5 text-center">
+                                        <input type="text" name="name" required placeholder="Yeni Branş Adı" class="col-span-3 border rounded-lg px-2.5 py-1.5">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <input type="text" name="age_range" value="4-12 Yaş" placeholder="Yaş Aralığı" class="border rounded-lg px-2 py-1">
+                                        <input type="text" name="level" value="Tüm Seviyeler" placeholder="Seviye" class="border rounded-lg px-2 py-1">
+                                    </div>
+                                    <input type="hidden" name="description" value="Türkiye Cimnastik Federasyonu müfredatına uygun branş eğitimi.">
+                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">➕ Yeni Branş Ekle</button>
+                                </form>
+                                <div class="max-h-28 overflow-y-auto space-y-1 pt-1 border-t">
+                                    @foreach($branches as $b)
+                                        <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
+                                            <span class="truncate font-semibold">{{ $b->icon }} {{ $b->name }}</span>
+                                            <form action="{{ route('admin.branches.destroy', $b->id) }}" method="POST" onsubmit="return confirm('{{ $b->name }} branşını silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- 4. Hızlı İndirim Kuralı Ekle & Sil -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1.5">🏷️ İndirim Seçenekleri ({{ $discountRules->count() }})</div>
+                                <form action="{{ route('admin.discounts.store') }}" method="POST" class="space-y-1.5">
+                                    @csrf
+                                    <input type="hidden" name="return_tab" value="ogrenciler">
+                                    <input type="text" name="name" required placeholder="İndirim Adı (Ör: Memur İndirimi)" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <input type="number" step="0.1" name="percentage" required value="10" placeholder="Oran (%)" class="border rounded-lg px-2 py-1.5 font-bold">
+                                        <select name="type" class="border rounded-lg px-2 py-1.5 bg-white">
+                                            <option value="sibling">Kardeş</option>
+                                            <option value="term">Dönem</option>
+                                            <option value="custom">Özel</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold">➕ Yeni İndirim Ekle</button>
+                                </form>
+                                <div class="max-h-28 overflow-y-auto space-y-1 pt-1 border-t">
+                                    @foreach($discountRules as $d)
+                                        <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
+                                            <span class="truncate font-semibold">{{ $d->name }} (%{{ $d->percentage }})</span>
+                                            <form action="{{ route('admin.discounts.destroy', $d->id) }}" method="POST" onsubmit="return confirm('{{ $d->name }} indirimini silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                @endif
+
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Yeni Öğrenci Kaydı Formu -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
                         <span class="text-[11px] font-bold uppercase text-indigo-600">Öğrenci Kayıt Merkezi</span>
                         <h3 class="text-lg font-extrabold mb-3">
                             {{ $currentRole === 'super_admin' ? '➕ Yeni Öğrenci Kaydı Aç & İlk Tahsilatı Gir' : '➕ Yeni Öğrenci Kaydı Aç' }}
@@ -296,7 +534,12 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="font-bold block mb-1">Branş *</label>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="font-bold">Branş *</label>
+                                        @if($currentRole === 'super_admin')
+                                            <a href="{{ route('admin.index', ['tab' => 'gruplar', 'role_view' => $currentRole]) }}" class="text-[10px] text-indigo-600 font-bold underline">+ Branş Yönet</a>
+                                        @endif
+                                    </div>
                                     <select name="branch_id" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         @foreach($branches as $b)
                                             <option value="{{ $b->id }}">{{ $b->name }}</option>
@@ -306,7 +549,12 @@
                             </div>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
-                                    <label class="font-bold block mb-1">Grup Seçimi *</label>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="font-bold">Grup Seçimi *</label>
+                                        @if($currentRole === 'super_admin')
+                                            <a href="{{ route('admin.index', ['tab' => 'gruplar', 'role_view' => $currentRole]) }}" class="text-[10px] text-indigo-600 font-bold underline">+ Grup Ekle/Düzenle</a>
+                                        @endif
+                                    </div>
                                     <select name="group_id" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         @foreach($groups as $g)
                                             <option value="{{ $g->id }}">{{ $g->name }} ({{ $g->active_students_count }}/{{ $g->capacity }})</option>
@@ -314,7 +562,12 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="font-bold block mb-1">Eğitim Programı / Paket *</label>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="font-bold">Eğitim Programı / Paket *</label>
+                                        @if($currentRole === 'super_admin')
+                                            <a href="{{ route('admin.index', ['tab' => 'paketler', 'role_view' => $currentRole]) }}" class="text-[10px] text-indigo-600 font-bold underline">+ Paket Ekle/Düzenle</a>
+                                        @endif
+                                    </div>
                                     <select name="package_id" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         @foreach($packages as $p)
                                             <option value="{{ $p->id }}">
@@ -326,11 +579,16 @@
                             </div>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
-                                    <label class="font-bold block mb-1">İndirim / Kardeş Durumu</label>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="font-bold">İndirim / Kardeş Durumu</label>
+                                        @if($currentRole === 'super_admin')
+                                            <a href="{{ route('admin.index', ['tab' => 'paketler', 'role_view' => $currentRole]) }}" class="text-[10px] text-indigo-600 font-bold underline">+ İndirim Yönet</a>
+                                        @endif
+                                    </div>
                                     <select name="discount_rule_id" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         <option value="">Standart Kayıt</option>
                                         @foreach($discountRules as $d)
-                                            <option value="{{ $d->id }}">{{ $d->name }}</option>
+                                            <option value="{{ $d->id }}">{{ $d->name }} (%{{ $d->percentage }})</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -387,7 +645,7 @@
                             <thead class="bg-slate-50 border-b text-slate-600 uppercase">
                                 <tr>
                                     <th class="p-2.5">Sporcu</th>
-                                    <th class="p-2.5">Branş / Grup</th>
+                                    <th class="p-2.5">Branş / Grup / Paket</th>
                                     <th class="p-2.5">Veli / İletişim</th>
                                     <th class="p-2.5">KVKK & Rapor</th>
                                     <th class="p-2.5">Durum & İşlem</th>
@@ -413,7 +671,10 @@
                                             <span class="block text-[11px] text-slate-500">Rapor: {{ $st->medical_report_expires_at?->format('d.m.Y') ?? '-' }}</span>
                                         </td>
                                         <td class="p-2.5">
-                                            <div class="flex items-center gap-1.5">
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                <button type="button" onclick="document.getElementById('edit-student-{{ $st->id }}').classList.toggle('hidden')" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold">
+                                                    ✏️ Düzenle
+                                                </button>
                                                 <form action="{{ route('admin.students.status', $st->id) }}" method="POST">
                                                     @csrf
                                                     <select name="status" onchange="this.form.submit()" class="text-[11px] font-bold rounded-lg border px-2 py-1 {{ $st->status === 'active' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }}">
@@ -433,6 +694,89 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    <tr id="edit-student-{{ $st->id }}" class="hidden bg-indigo-50/60">
+                                        <td colspan="5" class="p-4">
+                                            <form action="{{ route('admin.students.update', $st->id) }}" method="POST" class="space-y-2.5 text-xs">
+                                                @csrf
+                                                <div class="font-extrabold text-indigo-900">✏️ {{ $st->full_name }} — Öğrenci, Grup ve Paket Bilgilerini Güncelle</div>
+                                                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Ad Soyad *</label>
+                                                        <input type="text" name="full_name" value="{{ $st->full_name }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Doğum Tarihi</label>
+                                                        <input type="date" name="birth_date" value="{{ $st->birth_date?->format('Y-m-d') }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Branş *</label>
+                                                        <select name="branch_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                            @foreach($branches as $b)
+                                                                <option value="{{ $b->id }}" {{ $st->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Grup Seçimi *</label>
+                                                        <select name="group_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                            @foreach($groups as $g)
+                                                                <option value="{{ $g->id }}" {{ $st->group_id === $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Eğitim Programı / Paket *</label>
+                                                        <select name="package_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                            @foreach($packages as $p)
+                                                                <option value="{{ $p->id }}" {{ $st->package_id === $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">İndirim Kuralı</label>
+                                                        <select name="discount_rule_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                            <option value="">Standart Kayıt</option>
+                                                            @foreach($discountRules as $d)
+                                                                <option value="{{ $d->id }}" {{ $st->discount_rule_id === $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Veli Adı *</label>
+                                                        <input type="text" name="parent_name" value="{{ $st->parent_name }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Veli Telefon *</label>
+                                                        <input type="text" name="parent_phone" value="{{ $st->parent_phone }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-mono">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Beden / Lisans</label>
+                                                        <input type="text" name="uniform_size" value="{{ $st->uniform_size }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Telafi Hakkı</label>
+                                                        <input type="number" name="makeup_credits" value="{{ $st->makeup_credits }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Rapor Bitiş Tarihi</label>
+                                                        <input type="date" name="medical_report_expires_at" value="{{ $st->medical_report_expires_at?->format('Y-m-d') }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Sağlık Notu</label>
+                                                        <input type="text" name="health_notes" value="{{ $st->health_notes }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-wrap justify-between items-center pt-1">
+                                                    <div class="flex gap-3">
+                                                        <label class="flex items-center gap-1"><input type="checkbox" name="kvkk_consent" value="1" {{ $st->kvkk_consent ? 'checked' : '' }}> KVKK</label>
+                                                        <label class="flex items-center gap-1"><input type="checkbox" name="health_data_consent" value="1" {{ $st->health_data_consent ? 'checked' : '' }}> Sağlık Rızası</label>
+                                                        <label class="flex items-center gap-1"><input type="checkbox" name="photo_consent" value="1" {{ $st->photo_consent ? 'checked' : '' }}> Foto İzin</label>
+                                                    </div>
+                                                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">💾 Öğrenciyi Güncelle</button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -441,111 +785,370 @@
             @endif
 
             <!-- ========================================== -->
-            <!-- 4 & 5. BRANŞ, GRUP VE DERS PROGRAMI        -->
+            <!-- 4 & 5. BRANŞ, GRUP VE EĞİTİM PROGRAMI      -->
             <!-- ========================================== -->
             @if($activeTab === 'gruplar')
+                @if($currentRole === 'super_admin')
+                    <!-- Dinamik Seçenekler (Salon Alanları, Yaş Grupları, Seviyeler & Branşlar) Yönetimi -->
+                    <details class="bg-indigo-950 text-white rounded-2xl border border-indigo-800 p-4 shadow-sm">
+                        <summary class="cursor-pointer font-extrabold text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
+                            <span>🎛️ Branşlar, Salon Alanları, Yaş Grupları ve Seviye Seçeneklerini Yönet (Ekle · Düzenle · Sil)</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-extrabold">⚡ Seçenekleri Özelleştir</span>
+                        </summary>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
+                            <!-- Salon Alanları -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1">📍 Salon Alanları</div>
+                                <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5">
+                                    @csrf
+                                    <input type="hidden" name="option_key" value="custom_hall_areas">
+                                    <input type="hidden" name="operation" value="add">
+                                    <input type="hidden" name="return_tab" value="gruplar">
+                                    <input type="text" name="new_option" required placeholder="Ör: Cimnastik Salon 2" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shrink-0">➕ Ekle</button>
+                                </form>
+                                <div class="space-y-1 max-h-32 overflow-y-auto">
+                                    @foreach($hallAreas as $areaItem)
+                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
+                                            <span class="font-semibold">{{ $areaItem }}</span>
+                                            <form action="{{ route('admin.options.update') }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="option_key" value="custom_hall_areas">
+                                                <input type="hidden" name="operation" value="remove">
+                                                <input type="hidden" name="remove_option" value="{{ $areaItem }}">
+                                                <input type="hidden" name="return_tab" value="gruplar">
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Yaş Grupları -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1">👶 Yaş Grubu Seçenekleri</div>
+                                <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5">
+                                    @csrf
+                                    <input type="hidden" name="option_key" value="custom_age_groups">
+                                    <input type="hidden" name="operation" value="add">
+                                    <input type="hidden" name="return_tab" value="gruplar">
+                                    <input type="text" name="new_option" required placeholder="Ör: 12-16 Yaş Gençler" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shrink-0">➕ Ekle</button>
+                                </form>
+                                <div class="space-y-1 max-h-32 overflow-y-auto">
+                                    @foreach($ageGroups as $ageItem)
+                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
+                                            <span class="font-semibold">{{ $ageItem }}</span>
+                                            <form action="{{ route('admin.options.update') }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="option_key" value="custom_age_groups">
+                                                <input type="hidden" name="operation" value="remove">
+                                                <input type="hidden" name="remove_option" value="{{ $ageItem }}">
+                                                <input type="hidden" name="return_tab" value="gruplar">
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Seviye Seçenekleri -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1">🏅 Seviye Seçenekleri</div>
+                                <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5">
+                                    @csrf
+                                    <input type="hidden" name="option_key" value="custom_group_levels">
+                                    <input type="hidden" name="operation" value="add">
+                                    <input type="hidden" name="return_tab" value="gruplar">
+                                    <input type="text" name="new_option" required placeholder="Ör: Milli Takım Aday" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shrink-0">➕ Ekle</button>
+                                </form>
+                                <div class="space-y-1 max-h-32 overflow-y-auto">
+                                    @foreach($groupLevels as $lvlItem)
+                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
+                                            <span class="font-semibold">{{ $lvlItem }}</span>
+                                            <form action="{{ route('admin.options.update') }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="option_key" value="custom_group_levels">
+                                                <input type="hidden" name="operation" value="remove">
+                                                <input type="hidden" name="remove_option" value="{{ $lvlItem }}">
+                                                <input type="hidden" name="return_tab" value="gruplar">
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Branş Ekle & Sil -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1">🤸 Branşlar ({{ $branches->count() }})</div>
+                                <form action="{{ route('admin.branches.store') }}" method="POST" class="space-y-1.5">
+                                    @csrf
+                                    <input type="hidden" name="return_tab" value="gruplar">
+                                    <div class="grid grid-cols-4 gap-1">
+                                        <input type="text" name="icon" value="🤸" class="border rounded-lg px-2 py-1 text-center">
+                                        <input type="text" name="name" required placeholder="Yeni Branş Adı" class="col-span-3 border rounded-lg px-2 py-1">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-1">
+                                        <input type="text" name="age_range" value="4-12 Yaş" class="border rounded-lg px-2 py-1">
+                                        <input type="text" name="level" value="Temel & İleri" class="border rounded-lg px-2 py-1">
+                                    </div>
+                                    <input type="hidden" name="description" value="Federasyon müfredatına uygun cimnastik branşı.">
+                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">➕ Branş Ekle</button>
+                                </form>
+                                <div class="space-y-1 max-h-24 overflow-y-auto">
+                                    @foreach($branches as $b)
+                                        <div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded border text-[11px]">
+                                            <span class="font-semibold truncate">{{ $b->icon }} {{ $b->name }}</span>
+                                            <form action="{{ route('admin.branches.destroy', $b->id) }}" method="POST" onsubmit="return confirm('{{ $b->name }} branşını silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                @endif
+
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <!-- Kabul Kriteri #2: Yeni Grup Açıp Ders Programına Ekleme -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Eğitim Planlama</span>
-                        <h3 class="text-lg font-extrabold mb-3">➕ Yeni Grup Aç & Ders Programına Ekle</h3>
-                        <form action="{{ route('admin.groups.store') }}" method="POST" class="space-y-3 text-xs">
-                            @csrf
-                            <div>
-                                <label class="font-bold block mb-1">Grup Adı *</label>
-                                <input type="text" name="name" required placeholder="Ör: Hafta Sonu Yıldızlar C Grubu" class="w-full border rounded-xl px-3 py-2">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2.5">
+                    <!-- Sol Kolon: Yeni Grup Aç & Mevcut Gruba Yeni Ders Saati Ekle -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <span class="text-[11px] font-bold uppercase text-indigo-600">Eğitim Planlama</span>
+                            <h3 class="text-lg font-extrabold mb-3">➕ Yeni Grup Aç & Eğitim Programına Ekle</h3>
+                            <form action="{{ route('admin.groups.store') }}" method="POST" class="space-y-3 text-xs">
+                                @csrf
                                 <div>
-                                    <label class="font-bold block mb-1">Branş *</label>
-                                    <select name="branch_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        @foreach($branches as $b)
-                                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                    <label class="font-bold block mb-1">Grup Adı *</label>
+                                    <input type="text" name="name" required placeholder="Ör: Hafta Sonu Yıldızlar C Grubu" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="font-bold block mb-1">Branş *</label>
+                                        <select name="branch_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            @foreach($branches as $b)
+                                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Antrenör *</label>
+                                        <select name="coach_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            @foreach($staff->where('role', 'coach') as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Yaş Grubu</label>
+                                        <select name="age_group" class="w-full border rounded-xl px-2 py-2 bg-white">
+                                            @foreach($ageGroups as $ag)
+                                                <option value="{{ $ag }}">{{ $ag }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Seviye</label>
+                                        <select name="level" class="w-full border rounded-xl px-2 py-2 bg-white">
+                                            @foreach($groupLevels as $lvl)
+                                                <option value="{{ $lvl }}">{{ $lvl }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Kontenjan</label>
+                                        <input type="number" name="capacity" value="12" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Salon Alanı (Çakışma Kontrolü Yapılır)</label>
+                                    <select name="area" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($hallAreas as $ha)
+                                            <option value="{{ $ha }}">{{ $ha }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Ders Günü</label>
+                                        <select name="day_of_week" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            @foreach(['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] as $d)
+                                                <option value="{{ $d }}">{{ $d }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Başlangıç</label>
+                                        <input type="time" name="start_time" value="11:30" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Bitiş</label>
+                                        <input type="time" name="end_time" value="12:30" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow">
+                                    📅 Grubu Aç ve Haftalık Eğitim Programına Ekle
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Mevcut Gruba Yeni Eğitim Programı (Ders Günü & Saati) Ekleme -->
+                        <div class="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm">
+                            <span class="text-[11px] font-bold uppercase text-emerald-700">Haftalık Eğitim Programı Ekleme</span>
+                            <h3 class="text-base font-extrabold mb-2">🗓️ Mevcut Gruba Yeni Ders Günü / Saati Ekle</h3>
+                            <p class="text-[11px] text-slate-500 mb-3">Bir grubun haftada birden fazla dersi varsa veya programa yeni bir gün/saat eklemek istiyorsanız buradan ekleyin.</p>
+                            <form action="" method="POST" id="quick-add-schedule-form" onsubmit="this.action='/panel/gruplar/' + this.group_id.value + '/program-ekle'" class="space-y-2.5 text-xs">
+                                @csrf
                                 <div>
-                                    <label class="font-bold block mb-1">Antrenör *</label>
-                                    <select name="coach_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        @foreach($staff->where('role', 'coach') as $c)
-                                            <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                    <label class="font-bold block mb-1">Grup Seçin *</label>
+                                    <select name="group_id" required class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                                        @foreach($groups as $g)
+                                            <option value="{{ $g->id }}">{{ $g->name }} ({{ $g->branch?->name }})</option>
                                         @endforeach
                                     </select>
                                 </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div>
-                                    <label class="font-bold block mb-1">Yaş Grubu</label>
-                                    <input type="text" name="age_group" value="5-8 Yaş" class="w-full border rounded-xl px-3 py-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Ders Günü *</label>
+                                        <select name="day_of_week" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            @foreach(['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] as $d)
+                                                <option value="{{ $d }}">{{ $d }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Salon Alanı</label>
+                                        <select name="area" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            @foreach($hallAreas as $ha)
+                                                <option value="{{ $ha }}">{{ $ha }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="font-bold block mb-1">Seviye</label>
-                                    <input type="text" name="level" value="Başlangıç" class="w-full border rounded-xl px-3 py-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Başlangıç Saati *</label>
+                                        <input type="time" name="start_time" value="14:00" required class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Bitiş Saati *</label>
+                                        <input type="time" name="end_time" value="15:00" required class="w-full border rounded-xl px-3 py-2">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="font-bold block mb-1">Kontenjan</label>
-                                    <input type="number" name="capacity" value="12" class="w-full border rounded-xl px-3 py-2">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="font-bold block mb-1">Salon Alanı (Çakışma Kontrolü Yapılır)</label>
-                                <select name="area" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                    <option value="Ana Minder">Ana Minder</option>
-                                    <option value="Trampolin Alanı">Trampolin Alanı</option>
-                                    <option value="Ana Minder & Bar Alanı">Ana Minder & Bar Alanı</option>
-                                    <option value="Bale & Ritmik Salonu">Bale & Ritmik Salonu</option>
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div>
-                                    <label class="font-bold block mb-1">Ders Günü</label>
-                                    <select name="day_of_week" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        @foreach(['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] as $d)
-                                            <option value="{{ $d }}">{{ $d }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="font-bold block mb-1">Başlangıç</label>
-                                    <input type="time" name="start_time" value="11:30" class="w-full border rounded-xl px-3 py-2">
-                                </div>
-                                <div>
-                                    <label class="font-bold block mb-1">Bitiş</label>
-                                    <input type="time" name="end_time" value="12:30" class="w-full border rounded-xl px-3 py-2">
-                                </div>
-                            </div>
-                            <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                                📅 Grubu Aç ve Haftalık Programa Ekle
-                            </button>
-                        </form>
+                                <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow">
+                                    ➕ Eğitim Programına Yeni Ders Saati Ekle
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
+                    <!-- Sağ Kolon: Mevcut Gruplar & Haftalık Eğitim Programı (Düzenle / Ekle / Sil) -->
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="text-lg font-extrabold mb-3">🗓️ Mevcut Gruplar, Eğitim Planı ve Haftalık Ders Programı</h3>
-                        <div class="space-y-3">
+                        <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold">🗓️ Mevcut Gruplar ve Haftalık Eğitim Programı (Düzenle & Sil)</h3>
+                                <p class="text-xs text-slate-500">Her grubun adını, kontenjanını, antrenörünü ve ders gün/saatlerini doğrudan güncelleyebilir veya silebilirsiniz.</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
                             @foreach($groups as $g)
-                                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
-                                    <div>
-                                        <span class="text-[11px] font-bold text-indigo-600">{{ $g->branch?->name }} · {{ $g->area }}</span>
-                                        <h4 class="font-extrabold text-sm">{{ $g->name }} ({{ $g->active_students_count }}/{{ $g->capacity }} Öğrenci)</h4>
-                                        <p class="text-xs text-slate-500">Antrenör: {{ $g->coach?->name ?? '-' }} · {{ $g->age_group }} · {{ $g->level }}</p>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-1.5">
-                                        @foreach($g->schedules as $sch)
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border text-xs font-bold">
-                                                <span>{{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }}-{{ substr($sch->end_time, 0, 5) }}</span>
-                                                <form action="{{ route('admin.schedules.destroy', $sch->id) }}" method="POST" class="inline" onsubmit="return confirm('{{ $sch->day_of_week }} ders saati kaydını programdan silmek istediğinize emin misiniz?')">
-                                                    @csrf
-                                                    <button type="submit" title="Ders Saatini Sil" class="text-rose-600 hover:text-rose-800 font-extrabold px-1">✕</button>
-                                                </form>
-                                            </span>
-                                        @endforeach
-                                        <form action="{{ route('admin.groups.destroy', $g->id) }}" method="POST" onsubmit="return confirm('{{ $g->name }} grubunu ve bağlı haftalık ders programını silmek istediğinize emin misiniz?')">
-                                            @csrf
-                                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">
-                                                🗑️ Grubu Sil
+                                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+                                    <div class="flex flex-wrap justify-between items-start gap-3">
+                                        <div>
+                                            <span class="text-[11px] font-bold text-indigo-600">{{ $g->branch?->name }} · {{ $g->area }}</span>
+                                            <h4 class="font-extrabold text-sm text-slate-900">{{ $g->name }} ({{ $g->active_students_count }}/{{ $g->capacity }} Öğrenci)</h4>
+                                            <p class="text-xs text-slate-500">Antrenör: {{ $g->coach?->name ?? '-' }} · {{ $g->age_group }} · {{ $g->level }}</p>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <button type="button" onclick="document.getElementById('edit-group-{{ $g->id }}').classList.toggle('hidden')" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold">
+                                                ✏️ Grubu Düzenle
                                             </button>
-                                        </form>
+                                            <form action="{{ route('admin.groups.destroy', $g->id) }}" method="POST" onsubmit="return confirm('{{ $g->name }} grubunu ve bağlı haftalık ders programını silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">
+                                                    🗑️ Grubu Sil
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grup Bilgilerini Güncelleme Formu (Gizli/Açılır) -->
+                                    <form id="edit-group-{{ $g->id }}" action="{{ route('admin.groups.update', $g->id) }}" method="POST" class="hidden p-3.5 rounded-xl bg-white border border-indigo-200 space-y-2.5 text-xs">
+                                        @csrf
+                                        <div class="font-extrabold text-indigo-900">✏️ {{ $g->name }} Bilgilerini Güncelle</div>
+                                        <div class="grid sm:grid-cols-3 gap-2">
+                                            <div>
+                                                <label class="font-bold block mb-0.5">Grup Adı *</label>
+                                                <input type="text" name="name" value="{{ $g->name }}" required class="w-full border rounded-lg px-2.5 py-1.5">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-0.5">Branş *</label>
+                                                <select name="branch_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                    @foreach($branches as $b)
+                                                        <option value="{{ $b->id }}" {{ $g->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-0.5">Antrenör *</label>
+                                                <select name="coach_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                    @foreach($staff->where('role', 'coach') as $c)
+                                                        <option value="{{ $c->id }}" {{ $g->coach_id === $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-0.5">Yaş Grubu</label>
+                                                <input type="text" name="age_group" value="{{ $g->age_group }}" class="w-full border rounded-lg px-2.5 py-1.5">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-0.5">Seviye</label>
+                                                <input type="text" name="level" value="{{ $g->level }}" class="w-full border rounded-lg px-2.5 py-1.5">
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-0.5">Kontenjan & Alan</label>
+                                                <div class="flex gap-1">
+                                                    <input type="number" name="capacity" value="{{ $g->capacity }}" class="w-16 border rounded-lg px-2 py-1.5">
+                                                    <input type="text" name="area" value="{{ $g->area }}" class="w-full border rounded-lg px-2 py-1.5">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end">
+                                            <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Grup Bilgilerini Kaydet</button>
+                                        </div>
+                                    </form>
+
+                                    <!-- Grubun Haftalık Eğitim Programı (Ders Günleri ve Saatleri - Güncelle & Sil) -->
+                                    <div class="space-y-2 pt-2 border-t border-slate-200/80">
+                                        <div class="text-[11px] font-bold text-slate-600">📅 Grubun Eğitim Programı Saatleri (Güncelle veya Sil):</div>
+                                        @forelse($g->schedules as $sch)
+                                            <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200 text-xs">
+                                                <form action="{{ route('admin.schedules.update', $sch->id) }}" method="POST" class="flex flex-wrap items-center gap-1.5 flex-1">
+                                                    @csrf
+                                                    <select name="day_of_week" class="border rounded-lg px-2 py-1 bg-slate-50 font-bold">
+                                                        @foreach(['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] as $d)
+                                                            <option value="{{ $d }}" {{ $sch->day_of_week === $d ? 'selected' : '' }}>{{ $d }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input type="time" name="start_time" value="{{ substr($sch->start_time, 0, 5) }}" class="border rounded-lg px-2 py-1 font-mono">
+                                                    <span>-</span>
+                                                    <input type="time" name="end_time" value="{{ substr($sch->end_time, 0, 5) }}" class="border rounded-lg px-2 py-1 font-mono">
+                                                    <input type="text" name="area" value="{{ $sch->area ?? $g->area }}" placeholder="Salon Alanı" class="border rounded-lg px-2 py-1 w-32">
+                                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px]">💾 Saat Güncelle</button>
+                                                </form>
+                                                <form action="{{ route('admin.schedules.destroy', $sch->id) }}" method="POST" onsubmit="return confirm('{{ $sch->day_of_week }} ders saati kaydını programdan silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" title="Ders Saatini Sil" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold text-[11px]">🗑️ Sil</button>
+                                                </form>
+                                            </div>
+                                        @empty
+                                            <p class="text-[11px] text-slate-400 italic">Bu gruba henüz haftalık ders saati eklenmemiş.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             @endforeach
@@ -642,58 +1245,172 @@
             @endif
 
             <!-- ========================================== -->
-            <!-- 7. PAKETLER VE TOPLU FİYAT GÜNCELLEME      -->
+            <!-- 7. PAKETLER, EĞİTİM PROGRAMI PAKETİ & İNDİRİMLER -->
             <!-- ========================================== -->
             @if($activeTab === 'paketler' && $currentRole === 'super_admin')
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <!-- Kabul Kriteri #3: Paket Fiyatlarını Toplu Güncelleme -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Fiyat Yönetimi</span>
-                        <h3 class="text-lg font-extrabold mb-2">🏷️ Paket Fiyatlarını Toplu Güncelle</h3>
-                        <p class="text-xs text-slate-500 mb-4">Dönem başında tüm paket fiyatlarını yüzdesel (%) veya sabit TL olarak tek tıkla güncelleyin.</p>
-                        <form action="{{ route('admin.packages.bulk_price') }}" method="POST" class="space-y-3 text-xs">
-                            @csrf
-                            <div>
-                                <label class="font-bold block mb-1">Yüzdesel Artış / İndirim Oranı (%)</label>
-                                <input type="number" step="0.1" name="percentage" value="15" class="w-full border rounded-xl px-3 py-2 font-bold">
-                            </div>
-                            <div>
-                                <label class="font-bold block mb-1">Veya Sabit Ek Tutar (₺)</label>
-                                <input type="number" name="fixed_amount" value="0" class="w-full border rounded-xl px-3 py-2">
-                            </div>
-                            <button type="submit" class="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold">
-                                🚀 Tüm Paket Fiyatlarını Toplu Güncelle
-                            </button>
-                        </form>
+                    <!-- Sol Kolon: Yeni Eğitim Paketi Ekle, Yeni İndirim Ekle & Toplu Fiyat Güncelle -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <!-- 1. Yeni Eğitim Programı / Paket Ekleme Formu -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <span class="text-[11px] font-bold uppercase text-indigo-600">Eğitim Programı & Paket Yönetimi</span>
+                            <h3 class="text-lg font-extrabold mb-3">➕ Yeni Eğitim Paketi Ekle</h3>
+                            <form action="{{ route('admin.packages.store') }}" method="POST" class="space-y-3 text-xs">
+                                @csrf
+                                <input type="hidden" name="return_tab" value="paketler">
+                                <div>
+                                    <label class="font-bold block mb-1">Paket / Eğitim Programı Adı *</label>
+                                    <input type="text" name="name" required placeholder="Ör: Haftada 3 Gün Performans Paketi (12 Ders)" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Paket Ücreti (₺) *</label>
+                                        <input type="number" name="price" required value="4200" class="w-full border rounded-xl px-3 py-2 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Ders Sayısı *</label>
+                                        <input type="number" name="lessons_count" required value="12" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Süre (Ay) *</label>
+                                        <input type="number" name="duration_months" required value="1" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Kayıt / Dosya Ücreti (₺)</label>
+                                        <input type="number" name="registration_fee" value="500" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Kısa Açıklama</label>
+                                        <input type="text" name="description" placeholder="Ör: Lisanslı sporcular ve yoğun antrenman" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow">
+                                    ➕ Yeni Eğitim Paketini Kaydet
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 2. Yeni Otomatik İndirim Kuralı Ekleme Formu -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <span class="text-[11px] font-bold uppercase text-emerald-700">İndirim Yönetimi</span>
+                            <h3 class="text-base font-extrabold mb-3">➕ Yeni İndirim Kuralı Ekle</h3>
+                            <form action="{{ route('admin.discounts.store') }}" method="POST" class="space-y-3 text-xs">
+                                @csrf
+                                <input type="hidden" name="return_tab" value="paketler">
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="col-span-2">
+                                        <label class="font-bold block mb-1">İndirim Adı *</label>
+                                        <input type="text" name="name" required placeholder="Ör: Erken Kayıt İndirimi" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Oran (%) *</label>
+                                        <input type="number" step="0.1" name="percentage" required value="10" class="w-full border rounded-xl px-3 py-2 font-bold">
+                                    </div>
+                                </div>
+                                <input type="hidden" name="type" value="custom">
+                                <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                    ➕ İndirim Kuralını Ekle
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 3. Paket Fiyatlarını Toplu Güncelleme -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <span class="text-[11px] font-bold uppercase text-rose-600">Toplu Zam / Güncelleme</span>
+                            <h3 class="text-base font-extrabold mb-2">🏷️ Tüm Paket Fiyatlarını Toplu Güncelle</h3>
+                            <form action="{{ route('admin.packages.bulk_price') }}" method="POST" class="space-y-3 text-xs">
+                                @csrf
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Yüzdesel Oran (%)</label>
+                                        <input type="number" step="0.1" name="percentage" value="15" class="w-full border rounded-xl px-3 py-2 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Veya Sabit Ek Tutar (₺)</label>
+                                        <input type="number" name="fixed_amount" value="0" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold">
+                                    🚀 Tüm Paket Fiyatlarını Toplu Güncelle
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
+                    <!-- Sağ Kolon: Mevcut Paketleri ve İndirimleri Tek Tek Düzenle & Sil -->
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="text-lg font-extrabold mb-3">📦 Aktif Eğitim Paketleri ve İndirim Kuralları</h3>
+                        <h3 class="text-lg font-extrabold mb-1">📦 Mevcut Eğitim Paketleri (Güncelle & Sil)</h3>
+                        <p class="text-xs text-slate-500 mb-4">Her paketin adını, fiyatını, ders sayısını, kayıt ücretini ve açıklamasını doğrudan düzenleyip kaydedebilirsiniz.</p>
                         <div class="space-y-3 mb-6">
                             @foreach($packages as $p)
-                                <div class="p-3.5 rounded-xl border flex justify-between items-center gap-3">
-                                    <div>
-                                        <div class="font-extrabold text-sm">{{ $p->name }}</div>
-                                        <div class="text-xs text-slate-500">{{ $p->lessons_count }} Ders · Kayıt Ücreti: {{ number_format($p->registration_fee, 0, ',', '.') }} ₺</div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <div class="text-xl font-extrabold text-indigo-700">{{ number_format($p->price, 0, ',', '.') }} ₺</div>
+                                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2.5 text-xs">
+                                    <form action="{{ route('admin.packages.update', $p->id) }}" method="POST" class="space-y-2.5">
+                                        @csrf
+                                        <input type="hidden" name="return_tab" value="paketler">
+                                        <div class="grid sm:grid-cols-12 gap-2 items-end">
+                                            <div class="sm:col-span-5">
+                                                <label class="font-bold text-slate-600 block mb-0.5">Paket / Program Adı</label>
+                                                <input type="text" name="name" value="{{ $p->name }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                                            </div>
+                                            <div class="sm:col-span-3">
+                                                <label class="font-bold text-slate-600 block mb-0.5">Ücret (₺)</label>
+                                                <input type="number" name="price" value="{{ $p->price }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-extrabold text-indigo-700">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="font-bold text-slate-600 block mb-0.5">Ders Sayısı</label>
+                                                <input type="number" name="lessons_count" value="{{ $p->lessons_count }}" required class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="font-bold text-slate-600 block mb-0.5">Süre (Ay)</label>
+                                                <input type="number" name="duration_months" value="{{ $p->duration_months }}" required class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                            </div>
+                                        </div>
+                                        <div class="grid sm:grid-cols-12 gap-2 items-center">
+                                            <div class="sm:col-span-3">
+                                                <label class="font-bold text-slate-600 block mb-0.5">Kayıt Ücreti (₺)</label>
+                                                <input type="number" name="registration_fee" value="{{ $p->registration_fee }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                            </div>
+                                            <div class="sm:col-span-6">
+                                                <label class="font-bold text-slate-600 block mb-0.5">Açıklama</label>
+                                                <input type="text" name="description" value="{{ $p->description }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                            </div>
+                                            <div class="sm:col-span-3 flex items-center justify-end gap-2 pt-3">
+                                                <label class="flex items-center gap-1 font-bold">
+                                                    <input type="checkbox" name="is_active" value="1" {{ $p->is_active ? 'checked' : '' }}> Aktif
+                                                </label>
+                                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">💾 Güncelle</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <div class="flex justify-end pt-1 border-t border-slate-200/70">
                                         <form action="{{ route('admin.packages.destroy', $p->id) }}" method="POST" onsubmit="return confirm('{{ $p->name }} paketini silmek istediğinize emin misiniz?')">
                                             @csrf
-                                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>
+                                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-[11px] font-bold transition">🗑️ Paketi Sil</button>
                                         </form>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
-                        <h4 class="font-extrabold text-xs uppercase text-slate-500 mb-2">Otomatik İndirim Kuralları</h4>
-                        <div class="grid sm:grid-cols-3 gap-2.5">
+
+                        <h4 class="font-extrabold text-sm text-slate-800 mb-2">🏷️ Otomatik İndirim Kuralları (Güncelle & Sil)</h4>
+                        <div class="space-y-2">
                             @foreach($discountRules as $d)
-                                <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-900 flex justify-between items-center gap-2">
-                                    <span>{{ $d->name }} (%{{ $d->percentage }})</span>
+                                <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs flex flex-wrap justify-between items-center gap-2">
+                                    <form action="{{ route('admin.discounts.update', $d->id) }}" method="POST" class="flex flex-wrap items-center gap-2 flex-1">
+                                        @csrf
+                                        <input type="hidden" name="return_tab" value="paketler">
+                                        <input type="text" name="name" value="{{ $d->name }}" required class="border rounded-lg px-2.5 py-1.5 bg-white font-bold flex-1 min-w-[160px]">
+                                        <div class="flex items-center gap-1">
+                                            <span class="font-bold">%</span>
+                                            <input type="number" step="0.1" name="percentage" value="{{ $d->percentage }}" required class="w-20 border rounded-lg px-2 py-1.5 bg-white font-extrabold text-indigo-800">
+                                        </div>
+                                        <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Güncelle</button>
+                                    </form>
                                     <form action="{{ route('admin.discounts.destroy', $d->id) }}" method="POST" onsubmit="return confirm('{{ $d->name }} indirim kuralını silmek istediğinize emin misiniz?')">
                                         @csrf
-                                        <button type="submit" class="text-rose-600 hover:text-rose-800 font-extrabold px-1">✕</button>
+                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold">🗑️ Sil</button>
                                     </form>
                                 </div>
                             @endforeach
@@ -709,7 +1426,7 @@
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold">💳 Aidat, Otomatik Borçlandırma ve Tahsilat</h2>
-                        <p class="text-xs text-slate-500">"Önce borç açılır, tahsilat ona bağlanır" mimarisi · Makbuz PDF, WhatsApp gönderimi ve kayıt silme</p>
+                        <p class="text-xs text-slate-500">"Önce borç açılır, tahsilat ona bağlanır" mimarisi · Makbuz PDF, WhatsApp gönderimi, borç ekleme/güncelleme ve silme</p>
                     </div>
                     <form action="{{ route('admin.invoices.generate') }}" method="POST" class="flex items-center gap-2">
                         @csrf
@@ -719,50 +1436,86 @@
                 </div>
 
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <!-- Hızlı Tahsilat Girişi -->
-                    <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
-                        <h3 class="text-base font-extrabold mb-3">➕ Tahsilat Gir & Makbuz Üret</h3>
-                        <form action="{{ route('admin.payments.store') }}" method="POST" class="space-y-3 text-xs">
-                            @csrf
-                            <div>
-                                <label class="font-bold block mb-1">Açık Borç / Öğrenci Seçin *</label>
-                                <select name="invoice_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                    @foreach($invoices->where('remaining_amount', '>', 0) as $inv)
-                                        <option value="{{ $inv->id }}">{{ $inv->student?->full_name }} - {{ $inv->period_label }} (Kalan: {{ number_format($inv->remaining_amount, 0, ',', '.') }} ₺)</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
+                    <!-- Sol Kolon: Tahsilat Girişi & Tekil Özel Borç Açma -->
+                    <div class="lg:col-span-4 space-y-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-base font-extrabold mb-3">➕ Tahsilat Gir & Makbuz Üret</h3>
+                            <form action="{{ route('admin.payments.store') }}" method="POST" class="space-y-3 text-xs">
+                                @csrf
                                 <div>
-                                    <label class="font-bold block mb-1">Tahsilat Tutarı (₺) *</label>
-                                    <input type="number" name="amount" value="1220" required class="w-full border rounded-xl px-3 py-2 font-bold">
-                                </div>
-                                <div>
-                                    <label class="font-bold block mb-1">Ödeme Yöntemi *</label>
-                                    <select name="payment_method" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        <option value="cash">Nakit</option>
-                                        <option value="pos">Fiziki POS (Kart)</option>
-                                        <option value="bank_transfer">Havale / EFT</option>
+                                    <label class="font-bold block mb-1">Açık Borç / Öğrenci Seçin *</label>
+                                    <select name="invoice_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($invoices->where('remaining_amount', '>', 0) as $inv)
+                                            <option value="{{ $inv->id }}">{{ $inv->student?->full_name }} - {{ $inv->period_label }} (Kalan: {{ number_format($inv->remaining_amount, 0, ',', '.') }} ₺)</option>
+                                        @endforeach
                                     </select>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="font-bold block mb-1">Kasa / Banka Hesabı *</label>
-                                <select name="cash_account_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                    @foreach($cashAccounts as $acc)
-                                        <option value="{{ $acc->id }}">{{ $acc->name }} (Bakiye: {{ number_format($acc->balance, 0, ',', '.') }} ₺)</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
-                                🧾 Tahsilatı Kaydet & WhatsApp Makbuzu Hazırla
-                            </button>
-                        </form>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Tahsilat Tutarı (₺) *</label>
+                                        <input type="number" name="amount" value="1220" required class="w-full border rounded-xl px-3 py-2 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Ödeme Yöntemi *</label>
+                                        <select name="payment_method" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                            <option value="cash">Nakit</option>
+                                            <option value="pos">Fiziki POS (Kart)</option>
+                                            <option value="bank_transfer">Havale / EFT</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Kasa / Banka Hesabı *</label>
+                                    <select name="cash_account_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($cashAccounts as $acc)
+                                            <option value="{{ $acc->id }}">{{ $acc->name }} (Bakiye: {{ number_format($acc->balance, 0, ',', '.') }} ₺)</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
+                                    🧾 Tahsilatı Kaydet & WhatsApp Makbuzu Hazırla
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Tek Öğrenciye Özel Borç / Aidat Ekleme -->
+                        <div class="bg-white rounded-2xl border border-indigo-200 p-5 shadow-sm">
+                            <span class="text-[11px] font-bold uppercase text-indigo-600">Özel Borçlandırma</span>
+                            <h3 class="text-base font-extrabold mb-3">➕ Tek Öğrenciye Özel Aidat / Borç Ekle</h3>
+                            <form action="{{ route('admin.invoices.store_single') }}" method="POST" class="space-y-2.5 text-xs">
+                                @csrf
+                                <div>
+                                    <label class="font-bold block mb-1">Öğrenci Seçin *</label>
+                                    <select name="student_id" required class="w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($students as $st)
+                                            <option value="{{ $st->id }}">{{ $st->full_name }} ({{ $st->group?->name }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Dönem / Borç Açıklaması *</label>
+                                    <input type="text" name="period_label" required placeholder="Ör: Ekim 2026 Aidatı veya Mayo Bedeli" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Net Borç Tutarı (₺) *</label>
+                                        <input type="number" name="net_amount" required value="3200" class="w-full border rounded-xl px-3 py-2 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Son Ödeme Vadesi *</label>
+                                        <input type="date" name="due_date" required value="{{ today()->addDays(5)->toDateString() }}" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                                    ➕ Öğrenciye Borç Kaydı Aç
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                     <!-- Borçlar ve Makbuzlar Listesi -->
-                    <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm overflow-x-auto">
-                        <h3 class="text-base font-extrabold mb-3">📋 Aidat Borçları ve Tahsilat Makbuzları</h3>
+                    <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm overflow-x-auto h-fit">
+                        <h3 class="text-base font-extrabold mb-3">📋 Aidat Borçları ve Tahsilat Makbuzları (Düzenle & Sil)</h3>
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 border-b text-slate-600 uppercase">
                                 <tr>
@@ -797,11 +1550,34 @@
                                                         </form>
                                                     </span>
                                                 @endforeach
+                                                <button type="button" onclick="document.getElementById('edit-inv-{{ $inv->id }}').classList.toggle('hidden')" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold">✏️ Düzenle</button>
                                                 <form action="{{ route('admin.invoices.destroy', $inv->id) }}" method="POST" class="inline" onsubmit="return confirm('Bu aidat borç kaydını ve bağlı tahsilatları silmek istediğinize emin misiniz?')">
                                                     @csrf
                                                     <button type="submit" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
                                                 </form>
                                             </div>
+                                        </td>
+                                    </tr>
+                                    <tr id="edit-inv-{{ $inv->id }}" class="hidden bg-indigo-50/50">
+                                        <td colspan="5" class="p-3">
+                                            <form action="{{ route('admin.invoices.update', $inv->id) }}" method="POST" class="grid sm:grid-cols-4 gap-2 items-end text-xs">
+                                                @csrf
+                                                <div>
+                                                    <label class="font-bold block mb-0.5">Dönem / Açıklama</label>
+                                                    <input type="text" name="period_label" value="{{ $inv->period_label }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                </div>
+                                                <div>
+                                                    <label class="font-bold block mb-0.5">Net Tutar (₺)</label>
+                                                    <input type="number" name="net_amount" value="{{ $inv->net_amount }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                                                </div>
+                                                <div>
+                                                    <label class="font-bold block mb-0.5">Son Ödeme Vadesi</label>
+                                                    <input type="date" name="due_date" value="{{ $inv->due_date->format('Y-m-d') }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                </div>
+                                                <div>
+                                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Borcu Güncelle</button>
+                                                </div>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -815,15 +1591,108 @@
             <!-- 9. GELİR-GİDER, ÜRÜN SATIŞI VE KASA        -->
             <!-- ========================================== -->
             @if($activeTab === 'kasa' && $currentRole === 'super_admin')
+                <!-- Kasa & Banka Hesapları + Gelir/Gider Kategorileri Yönetimi -->
+                <details class="bg-indigo-950 text-white rounded-2xl border border-indigo-800 p-4 shadow-sm">
+                    <summary class="cursor-pointer font-extrabold text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
+                        <span>🎛️ Kasa / Banka / POS Hesapları ve Gelir-Gider Kategorilerini Yönet (Yeni Hesap Ekle · Güncelle · Sil)</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-extrabold">⚡ Kasa & Kategori Ayarları</span>
+                    </summary>
+                    <div class="grid md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
+                        <!-- Yeni Kasa / Banka / POS Hesabı Ekle -->
+                        <div class="bg-white rounded-xl p-4 space-y-2.5">
+                            <div class="font-extrabold text-indigo-900 border-b pb-1.5">🏦 Yeni Kasa / Banka / POS Hesabı Ekle</div>
+                            <form action="{{ route('admin.cash_accounts.store') }}" method="POST" class="grid sm:grid-cols-2 gap-2">
+                                @csrf
+                                <div>
+                                    <label class="font-bold block mb-0.5">Hesap Adı *</label>
+                                    <input type="text" name="name" required placeholder="Ör: Garanti POS Hesabı" class="w-full border rounded-lg px-2.5 py-1.5">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-0.5">Tür *</label>
+                                    <select name="type" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                        <option value="cash">Nakit Kasa</option>
+                                        <option value="bank">Banka / IBAN</option>
+                                        <option value="pos">Fiziki POS</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-0.5">Başlangıç Bakiyesi (₺)</label>
+                                    <input type="number" step="0.01" name="balance" value="0" class="w-full border rounded-lg px-2.5 py-1.5 font-bold">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-0.5">IBAN / Bilgi</label>
+                                    <input type="text" name="iban" placeholder="TR..." class="w-full border rounded-lg px-2.5 py-1.5 font-mono">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <button type="submit" class="w-full py-2 rounded-lg bg-indigo-600 text-white font-bold">➕ Yeni Hesap Ekle</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Gelir-Gider Kategorileri Ekle/Sil -->
+                        <div class="bg-white rounded-xl p-4 space-y-2.5">
+                            <div class="font-extrabold text-indigo-900 border-b pb-1.5">📂 Gelir & Gider Kategorileri</div>
+                            <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5">
+                                @csrf
+                                <input type="hidden" name="option_key" value="custom_finance_categories">
+                                <input type="hidden" name="operation" value="add">
+                                <input type="hidden" name="return_tab" value="kasa">
+                                <input type="text" name="new_option" required placeholder="Yeni Kategori (Ör: Muhasebe / Vergi)" class="w-full border rounded-lg px-2.5 py-1.5">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shrink-0">➕ Ekle</button>
+                            </form>
+                            <div class="grid sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                                @foreach($financeCategories as $catItem)
+                                    <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
+                                        <span class="font-semibold truncate">{{ $catItem }}</span>
+                                        <form action="{{ route('admin.options.update') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="option_key" value="custom_finance_categories">
+                                            <input type="hidden" name="operation" value="remove">
+                                            <input type="hidden" name="remove_option" value="{{ $catItem }}">
+                                            <input type="hidden" name="return_tab" value="kasa">
+                                            <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
                 <div class="grid sm:grid-cols-3 gap-4">
                     @foreach($cashAccounts as $acc)
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                            <span class="text-xs font-bold uppercase text-indigo-600">{{ $acc->type }}</span>
-                            <h3 class="font-extrabold text-base mt-0.5">{{ $acc->name }}</h3>
-                            <div class="text-2xl font-extrabold text-slate-900 mt-2">{{ number_format($acc->balance, 2, ',', '.') }} ₺</div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-xs font-bold uppercase text-indigo-600">{{ $acc->type }}</span>
+                                    <h3 class="font-extrabold text-base mt-0.5">{{ $acc->name }}</h3>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="document.getElementById('edit-acc-{{ $acc->id }}').classList.toggle('hidden')" class="px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">✏️</button>
+                                    <form action="{{ route('admin.cash_accounts.destroy', $acc->id) }}" method="POST" onsubmit="return confirm('{{ $acc->name }} hesabını silmek istediğinize emin misiniz?')">
+                                        @csrf
+                                        <button type="submit" class="px-2 py-1 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold">🗑️</button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-extrabold text-slate-900">{{ number_format($acc->balance, 2, ',', '.') }} ₺</div>
                             @if($acc->iban)
-                                <div class="text-[11px] font-mono text-slate-500 mt-1">{{ $acc->iban }}</div>
+                                <div class="text-[11px] font-mono text-slate-500">{{ $acc->iban }}</div>
                             @endif
+                            <form id="edit-acc-{{ $acc->id }}" action="{{ route('admin.cash_accounts.update', $acc->id) }}" method="POST" class="hidden pt-2 border-t space-y-1.5 text-xs">
+                                @csrf
+                                <input type="text" name="name" value="{{ $acc->name }}" required class="w-full border rounded-lg px-2 py-1">
+                                <div class="grid grid-cols-2 gap-1">
+                                    <select name="type" class="border rounded-lg px-2 py-1 bg-white">
+                                        <option value="cash" {{ $acc->type === 'cash' ? 'selected' : '' }}>Nakit</option>
+                                        <option value="bank" {{ $acc->type === 'bank' ? 'selected' : '' }}>Banka</option>
+                                        <option value="pos" {{ $acc->type === 'pos' ? 'selected' : '' }}>POS</option>
+                                    </select>
+                                    <input type="number" step="0.01" name="balance" value="{{ $acc->balance }}" required class="border rounded-lg px-2 py-1 font-bold">
+                                </div>
+                                <input type="text" name="iban" value="{{ $acc->iban }}" placeholder="IBAN" class="w-full border rounded-lg px-2 py-1 font-mono">
+                                <button type="submit" class="w-full py-1 rounded-lg bg-indigo-600 text-white font-bold">💾 Hesabı Güncelle</button>
+                            </form>
                         </div>
                     @endforeach
                 </div>
@@ -844,14 +1713,9 @@
                                 <div>
                                     <label class="font-bold block mb-1">Kategori</label>
                                     <select name="category" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        <option value="Kira">Kira</option>
-                                        <option value="Elektrik / Su / Doğalgaz">Elektrik / Su / Doğalgaz</option>
-                                        <option value="Maaş ve SGK">Maaş ve SGK</option>
-                                        <option value="Antrenör Hakedişi">Antrenör Hakedişi</option>
-                                        <option value="Ekipman ve Bakım">Ekipman ve Bakım</option>
-                                        <option value="Temizlik">Temizlik</option>
-                                        <option value="Reklam (Instagram/Google)">Reklam (Instagram/Google)</option>
-                                        <option value="Ürün Satışı (Mayo / Forma)">Ürün Satışı (Mayo / Forma)</option>
+                                        @foreach($financeCategories as $fc)
+                                            <option value="{{ $fc }}">{{ $fc }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -885,7 +1749,7 @@
                     </div>
 
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="text-base font-extrabold mb-3">📊 Gelir - Gider Hareketleri</h3>
+                        <h3 class="text-base font-extrabold mb-3">📊 Gelir - Gider Hareketleri (Düzenle & Sil)</h3>
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 border-b text-slate-600 uppercase">
                                 <tr>
@@ -905,15 +1769,39 @@
                                         </td>
                                         <td class="p-2.5">{{ $tx->cashAccount?->name }}</td>
                                         <td class="p-2.5 text-right">
-                                            <div class="flex justify-end items-center gap-2">
+                                            <div class="flex justify-end items-center gap-1.5">
                                                 <span class="font-extrabold {{ $tx->direction === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
                                                     {{ $tx->direction === 'income' ? '+' : '-' }}{{ number_format($tx->amount, 2, ',', '.') }} ₺
                                                 </span>
+                                                <button type="button" onclick="document.getElementById('edit-tx-{{ $tx->id }}').classList.toggle('hidden')" class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">✏️</button>
                                                 <form action="{{ route('admin.transactions.destroy', $tx->id) }}" method="POST" class="inline" onsubmit="return confirm('{{ $tx->title }} kasa hareketini silmek istediğinize emin misiniz?')">
                                                     @csrf
                                                     <button type="submit" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
                                                 </form>
                                             </div>
+                                        </td>
+                                    </tr>
+                                    <tr id="edit-tx-{{ $tx->id }}" class="hidden bg-indigo-50/50">
+                                        <td colspan="4" class="p-3">
+                                            <form action="{{ route('admin.transactions.update', $tx->id) }}" method="POST" class="grid sm:grid-cols-5 gap-2 items-end text-xs">
+                                                @csrf
+                                                <div class="sm:col-span-2">
+                                                    <label class="font-bold block mb-0.5">Başlık / Açıklama</label>
+                                                    <input type="text" name="title" value="{{ $tx->title }}" required class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                </div>
+                                                <div>
+                                                    <label class="font-bold block mb-0.5">Kategori</label>
+                                                    <input type="text" name="category" value="{{ $tx->category }}" required class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                </div>
+                                                <div>
+                                                    <label class="font-bold block mb-0.5">Tutar (₺)</label>
+                                                    <input type="number" step="0.01" name="amount" value="{{ $tx->amount }}" required class="w-full border rounded-lg px-2 py-1.5 bg-white font-bold">
+                                                </div>
+                                                <div>
+                                                    <input type="hidden" name="transaction_date" value="{{ $tx->transaction_date->format('Y-m-d') }}">
+                                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Güncelle</button>
+                                                </div>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -1128,7 +2016,7 @@
                     <div>
                         <span class="text-[11px] font-bold uppercase text-emerald-700">Meta Doğrulaması Gerektirmeyen Pratik Çözüm</span>
                         <h2 class="text-2xl font-extrabold">💬 WhatsApp Business Hazır Cevapları & Tıkla-Gönder Motoru</h2>
-                        <p class="text-xs text-slate-500">Şablon metinlerini ve gönderim saatlerini düzenleyin; günlük hatırlatma kuyruğunu tek tıkla WhatsApp Business'ta açıp gönderin veya silin.</p>
+                        <p class="text-xs text-slate-500">Şablon metinlerini ekleyin, düzenleyin ve gönderim saatlerini ayarlayın; günlük hatırlatma kuyruğunu tek tıkla gönderin.</p>
                     </div>
                     <form action="{{ route('admin.whatsapp.generate') }}" method="POST">
                         @csrf
@@ -1136,6 +2024,38 @@
                             🔄 Bugünün Hatırlatma Kuyruğunu Otomatik Oluştur
                         </button>
                     </form>
+                </div>
+
+                <!-- Manuel WhatsApp Mesajı & Yeni Şablon Ekleme -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="text-sm font-extrabold text-emerald-800 mb-3">➕ Kuyruğa Manuel Özel WhatsApp Mesajı Ekle</h3>
+                        <form action="{{ route('admin.whatsapp.message.store') }}" method="POST" class="space-y-2.5 text-xs">
+                            @csrf
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" name="recipient_name" required placeholder="Alıcı Veli Adı *" class="border rounded-xl px-3 py-2">
+                                <input type="text" name="recipient_phone" required placeholder="Telefon (0532...) *" class="border rounded-xl px-3 py-2 font-mono">
+                            </div>
+                            <textarea name="message_text" rows="2" required placeholder="Gönderilecek WhatsApp mesaj metni..." class="w-full border rounded-xl p-2.5"></textarea>
+                            <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Mesajı Kuyruğa Ekle</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="text-sm font-extrabold text-indigo-900 mb-3">➕ Yeni WhatsApp Hazır Cevap Şablonu Ekle</h3>
+                        <form action="{{ route('admin.whatsapp.template.store') }}" method="POST" class="space-y-2.5 text-xs">
+                            @csrf
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" name="title" required placeholder="Şablon Başlığı *" class="border rounded-xl px-3 py-2">
+                                <input type="text" name="shortcut" required placeholder="/kisayol *" class="border rounded-xl px-3 py-2 font-mono">
+                                <input type="time" name="send_time" value="10:30" required class="border rounded-xl px-3 py-2">
+                            </div>
+                            <input type="hidden" name="trigger_type" value="custom">
+                            <input type="hidden" name="days_offset" value="0">
+                            <textarea name="message_template" rows="2" required placeholder="Merhaba {veli_adi}, sporcumuz {ogrenci_adi}..." class="w-full border rounded-xl p-2.5"></textarea>
+                            <button type="submit" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">➕ Yeni Şablon Ekle</button>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Tıkla-Gönder Kuyruğu -->
@@ -1170,36 +2090,44 @@
 
                 <!-- Kabul Kriteri #4: Şablon Metnini ve Saatini Değiştirme -->
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                    <h3 class="text-base font-extrabold mb-3">⚙️ WhatsApp Business Hazır Cevap Kısayolları & Otomatik Kurallar</h3>
+                    <h3 class="text-base font-extrabold mb-3">⚙️ WhatsApp Business Hazır Cevap Kısayolları & Otomatik Kurallar (Düzenle & Sil)</h3>
                     <div class="grid md:grid-cols-2 gap-4">
                         @foreach($whatsappTemplates as $tpl)
-                            <form action="{{ route('admin.whatsapp.template.update', $tpl->id) }}" method="POST" class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5 text-xs">
-                                @csrf
-                                <div class="flex justify-between items-center">
-                                    <span class="font-extrabold text-sm text-indigo-900">{{ $tpl->title }}</span>
-                                    <input type="text" name="shortcut" value="{{ $tpl->shortcut }}" class="w-32 font-mono font-bold text-indigo-700 bg-white border rounded-lg px-2 py-1 text-right">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="font-bold text-slate-600 block">Hatırlatma Saati</label>
-                                        <input type="time" name="send_time" value="{{ substr($tpl->send_time, 0, 5) }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5 text-xs">
+                                <form action="{{ route('admin.whatsapp.template.update', $tpl->id) }}" method="POST" class="space-y-2.5">
+                                    @csrf
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-extrabold text-sm text-indigo-900">{{ $tpl->title }}</span>
+                                        <input type="text" name="shortcut" value="{{ $tpl->shortcut }}" class="w-32 font-mono font-bold text-indigo-700 bg-white border rounded-lg px-2 py-1 text-right">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="font-bold text-slate-600 block">Hatırlatma Saati</label>
+                                            <input type="time" name="send_time" value="{{ substr($tpl->send_time, 0, 5) }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                                        </div>
+                                        <div>
+                                            <label class="font-bold text-slate-600 block">Gün Farkı (-3 = 3 gün önce)</label>
+                                            <input type="number" name="days_offset" value="{{ $tpl->days_offset }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                        </div>
                                     </div>
                                     <div>
-                                        <label class="font-bold text-slate-600 block">Gün Farkı (-3 = 3 gün önce)</label>
-                                        <input type="number" name="days_offset" value="{{ $tpl->days_offset }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                        <label class="font-bold text-slate-600 block mb-1">Mesaj Şablonu ({veli_adi}, {ogrenci_adi}, {tutar}, {vade})</label>
+                                        <textarea name="message_template" rows="3" class="w-full border rounded-xl p-2.5 bg-white text-xs">{{ $tpl->message_template }}</textarea>
                                     </div>
+                                    <div class="flex justify-between items-center pt-1">
+                                        <label class="flex items-center gap-1.5 font-bold">
+                                            <input type="checkbox" name="is_active" value="1" {{ $tpl->is_active ? 'checked' : '' }}> Kural Aktif
+                                        </label>
+                                        <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">💾 Şablonu & Saati Kaydet</button>
+                                    </div>
+                                </form>
+                                <div class="flex justify-end pt-1 border-t border-slate-200/70">
+                                    <form action="{{ route('admin.whatsapp.template.destroy', $tpl->id) }}" method="POST" onsubmit="return confirm('{{ $tpl->title }} şablonunu silmek istediğinize emin misiniz?')">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-[11px] font-bold">🗑️ Şablonu Sil</button>
+                                    </form>
                                 </div>
-                                <div>
-                                    <label class="font-bold text-slate-600 block mb-1">Mesaj Şablonu ({veli_adi}, {ogrenci_adi}, {tutar}, {vade})</label>
-                                    <textarea name="message_template" rows="3" class="w-full border rounded-xl p-2.5 bg-white text-xs">{{ $tpl->message_template }}</textarea>
-                                </div>
-                                <div class="flex justify-between items-center pt-1">
-                                    <label class="flex items-center gap-1.5 font-bold">
-                                        <input type="checkbox" name="is_active" value="1" {{ $tpl->is_active ? 'checked' : '' }}> Kural Aktif
-                                    </label>
-                                    <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">💾 Şablonu & Saati Kaydet</button>
-                                </div>
-                            </form>
+                            </div>
                         @endforeach
                     </div>
                 </div>
@@ -1210,82 +2138,155 @@
             <!-- ========================================== -->
             @if($activeTab === 'etkinlikler' || $activeTab === 'gelisim')
                 <div class="grid lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
-                        <h3 class="text-lg font-extrabold mb-3">📈 Yeni Dönem Gelişim Karnesi Oluştur</h3>
-                        <form action="{{ route('admin.development.store') }}" method="POST" class="space-y-3 text-xs">
-                            @csrf
-                            <div>
-                                <label class="font-bold block mb-1">Sporcu Seçin</label>
-                                <select name="student_id" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                    @foreach($students as $st)
-                                        <option value="{{ $st->id }}">{{ $st->full_name }} ({{ $st->group?->name }})</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-extrabold mb-3">📈 Yeni Dönem Gelişim Karnesi Oluştur</h3>
+                            <form action="{{ route('admin.development.store') }}" method="POST" class="space-y-3 text-xs">
+                                @csrf
                                 <div>
-                                    <label class="font-bold block mb-1">Dönem Başlığı</label>
-                                    <input type="text" name="term_label" value="2026 Kış Dönemi Karnesi" class="w-full border rounded-xl px-3 py-2">
+                                    <label class="font-bold block mb-1">Sporcu Seçin</label>
+                                    <select name="student_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($students as $st)
+                                            <option value="{{ $st->id }}">{{ $st->full_name }} ({{ $st->group?->name }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Dönem Başlığı</label>
+                                        <input type="text" name="term_label" value="2026 Kış Dönemi Karnesi" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Mevcut Seviye</label>
+                                        <input type="text" name="current_level" value="Artistik Seviye 2" class="w-full border rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-5 gap-1.5">
+                                    <div><label class="font-bold block">Esneklik</label><input type="number" name="flexibility_score" value="90" class="w-full border rounded-lg p-1.5"></div>
+                                    <div><label class="font-bold block">Kuvvet</label><input type="number" name="strength_score" value="85" class="w-full border rounded-lg p-1.5"></div>
+                                    <div><label class="font-bold block">Denge</label><input type="number" name="balance_score" value="88" class="w-full border rounded-lg p-1.5"></div>
+                                    <div><label class="font-bold block">Koord.</label><input type="number" name="coordination_score" value="92" class="w-full border rounded-lg p-1.5"></div>
+                                    <div><label class="font-bold block">Disiplin</label><input type="number" name="discipline_score" value="95" class="w-full border rounded-lg p-1.5"></div>
                                 </div>
                                 <div>
-                                    <label class="font-bold block mb-1">Mevcut Seviye</label>
-                                    <input type="text" name="current_level" value="Artistik Seviye 2" class="w-full border rounded-xl px-3 py-2">
+                                    <label class="font-bold block mb-1">Antrenör Değerlendirme Notu</label>
+                                    <textarea name="coach_comment" rows="3" class="w-full border rounded-xl p-2.5">Sporcumuz dönem boyunca tüm temel cimnastik becerilerinde üstün gayret göstermiştir.</textarea>
                                 </div>
-                            </div>
-                            <div class="grid grid-cols-5 gap-1.5">
-                                <div><label class="font-bold block">Esneklik</label><input type="number" name="flexibility_score" value="90" class="w-full border rounded-lg p-1.5"></div>
-                                <div><label class="font-bold block">Kuvvet</label><input type="number" name="strength_score" value="85" class="w-full border rounded-lg p-1.5"></div>
-                                <div><label class="font-bold block">Denge</label><input type="number" name="balance_score" value="88" class="w-full border rounded-lg p-1.5"></div>
-                                <div><label class="font-bold block">Koord.</label><input type="number" name="coordination_score" value="92" class="w-full border rounded-lg p-1.5"></div>
-                                <div><label class="font-bold block">Disiplin</label><input type="number" name="discipline_score" value="95" class="w-full border rounded-lg p-1.5"></div>
-                            </div>
-                            <div>
-                                <label class="font-bold block mb-1">Antrenör Değerlendirme Notu</label>
-                                <textarea name="coach_comment" rows="3" class="w-full border rounded-xl p-2.5">Sporcumuz dönem boyunca tüm temel cimnastik becerilerinde üstün gayret göstermiştir.</textarea>
-                            </div>
-                            <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold">🏅 Gelişim Karnesini Yayınla</button>
-                        </form>
+                                <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold">🏅 Gelişim Karnesini Yayınla</button>
+                            </form>
+                        </div>
+
+                        <!-- Yeni Etkinlik / Kamp / Gösteri Ekleme Formu -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-base font-extrabold mb-3">🎪 Yeni Etkinlik / Gösteri / Kamp Ekle</h3>
+                            <form action="{{ route('admin.events.store') }}" method="POST" class="space-y-2.5 text-xs">
+                                @csrf
+                                <div>
+                                    <label class="font-bold block mb-1">Etkinlik Başlığı *</label>
+                                    <input type="text" name="title" required placeholder="Ör: 2026 Yıl Sonu Cimnastik Gösterisi" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="font-bold block mb-1">Tarih *</label>
+                                        <input type="date" name="event_date" required value="{{ today()->addDays(30)->toDateString() }}" class="w-full border rounded-xl px-2.5 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Kontenjan *</label>
+                                        <input type="number" name="quota" required value="50" class="w-full border rounded-xl px-2.5 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold block mb-1">Ücret (₺)</label>
+                                        <input type="number" name="fee" value="0" class="w-full border rounded-xl px-2.5 py-2">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Konum / Salon *</label>
+                                    <input type="text" name="location" required value="Tekirdağ Enerjik Cimnastik Ana Salonu" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Açıklama</label>
+                                    <textarea name="description" rows="2" class="w-full border rounded-xl p-2.5" placeholder="Etkinlik detayları..."></textarea>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Etkinliği Ekle</button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="lg:col-span-7 space-y-6">
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                            <h3 class="text-base font-extrabold mb-3">🎪 Etkinlikler, Gösteriler ve Yaz Okulu</h3>
+                            <h3 class="text-base font-extrabold mb-3">🎪 Etkinlikler, Gösteriler ve Yaz Okulu (Düzenle & Sil)</h3>
                             <div class="space-y-2.5">
                                 @foreach($events as $ev)
-                                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
-                                        <div>
-                                            <span class="text-xs font-bold text-indigo-600">{{ $ev->event_date->format('d.m.Y') }} · {{ $ev->location }}</span>
-                                            <h4 class="font-extrabold text-sm">{{ $ev->title }}</h4>
-                                            <p class="text-xs text-slate-600">{{ $ev->description }} (Katılımcı: {{ $ev->participants->count() }}/{{ $ev->quota }})</p>
+                                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                                        <div class="flex flex-wrap justify-between items-center gap-3">
+                                            <div>
+                                                <span class="text-xs font-bold text-indigo-600">{{ $ev->event_date->format('d.m.Y') }} · {{ $ev->location }}</span>
+                                                <h4 class="font-extrabold text-sm">{{ $ev->title }}</h4>
+                                                <p class="text-xs text-slate-600">{{ $ev->description }} (Katılımcı: {{ $ev->participants->count() }}/{{ $ev->quota }})</p>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                @if($currentRole === 'super_admin')
+                                                    <span class="font-extrabold text-indigo-700 text-sm">{{ number_format($ev->fee, 0, ',', '.') }} ₺</span>
+                                                @endif
+                                                <button type="button" onclick="document.getElementById('edit-ev-{{ $ev->id }}').classList.toggle('hidden')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">✏️ Düzenle</button>
+                                                <form action="{{ route('admin.events.destroy', $ev->id) }}" method="POST" onsubmit="return confirm('{{ $ev->title }} etkinliğini silmek istediğinize emin misiniz?')">
+                                                    @csrf
+                                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>
+                                                </form>
+                                            </div>
                                         </div>
-                                        <div class="flex items-center gap-2">
-                                            @if($currentRole === 'super_admin')
-                                                <span class="font-extrabold text-indigo-700 text-sm">{{ number_format($ev->fee, 0, ',', '.') }} ₺</span>
-                                            @endif
-                                            <form action="{{ route('admin.events.destroy', $ev->id) }}" method="POST" onsubmit="return confirm('{{ $ev->title }} etkinliğini silmek istediğinize emin misiniz?')">
-                                                @csrf
-                                                <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-xs font-bold transition">🗑️ Sil</button>
-                                            </form>
-                                        </div>
+                                        <form id="edit-ev-{{ $ev->id }}" action="{{ route('admin.events.update', $ev->id) }}" method="POST" class="hidden pt-2 border-t grid sm:grid-cols-4 gap-2 text-xs">
+                                            @csrf
+                                            <input type="text" name="title" value="{{ $ev->title }}" required class="sm:col-span-2 border rounded-lg px-2 py-1.5 bg-white">
+                                            <input type="date" name="event_date" value="{{ $ev->event_date->format('Y-m-d') }}" required class="border rounded-lg px-2 py-1.5 bg-white">
+                                            <input type="number" name="fee" value="{{ $ev->fee }}" class="border rounded-lg px-2 py-1.5 bg-white">
+                                            <input type="text" name="location" value="{{ $ev->location }}" required class="sm:col-span-2 border rounded-lg px-2 py-1.5 bg-white">
+                                            <input type="number" name="quota" value="{{ $ev->quota }}" required class="border rounded-lg px-2 py-1.5 bg-white">
+                                            <button type="submit" class="py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Kaydet</button>
+                                            <input type="hidden" name="description" value="{{ $ev->description }}">
+                                        </form>
                                     </div>
                                 @endforeach
                             </div>
                         </div>
 
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                            <h3 class="text-base font-extrabold mb-3">🏅 Yayınlanan Gelişim Karneleri</h3>
+                            <h3 class="text-base font-extrabold mb-3">🏅 Yayınlanan Gelişim Karneleri (Düzenle & Sil)</h3>
                             @foreach($developmentRecords as $dev)
-                                <div class="p-3.5 rounded-xl border border-slate-200 mb-2.5 text-xs flex justify-between items-start gap-3">
-                                    <div>
-                                        <div class="flex flex-wrap items-center gap-2 font-bold">
-                                            <span>{{ $dev->student?->full_name }} — {{ $dev->term_label }}</span>
-                                            <span class="text-indigo-600">({{ $dev->current_level }})</span>
+                                <div class="p-3.5 rounded-xl border border-slate-200 mb-2.5 text-xs space-y-2">
+                                    <div class="flex justify-between items-start gap-3">
+                                        <div>
+                                            <div class="flex flex-wrap items-center gap-2 font-bold">
+                                                <span>{{ $dev->student?->full_name }} — {{ $dev->term_label }}</span>
+                                                <span class="text-indigo-600">({{ $dev->current_level }})</span>
+                                            </div>
+                                            <p class="text-slate-600 mt-1">Esneklik: {{ $dev->flexibility_score }} · Kuvvet: {{ $dev->strength_score }} · Denge: {{ $dev->balance_score }} · "{{ $dev->coach_comment }}"</p>
                                         </div>
-                                        <p class="text-slate-600 mt-1">Esneklik: {{ $dev->flexibility_score }} · Kuvvet: {{ $dev->strength_score }} · Denge: {{ $dev->balance_score }} · "{{ $dev->coach_comment }}"</p>
+                                        <div class="flex gap-1.5 shrink-0">
+                                            <button type="button" onclick="document.getElementById('edit-dev-{{ $dev->id }}').classList.toggle('hidden')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">✏️ Düzenle</button>
+                                            <form action="{{ route('admin.development.destroy', $dev->id) }}" method="POST" onsubmit="return confirm('Bu gelişim karnesi kaydını silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold transition">🗑️ Sil</button>
+                                            </form>
+                                        </div>
                                     </div>
-                                    <form action="{{ route('admin.development.destroy', $dev->id) }}" method="POST" onsubmit="return confirm('Bu gelişim karnesi kaydını silmek istediğinize emin misiniz?')">
+                                    <form id="edit-dev-{{ $dev->id }}" action="{{ route('admin.development.update', $dev->id) }}" method="POST" class="hidden pt-2 border-t space-y-2">
                                         @csrf
-                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 font-bold shrink-0 transition">🗑️ Sil</button>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <input type="text" name="term_label" value="{{ $dev->term_label }}" required class="border rounded-lg px-2 py-1 bg-white">
+                                            <input type="text" name="current_level" value="{{ $dev->current_level }}" required class="border rounded-lg px-2 py-1 bg-white">
+                                        </div>
+                                        <div class="grid grid-cols-5 gap-1">
+                                            <input type="number" name="flexibility_score" value="{{ $dev->flexibility_score }}" class="border rounded-lg p-1">
+                                            <input type="number" name="strength_score" value="{{ $dev->strength_score }}" class="border rounded-lg p-1">
+                                            <input type="number" name="balance_score" value="{{ $dev->balance_score }}" class="border rounded-lg p-1">
+                                            <input type="number" name="coordination_score" value="{{ $dev->coordination_score }}" class="border rounded-lg p-1">
+                                            <input type="number" name="discipline_score" value="{{ $dev->discipline_score }}" class="border rounded-lg p-1">
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <input type="text" name="coach_comment" value="{{ $dev->coach_comment }}" class="w-full border rounded-lg px-2 py-1 bg-white">
+                                            <button type="submit" class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold shrink-0">💾 Güncelle</button>
+                                        </div>
                                     </form>
                                 </div>
                             @endforeach

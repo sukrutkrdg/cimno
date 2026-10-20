@@ -131,8 +131,8 @@
                     <h2 class="text-sm font-extrabold mt-1">📷 Salona Geldiniz mi? QR Yoklama</h2>
                     <p class="text-[11px] text-emerald-100">Salona girişte tek dokunuşla bugünkü ders yoklamasını onaylayın.</p>
                 </div>
-                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone]) }}" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow">
-                    ✅ Yoklama Yap
+                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone, 'kamera' => 1]) }}" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow">
+                    📷 Kamerayı Aç
                 </a>
             </div>
 
@@ -275,7 +275,7 @@
                     <span class="text-lg">🤸</span>
                     <span class="text-[11px]">Öğrencim</span>
                 </a>
-                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone]) }}" class="flex flex-col items-center gap-0.5 text-emerald-600 font-extrabold">
+                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone, 'kamera' => 1]) }}" class="flex flex-col items-center gap-0.5 text-emerald-600 font-extrabold">
                     <span class="text-lg">📷</span>
                     <span class="text-[11px]">QR Yoklama</span>
                 </a>
