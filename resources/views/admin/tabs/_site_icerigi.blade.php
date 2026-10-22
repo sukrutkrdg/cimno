@@ -71,13 +71,6 @@
                                 </div>
                             </div>
 
-                            @if($currentRole === 'super_admin')
-                                <div>
-                                    <label class="font-bold block mb-1">Kulüp IBAN Numarası (Veli Portalı & Aidat Ekranı İçin)</label>
-                                    <input type="text" name="iban_number" value="{{ $settings['iban_number'] ?? '' }}" class="w-full border rounded-xl px-3 py-2 font-mono">
-                                </div>
-                            @endif
-
                             <!-- Bölüm Görünürlük Kontrolleri (Aç / Kapat) -->
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                                 <span class="font-extrabold block text-slate-800">👁️ Ana Sayfa Bölümlerini Göster / Gizle</span>

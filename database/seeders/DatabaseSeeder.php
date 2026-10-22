@@ -660,7 +660,7 @@ class DatabaseSeeder extends Seeder
             'category' => 'utility',
             'days_offset' => -3,
             'send_time' => '10:30:00',
-            'message_template' => 'Sayın {veli_adi}, sporcumuz {ogrenci_adi} için {donem} aidat ödemesinin ({tutar} TL) son ödeme tarihi {vade} dir. Ödemenizi salonumuzda nakit/kart ile veya IBAN hesabımıza açıklamaya "{ogrenci_adi}" yazarak gerçekleştirebilirsiniz. Teşekkür ederiz. 🙏',
+            'message_template' => 'Sayın {veli_adi}, sporcumuz {ogrenci_adi} için {donem} aidat ödemesinin ({tutar} TL) son ödeme tarihi {vade} dir. Ödemenizi salonumuzda nakit/kart ile gerçekleştirebilirsiniz. Teşekkür ederiz. 🙏',
         ]);
 
         $tplDueOverdue = WhatsappTemplate::create([
@@ -846,8 +846,6 @@ class DatabaseSeeder extends Seeder
             ['key' => 'whatsapp_number', 'value' => '905388993159', 'group' => 'contact'],
             ['key' => 'address', 'value' => 'Tekirdağ Merkez / Süleymanpaşa', 'group' => 'contact'],
             ['key' => 'working_hours', 'value' => 'Salı - Pazar: 09:30 - 20:30 (Pazartesi İdari İzin)', 'group' => 'contact'],
-            ['key' => 'iban_holder', 'value' => 'Enerjik Cimnastik Spor Kulübü', 'group' => 'finance'],
-            ['key' => 'iban_number', 'value' => 'TR45 0006 2000 1230 0006 2999 01', 'group' => 'finance'],
             ['key' => 'kvkk_text', 'value' => '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, Tekirdağ Enerjik Cimnastik Spor Kulübü olarak veri sorumlusu sıfatıyla; reşit olmayan sporcularımızın ve velilerimizin kimlik, iletişim, sağlık beyanı ve görsel kayıt verilerini yalnızca kulüp faaliyetlerinin yürütülmesi, acil durum güvenliği ve Türkiye Cimnastik Federasyonu lisans süreçleri kapsamında işliyor, üçüncü kişilerle paylaşmıyoruz.', 'group' => 'kvkk'],
         ];
         foreach ($settings as $s) {

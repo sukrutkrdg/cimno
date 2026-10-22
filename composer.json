@@ -49,6 +49,7 @@
     "prefer-stable": true,
     "require-dev": {
         "fakerphp/faker": "^1.24",
+        "laravel/boost": "^2.10",
         "mockery/mockery": "^1.6",
         "phpunit/phpunit": "^11.5"
     }

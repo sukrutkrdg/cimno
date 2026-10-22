@@ -60,7 +60,7 @@
                 </div>
             </a>
             <div class="flex items-center gap-1.5">
-                <button onclick="triggerPwaInstall()" class="px-2.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow">
+                <button onclick="enerjikPwa.install()" class="px-2.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow">
                     📲 Ana Ekrana Ekle
                 </button>
                 @if($activePhone && $students->isNotEmpty())
@@ -121,7 +121,7 @@
                         <strong class="block text-indigo-950 font-extrabold">📲 Telefon Ekranına Kısayol Atın</strong>
                         <span class="text-slate-600 text-[11px]">Uygulama gibi tek dokunuşla açmak için ana ekranınıza ekleyin.</span>
                     </div>
-                    <button onclick="triggerPwaInstall()" class="shrink-0 px-3 py-2 rounded-xl bg-indigo-600 text-white font-extrabold text-xs">
+                    <button onclick="enerjikPwa.install()" class="shrink-0 px-3 py-2 rounded-xl bg-indigo-600 text-white font-extrabold text-xs">
                         Kısayol Ekle
                     </button>
                 </div>
@@ -243,11 +243,8 @@
                 </div>
             @endforeach
 
-            <!-- Kulüp IBAN ve Hızlı WhatsApp -->
+            <!-- Hızlı WhatsApp -->
             <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
-                <div class="text-xs font-extrabold text-indigo-600">🏦 Havale / EFT İçin Kulüp IBAN Bilgisi</div>
-                <div class="text-xs font-bold">{{ $settings['iban_holder'] ?? 'Enerjik Cimnastik Spor Kulübü' }}</div>
-                <div class="text-xs font-mono bg-slate-100 p-2 rounded-xl select-all">{{ $settings['iban_number'] ?? '' }}</div>
                 <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode('Merhaba, veli ekranından yazıyorum.') }}" target="_blank" class="block text-center w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">
                     💬 Salon WhatsApp Hattına Yaz
                 </a>
@@ -255,33 +252,6 @@
         @endif
 
     </main>
-
-    <!-- iOS & Android Ana Ekrana Ekleme Rehberi Modalı -->
-    <div id="install-modal" class="fixed inset-0 bg-slate-950/75 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-extrabold">📲 Telefon Ana Ekranına Kısayol Ekle</h3>
-                <button onclick="closeInstallModal()" class="text-slate-400 font-extrabold text-lg">✕</button>
-            </div>
-            <p class="text-xs text-slate-600">Mağaza indirmesi gerekmeden uygulamamızı 5 saniyede telefon ekranınıza ekleyebilirsiniz:</p>
-
-            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
-                <div class="font-extrabold text-indigo-900">🍎 iPhone / iPad (Safari) İçin:</div>
-                <p>1. Ekranın altındaki <strong>Paylaş (Yukarı Oklu Kare ⬆️)</strong> simgesine dokunun.</p>
-                <p>2. Menüden <strong>"Ana Ekrana Ekle"</strong> seçeneğine basıp sağ üstten <strong>Ekle</strong> deyin.</p>
-            </div>
-
-            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
-                <div class="font-extrabold text-emerald-900">🤖 Android (Chrome) İçin:</div>
-                <p>1. Sağ üstteki <strong>Üç Nokta (⋮)</strong> menüsüne dokunun.</p>
-                <p>2. <strong>"Ana ekrana ekle"</strong> veya <strong>"Uygulamayı yükle"</strong> seçeneğine dokunun.</p>
-            </div>
-
-            <button onclick="closeInstallModal()" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-extrabold text-xs">
-                Anladım, Teşekkürler
-            </button>
-        </div>
-    </div>
 
     <!-- Alt Mobil Uygulama Navigasyon Barı (Yalnız Veli Menüsü) -->
     @if($activePhone && $students->isNotEmpty())
@@ -307,39 +277,6 @@
         </nav>
     @endif
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-            });
-        }
-
-        let deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-        });
-
-        function triggerPwaInstall() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-            } else {
-                openInstallModal();
-            }
-        }
-
-        function openInstallModal() {
-            const m = document.getElementById('install-modal');
-            m.classList.remove('hidden');
-            m.classList.add('flex');
-        }
-
-        function closeInstallModal() {
-            const m = document.getElementById('install-modal');
-            m.classList.add('hidden');
-            m.classList.remove('flex');
-        }
-    </script>
+    @include('partials.pwa-install-prompt')
 </body>
 </html>
