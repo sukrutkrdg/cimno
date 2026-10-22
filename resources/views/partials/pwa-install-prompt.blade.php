@@ -16,6 +16,13 @@
     </div>
 </div>
 
+<!-- Kalıcı Küçük Kısayol Düğmesi: banner kapatılsa/zamanı geçse bile her zaman tek dokunuşla erişim sağlar. -->
+<button type="button" id="pwa-install-fab" onclick="enerjikPwa.install()"
+    class="fixed bottom-20 right-3 z-[65] hidden w-12 h-12 rounded-full bg-indigo-600 text-white text-xl shadow-xl border-2 border-white items-center justify-center"
+    aria-label="Ana Ekrana Ekle">
+    📲
+</button>
+
 <!-- iOS & Android Ana Ekrana Ekleme Rehberi Modalı -->
 <div id="install-modal" class="fixed inset-0 bg-slate-950/75 z-[80] hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900">
@@ -46,7 +53,7 @@
 <script>
     window.enerjikPwa = (function () {
         const DISMISS_KEY = 'enerjik_pwa_prompt_dismissed_at';
-        const DISMISS_DAYS = 14;
+        const DISMISS_DAYS = 3;
         let deferredPrompt = null;
 
         function isStandalone() {
@@ -80,6 +87,16 @@
             if (el) { el.classList.add('hidden'); }
         }
 
+        function showFab() {
+            const el = document.getElementById('pwa-install-fab');
+            if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
+        }
+
+        function hideFab() {
+            const el = document.getElementById('pwa-install-fab');
+            if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+        }
+
         function openModal() {
             const m = document.getElementById('install-modal');
             if (!m) return;
@@ -94,6 +111,7 @@
             m.classList.remove('flex');
             markDismissed();
             hideBanner();
+            showFab();
         }
 
         function install() {
@@ -110,6 +128,8 @@
         function dismiss() {
             hideBanner();
             markDismissed();
+            // Banner kapatılsa da küçük düğme ekranda kalır; kullanıcı istediği an kuruluma dönebilir.
+            showFab();
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -119,6 +139,7 @@
 
         window.addEventListener('appinstalled', () => {
             hideBanner();
+            hideFab();
             markDismissed();
         });
 
@@ -129,8 +150,12 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            if (isStandalone() || !isMobile() || recentlyDismissed()) return;
-            setTimeout(showBanner, 1800);
+            if (isStandalone() || !isMobile()) return;
+            // Kalıcı kısayol düğmesi: kuruluş isteği kapatılsa/ertelense bile her zaman erişilebilir.
+            showFab();
+            if (!recentlyDismissed()) {
+                setTimeout(showBanner, 1800);
+            }
         });
 
         return { install, dismiss, openModal, closeModal };
