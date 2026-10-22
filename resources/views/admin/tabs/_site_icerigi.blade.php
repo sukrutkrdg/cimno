@@ -71,10 +71,23 @@
                                 </div>
                             </div>
 
+                            <!-- WhatsApp Karşılama Mesajı -->
+                            <div>
+                                <label class="font-bold block mb-1">Üst Bar "WhatsApp İletişim" Tıklanınca Açılan Hazır Mesaj</label>
+                                <input type="text" name="whatsapp_welcome_msg" value="{{ $settings['whatsapp_welcome_msg'] ?? 'Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.' }}" class="w-full border rounded-xl px-3 py-2">
+                            </div>
+
                             <!-- Bölüm Görünürlük Kontrolleri (Aç / Kapat) -->
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                                 <span class="font-extrabold block text-slate-800">👁️ Ana Sayfa Bölümlerini Göster / Gizle</span>
                                 <div class="grid sm:grid-cols-2 gap-2">
+                                    <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
+                                        <span>🤸 Branşlar Bölümü</span>
+                                        <select name="show_branches_section" class="font-bold text-indigo-700 bg-transparent">
+                                            <option value="1" {{ ($settings['show_branches_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
+                                            <option value="0" {{ ($settings['show_branches_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
+                                        </select>
+                                    </label>
                                     <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
                                         <span>📅 Ders Programı Bölümü</span>
                                         <select name="show_schedule_section" class="font-bold text-indigo-700 bg-transparent">
@@ -97,10 +110,17 @@
                                         </select>
                                     </label>
                                     <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
-                                        <span>📸 Galeri & ❓ SSS</span>
+                                        <span>📸 Galeri Bölümü</span>
                                         <select name="show_gallery_section" class="font-bold text-indigo-700 bg-transparent">
                                             <option value="1" {{ ($settings['show_gallery_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
                                             <option value="0" {{ ($settings['show_gallery_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
+                                        </select>
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 rounded-xl bg-white border">
+                                        <span>❓ SSS Bölümü</span>
+                                        <select name="show_faq_section" class="font-bold text-indigo-700 bg-transparent">
+                                            <option value="1" {{ ($settings['show_faq_section'] ?? '1') === '1' ? 'selected' : '' }}>Açık</option>
+                                            <option value="0" {{ ($settings['show_faq_section'] ?? '1') === '0' ? 'selected' : '' }}>Gizli</option>
                                         </select>
                                     </label>
                                 </div>
@@ -175,6 +195,64 @@
                         </div>
                     </div>
                 </form>
+
+                <!-- 2b. NAVİGASYON, BUTON, BÖLÜM ROZETİ VE FOOTER METİNLERİ (Sitede Görünen Her Küçük Yazı) -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-5">
+                    <div>
+                        <h3 class="text-base font-extrabold">🧩 2b. Navigasyon, Buton, Bölüm Rozeti & Footer Metinleri</h3>
+                        <p class="text-[11px] text-slate-500">Menüdeki, bölüm başlıklarının üstündeki küçük rozetlerde, ön kayıt formunda ve alt bilgide görünen tüm kısa metinler — sitede görünen hemen her yazı buradan değiştirilir.</p>
+                    </div>
+                    <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-5 text-xs">
+                        @csrf
+                        <div>
+                            <span class="font-extrabold block text-slate-700 mb-2">☰ Üst Menü & Buton Etiketleri</span>
+                            <div class="grid sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                                <div><label class="font-bold block mb-1">"Branşlarımız" Menü</label><input type="text" name="nav_branches" value="{{ $settings['nav_branches'] ?? 'Branşlarımız' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"Ders Programı" Menü</label><input type="text" name="nav_schedule" value="{{ $settings['nav_schedule'] ?? 'Ders Programı' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"Paket & Ücretler" Menü</label><input type="text" name="nav_packages" value="{{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"Antrenörler" Menü</label><input type="text" name="nav_coaches" value="{{ $settings['nav_coaches'] ?? 'Antrenörler' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"Galeri" Menü</label><input type="text" name="nav_gallery" value="{{ $settings['nav_gallery'] ?? 'Galeri' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"SSS" Menü</label><input type="text" name="nav_faq" value="{{ $settings['nav_faq'] ?? 'SSS' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"Veli Girişi" Butonu</label><input type="text" name="header_parent_btn" value="{{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">"Deneme Dersi" Butonu</label><input type="text" name="header_trial_btn" value="{{ $settings['header_trial_btn'] ?? 'Ücretsiz Deneme Dersi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="font-extrabold block text-slate-700 mb-2">🏷️ Bölüm Üstü Rozetler & Alt Açıklamalar</span>
+                            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                <div><label class="font-bold block mb-1">Branşlar Rozeti</label><input type="text" name="section_branches_badge" value="{{ $settings['section_branches_badge'] ?? 'Yaş ve Seviyeye Özel Eğitim' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Branşlar Alt Açıklama</label><input type="text" name="section_branches_sub" value="{{ $settings['section_branches_sub'] ?? '' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Ders Programı Rozeti</label><input type="text" name="section_schedule_badge" value="{{ $settings['section_schedule_badge'] ?? 'Canlı Salon Takvimi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Ders Programı Başlığı</label><input type="text" name="section_schedule_title" value="{{ $settings['section_schedule_title'] ?? 'Haftalık Ders Programı & Kontenjanlar' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Paketler Rozeti</label><input type="text" name="section_packages_badge" value="{{ $settings['section_packages_badge'] ?? 'Şeffaf Fiyatlandırma' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Paketler Alt Açıklama</label><input type="text" name="section_packages_sub" value="{{ $settings['section_packages_sub'] ?? '' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Antrenörler Rozeti</label><input type="text" name="section_coaches_badge" value="{{ $settings['section_coaches_badge'] ?? 'Uzman Kadromuz' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Antrenörler Başlığı</label><input type="text" name="section_coaches_title" value="{{ $settings['section_coaches_title'] ?? 'Federasyon Belgeli Antrenörlerimiz' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Galeri Başlığı</label><input type="text" name="section_gallery_title" value="{{ $settings['section_gallery_title'] ?? 'Salonumuzdan Kareler' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">SSS Başlığı</label><input type="text" name="section_faq_title" value="{{ $settings['section_faq_title'] ?? 'Güncel Duyurular & SSS' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="font-extrabold block text-slate-700 mb-2">🎯 Ön Kayıt Formu Metinleri</span>
+                            <div class="grid sm:grid-cols-3 gap-2.5">
+                                <div><label class="font-bold block mb-1">Form Rozeti</label><input type="text" name="trial_form_badge" value="{{ $settings['trial_form_badge'] ?? 'Online Ön Kayıt' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Form Başlığı</label><input type="text" name="trial_form_title" value="{{ $settings['trial_form_title'] ?? 'Ücretsiz Deneme Dersi Formu' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Gönder Butonu</label><input type="text" name="trial_form_submit" value="{{ $settings['trial_form_submit'] ?? '🚀 Ücretsiz Deneme Dersi Talebi Gönder' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="font-extrabold block text-slate-700 mb-2">⬇️ Alt Bilgi (Footer)</span>
+                            <input type="text" name="footer_copyright" value="{{ $settings['footer_copyright'] ?? '© ' . date('Y') . ' Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.' }}" class="w-full border rounded-lg px-2.5 py-1.5">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-lg shadow-indigo-600/20">
+                            💾 Bu Metinleri Kaydet
+                        </button>
+                    </form>
+                </div>
 
                 <!-- 3. SİTEDEKİ CİMNASTİK BRANŞ KARTLARINI YÖNET (EKLE / DÜZENLE / SİL) -->
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">

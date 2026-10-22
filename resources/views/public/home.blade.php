@@ -244,6 +244,7 @@
     </section>
 
     <!-- Branşlarımız -->
+    @if(($settings['show_branches_section'] ?? '1') === '1')
     <section id="branslar" class="py-16 max-w-7xl mx-auto px-4">
         <div class="text-center max-w-2xl mx-auto mb-12">
             <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">{{ $settings['section_branches_badge'] ?? 'Yaş ve Seviyeye Özel Eğitim' }}</span>
@@ -274,6 +275,7 @@
             @endforeach
         </div>
     </section>
+    @endif
 
     <!-- Haftalık Ders Programı & Canlı Kontenjan -->
     @if(($settings['show_schedule_section'] ?? '1') === '1')
