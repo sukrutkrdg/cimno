@@ -4,24 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Salon Giriş QR Yoklama & Mobil Kısayol Afişi | Enerjik Cimnastik</title>
+    @php
+        $brandPalette = \App\Support\ColorPalette::fromHex($settings['brand_color'] ?? null);
+        $accentPalette = \App\Support\ColorPalette::fromHex($settings['brand_color'] ?? null, 0.6);
+    @endphp
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Veli/ziyaretçi teması: tek sıcak marka rengi (bordo-eflatun), Mindbody'nin
-        // "tek güçlü renk" refleksinden esinlenildi. Durum renkleri (emerald/amber/
-        // rose) değiştirilmedi — sadece "indigo/purple" marka rengi güncellendi.
+        // Veli/ziyaretçi teması: tek sıcak marka rengi (bordo-eflatun), panel ayarlarından
+        // seçilen tek bir hex renkten otomatik üretilir (bkz. App\Support\ColorPalette).
+        // Durum renkleri (emerald/amber/rose) değiştirilmedi.
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         indigo: {
-                            50: '#fdf2f6', 100: '#fce7ee', 200: '#fbd0dd', 300: '#f4a3c0',
-                            400: '#e8689a', 500: '#c23572', 600: '#9d174d', 700: '#831440',
-                            800: '#6b1035', 900: '#4a0a24', 950: '#2e0616',
+                            50: '{{ $brandPalette['50'] }}', 100: '{{ $brandPalette['100'] }}', 200: '{{ $brandPalette['200'] }}', 300: '{{ $brandPalette['300'] }}',
+                            400: '{{ $brandPalette['400'] }}', 500: '{{ $brandPalette['500'] }}', 600: '{{ $brandPalette['600'] }}', 700: '{{ $brandPalette['700'] }}',
+                            800: '{{ $brandPalette['800'] }}', 900: '{{ $brandPalette['900'] }}', 950: '{{ $brandPalette['950'] }}',
                         },
                         purple: {
-                            50: '#fdf2f6', 100: '#fbe4ec', 200: '#f4c2d4', 300: '#e592ae',
-                            400: '#c85c82', 500: '#a13a5c', 600: '#7d2945', 700: '#5f1f35',
-                            800: '#451726', 900: '#2e0f19', 950: '#1a0810',
+                            50: '{{ $accentPalette['50'] }}', 100: '{{ $accentPalette['100'] }}', 200: '{{ $accentPalette['200'] }}', 300: '{{ $accentPalette['300'] }}',
+                            400: '{{ $accentPalette['400'] }}', 500: '{{ $accentPalette['500'] }}', 600: '{{ $accentPalette['600'] }}', 700: '{{ $accentPalette['700'] }}',
+                            800: '{{ $accentPalette['800'] }}', 900: '{{ $accentPalette['900'] }}', 950: '{{ $accentPalette['950'] }}',
                         },
                     },
                 },

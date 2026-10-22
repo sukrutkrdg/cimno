@@ -12,24 +12,40 @@
     <meta name="apple-mobile-web-app-title" content="Enerjik Cimnastik">
     <link rel="apple-touch-icon" href="/icons/logo.jpg">
     <link rel="icon" type="image/jpeg" href="/icons/logo.jpg">
+    @php
+        $brandPalette = \App\Support\ColorPalette::fromHex($settings['brand_color'] ?? null);
+        $accentPalette = \App\Support\ColorPalette::fromHex($settings['brand_color'] ?? null, 0.6);
+    @endphp
+    <!-- Sayfa boyanmadan önce tema tercihini uygula: beyaz ekranın karanlık temaya "çakması" (flash) önlenir. -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('enerjik_theme');
+                var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (dark) document.documentElement.classList.add('dark');
+            } catch (e) {}
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Veli/ziyaretçi teması: tek sıcak marka rengi (bordo-eflatun), Mindbody'nin
-        // "tek güçlü renk" refleksinden esinlenildi. Durum renkleri (emerald/amber/
-        // rose) değiştirilmedi — sadece "indigo/purple" marka rengi güncellendi.
+        // Veli/ziyaretçi teması: tek sıcak marka rengi (bordo-eflatun), panel ayarlarından
+        // seçilen tek bir hex renkten otomatik üretilir (bkz. App\Support\ColorPalette).
+        // Durum renkleri (emerald/amber/rose) değiştirilmedi. darkMode 'class': <html>
+        // üzerindeki "dark" sınıfı ile açık/koyu tema arası geçiş yapılır.
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         indigo: {
-                            50: '#fdf2f6', 100: '#fce7ee', 200: '#fbd0dd', 300: '#f4a3c0',
-                            400: '#e8689a', 500: '#c23572', 600: '#9d174d', 700: '#831440',
-                            800: '#6b1035', 900: '#4a0a24', 950: '#2e0616',
+                            50: '{{ $brandPalette['50'] }}', 100: '{{ $brandPalette['100'] }}', 200: '{{ $brandPalette['200'] }}', 300: '{{ $brandPalette['300'] }}',
+                            400: '{{ $brandPalette['400'] }}', 500: '{{ $brandPalette['500'] }}', 600: '{{ $brandPalette['600'] }}', 700: '{{ $brandPalette['700'] }}',
+                            800: '{{ $brandPalette['800'] }}', 900: '{{ $brandPalette['900'] }}', 950: '{{ $brandPalette['950'] }}',
                         },
                         purple: {
-                            50: '#fdf2f6', 100: '#fbe4ec', 200: '#f4c2d4', 300: '#e592ae',
-                            400: '#c85c82', 500: '#a13a5c', 600: '#7d2945', 700: '#5f1f35',
-                            800: '#451726', 900: '#2e0f19', 950: '#1a0810',
+                            50: '{{ $accentPalette['50'] }}', 100: '{{ $accentPalette['100'] }}', 200: '{{ $accentPalette['200'] }}', 300: '{{ $accentPalette['300'] }}',
+                            400: '{{ $accentPalette['400'] }}', 500: '{{ $accentPalette['500'] }}', 600: '{{ $accentPalette['600'] }}', 700: '{{ $accentPalette['700'] }}',
+                            800: '{{ $accentPalette['800'] }}', 900: '{{ $accentPalette['900'] }}', 950: '{{ $accentPalette['950'] }}',
                         },
                     },
                 },
@@ -41,7 +57,7 @@
         html, body { font-family: 'Plus Jakarta Sans', sans-serif; max-width: 100%; overflow-x: hidden; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors">
 
     <!-- Üst İletişim Barı (Sadece Ziyaretçi Bilgileri) -->
     <div class="bg-indigo-950 text-indigo-100 text-xs py-2 px-3 sm:px-4 border-b border-indigo-900">
@@ -62,77 +78,83 @@
     </div>
 
     <!-- Kurumsal Navigasyon (Masaüstünde Dengeli, Mobilde Açılır Menülü) -->
-    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
         <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center gap-4">
             <!-- Sol: Logo ve Kulüp Adı -->
             <a href="/" class="flex items-center gap-3 shrink-0">
                 <img src="{{ $settings['logo_url'] ?? '/icons/logo.jpg' }}" alt="Enerjik Cimnastik Logo" class="w-12 h-12 rounded-full object-cover border-2 border-purple-600 shadow">
                 <div>
-                    <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 block leading-tight">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</span>
-                    <span class="text-[11px] text-purple-700 font-bold block">{{ $settings['club_slogan'] ?? '🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar' }}</span>
+                    <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white block leading-tight">{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}</span>
+                    <span class="text-[11px] text-purple-700 dark:text-purple-300 font-bold block">{{ $settings['club_slogan'] ?? '🟣 Enerjik ⚡️ Mutlu 🤩 Güçlü 💪 Çocuklar' }}</span>
                 </div>
             </a>
 
             <!-- Orta: Masaüstü Menü Linkleri -->
-            <nav class="hidden xl:flex items-center gap-7 text-sm font-bold text-slate-700">
-                <a href="#branslar" class="hover:text-indigo-600 transition">{{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
+            <nav class="hidden xl:flex items-center gap-7 text-sm font-bold text-slate-700 dark:text-slate-200">
+                <a href="#branslar" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
                 @if(($settings['show_schedule_section'] ?? '1') === '1')
-                    <a href="#program" class="hover:text-indigo-600 transition">{{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
+                    <a href="#program" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
                 @endif
                 @if(($settings['show_prices_section'] ?? '1') === '1')
-                    <a href="#ucretler" class="hover:text-indigo-600 transition">{{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
+                    <a href="#ucretler" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
                 @endif
                 @if(($settings['show_coaches_section'] ?? '1') === '1')
-                    <a href="#antrenorler" class="hover:text-indigo-600 transition">{{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
+                    <a href="#antrenorler" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
                 @endif
                 @if(($settings['show_gallery_section'] ?? '1') === '1')
-                    <a href="#galeri" class="hover:text-indigo-600 transition">{{ $settings['nav_gallery'] ?? 'Galeri' }}</a>
+                    <a href="#galeri" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_gallery'] ?? 'Galeri' }}</a>
                 @endif
                 @if(($settings['show_faq_section'] ?? '1') === '1')
-                    <a href="#sss" class="hover:text-indigo-600 transition">{{ $settings['nav_faq'] ?? 'SSS' }}</a>
+                    <a href="#sss" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_faq'] ?? 'SSS' }}</a>
                 @endif
             </nav>
 
-            <!-- Sağ: Veli Girişi & Deneme Dersi Butonları -->
-            <div class="hidden sm:flex items-center gap-2.5 shrink-0">
-                <a href="{{ route('public.mobile.pwa') }}" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 hover:bg-indigo-50 transition">
-                    👨‍👩‍👧 {{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}
-                </a>
-                <a href="#on-kayit" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition">
-                    ✨ {{ $settings['header_trial_btn'] ?? 'Ücretsiz Deneme Dersi' }}
-                </a>
-            </div>
+            <!-- Sağ: Tema Anahtarı, Veli Girişi & Deneme Dersi Butonları -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="enerjikToggleTheme()" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Karanlık/Aydınlık Tema">
+                    <span class="dark:hidden">🌙</span>
+                    <span class="hidden dark:inline">☀️</span>
+                </button>
+                <div class="hidden sm:flex items-center gap-2.5">
+                    <a href="{{ route('public.mobile.pwa') }}" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition">
+                        👨‍👩‍👧 {{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}
+                    </a>
+                    <a href="#on-kayit" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition">
+                        ✨ {{ $settings['header_trial_btn'] ?? 'Ücretsiz Deneme Dersi' }}
+                    </a>
+                </div>
 
-            <!-- Mobil / Tablet Hamburger Menü Butonu -->
-            <button onclick="document.getElementById('mobile-nav-drawer').classList.toggle('hidden')" class="xl:hidden p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100" aria-label="Menüyü Aç">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
+                <!-- Mobil / Tablet Hamburger Menü Butonu -->
+                <button onclick="document.getElementById('mobile-nav-drawer').classList.toggle('hidden')" class="xl:hidden p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Menüyü Aç">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Mobil / Tablet Açılır Menü -->
-        <div id="mobile-nav-drawer" class="hidden xl:hidden bg-white border-t border-slate-200 px-4 py-4 space-y-3 shadow-lg">
-            <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
-                <a href="#branslar" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🤸 {{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
+        <div id="mobile-nav-drawer" class="hidden xl:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-4 space-y-3 shadow-lg">
+            <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                <a href="#branslar" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">🤸 {{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
                 @if(($settings['show_schedule_section'] ?? '1') === '1')
-                    <a href="#program" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📅 {{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
+                    <a href="#program" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">📅 {{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
                 @endif
                 @if(($settings['show_prices_section'] ?? '1') === '1')
-                    <a href="#ucretler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏷️ {{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
+                    <a href="#ucretler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">🏷️ {{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
                 @endif
                 @if(($settings['show_coaches_section'] ?? '1') === '1')
-                    <a href="#antrenorler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">🏅 {{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
+                    <a href="#antrenorler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">🏅 {{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
                 @endif
                 @if(($settings['show_gallery_section'] ?? '1') === '1')
-                    <a href="#galeri" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">📸 {{ $settings['nav_gallery'] ?? 'Salon Galerisi' }}</a>
+                    <a href="#galeri" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">📸 {{ $settings['nav_gallery'] ?? 'Salon Galerisi' }}</a>
                 @endif
                 @if(($settings['show_faq_section'] ?? '1') === '1')
-                    <a href="#sss" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50">❓ {{ $settings['nav_faq'] ?? 'Sık Sorulanlar' }}</a>
+                    <a href="#sss" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">❓ {{ $settings['nav_faq'] ?? 'Sık Sorulanlar' }}</a>
                 @endif
             </div>
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-                <a href="{{ route('public.mobile.pwa') }}" class="text-center py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 font-extrabold text-xs">
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <a href="{{ route('public.mobile.pwa') }}" class="text-center py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">
                     👨‍👩‍👧 {{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}
                 </a>
                 <a href="#on-kayit" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="text-center py-2.5 rounded-xl bg-rose-600 text-white font-extrabold text-xs">
@@ -179,7 +201,7 @@
                 </div>
             </div>
             <div class="lg:col-span-5">
-                <div class="bg-white text-slate-900 rounded-2xl p-6 shadow-2xl border border-indigo-100" id="on-kayit">
+                <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 shadow-2xl border border-indigo-100 dark:border-slate-700" id="on-kayit">
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <span class="text-xs font-bold uppercase tracking-wider text-rose-600">{{ $settings['trial_form_badge'] ?? 'Online Ön Kayıt' }}</span>
@@ -198,41 +220,41 @@
                         @csrf
                         <div class="grid sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Veli Adı Soyadı *</label>
-                                <input type="text" name="parent_name" required placeholder="Ör: Ayşe Yılmaz" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Veli Adı Soyadı *</label>
+                                <input type="text" name="parent_name" required placeholder="Ör: Ayşe Yılmaz" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Cep Telefonu (WhatsApp) *</label>
-                                <input type="tel" name="parent_phone" required placeholder="05XX XXX XX XX" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
-                            </div>
-                        </div>
-                        <div class="grid sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Sporcu (Çocuk) Adı *</label>
-                                <input type="text" name="student_name" required placeholder="Ör: Can Yılmaz" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Yaşı *</label>
-                                <input type="number" name="student_age" required min="3" max="50" value="6" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cep Telefonu (WhatsApp) *</label>
+                                <input type="tel" name="parent_phone" required placeholder="05XX XXX XX XX" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
                             </div>
                         </div>
                         <div class="grid sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Branş Tercihi</label>
-                                <select name="branch_id" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm bg-white">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Sporcu (Çocuk) Adı *</label>
+                                <input type="text" name="student_name" required placeholder="Ör: Can Yılmaz" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Yaşı *</label>
+                                <input type="number" name="student_age" required min="3" max="50" value="6" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Branş Tercihi</label>
+                                <select name="branch_id" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 px-3 py-2.5 text-sm bg-white">
                                     @foreach($branches as $b)
                                         <option value="{{ $b->id }}">{{ $b->name }} ({{ $b->age_range }})</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Uygun Gün / Saat</label>
-                                <input type="text" name="preferred_days" placeholder="Ör: Hafta sonu sabah" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Uygun Gün / Saat</label>
+                                <input type="text" name="preferred_days" placeholder="Ör: Hafta sonu sabah" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm">
                             </div>
                         </div>
-                        <label class="flex items-start gap-2 text-xs text-slate-600 pt-1 cursor-pointer">
+                        <label class="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 pt-1 cursor-pointer">
                             <input type="checkbox" name="kvkk_approved" value="1" checked required class="mt-0.5 rounded text-indigo-600">
-                            <span><a href="#kvkk" class="text-indigo-600 underline font-semibold">KVKK Aydınlatma Metni</a>'ni okudum, deneme dersi planlaması için tarafımla iletişime geçilmesini onaylıyorum.</span>
+                            <span><a href="#kvkk" class="text-indigo-600 dark:text-indigo-400 underline font-semibold">KVKK Aydınlatma Metni</a>'ni okudum, deneme dersi planlaması için tarafımla iletişime geçilmesini onaylıyorum.</span>
                         </label>
                         <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition">
                             {{ $settings['trial_form_submit'] ?? '🚀 Ücretsiz Deneme Dersi Talebi Gönder' }}
@@ -247,24 +269,24 @@
     @if(($settings['show_branches_section'] ?? '1') === '1')
     <section id="branslar" class="py-16 max-w-7xl mx-auto px-4">
         <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">{{ $settings['section_branches_badge'] ?? 'Yaş ve Seviyeye Özel Eğitim' }}</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{{ $settings['section_branches_badge'] ?? 'Yaş ve Seviyeye Özel Eğitim' }}</span>
             <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_branches_title'] ?? 'Cimnastik Branşlarımız' }}</h2>
-            <p class="text-slate-600 text-sm mt-2">{{ $settings['section_branches_sub'] ?? 'Her yaş grubunun fiziksel ve pedagojik gelişimine uygun, Türkiye Cimnastik Federasyonu müfredatıyla uyumlu branşlar.' }}</p>
+            <p class="text-slate-600 dark:text-slate-400 text-sm mt-2">{{ $settings['section_branches_sub'] ?? 'Her yaş grubunun fiziksel ve pedagojik gelişimine uygun, Türkiye Cimnastik Federasyonu müfredatıyla uyumlu branşlar.' }}</p>
         </div>
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($branches as $b)
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-4">
-                            <span class="text-3xl bg-indigo-50 w-12 h-12 rounded-xl flex items-center justify-center">{{ $b->icon }}</span>
-                            <span class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800">{{ $b->age_range }}</span>
+                            <span class="text-3xl bg-indigo-50 dark:bg-indigo-950 w-12 h-12 rounded-xl flex items-center justify-center">{{ $b->icon }}</span>
+                            <span class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">{{ $b->age_range }}</span>
                         </div>
-                        <h3 class="text-lg font-extrabold text-slate-900">{{ $b->name }}</h3>
-                        <p class="text-xs font-semibold text-rose-600 mt-0.5">{{ $b->level }}</p>
-                        <p class="text-sm text-slate-600 mt-3">{{ $b->description }}</p>
+                        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">{{ $b->name }}</h3>
+                        <p class="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-0.5">{{ $b->level }}</p>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mt-3">{{ $b->description }}</p>
                         @if($b->benefits)
-                            <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700">
-                                <strong class="text-slate-900">Kazanımlar:</strong> {{ $b->benefits }}
+                            <div class="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300">
+                                <strong class="text-slate-900 dark:text-white">Kazanımlar:</strong> {{ $b->benefits }}
                             </div>
                         @endif
                     </div>
@@ -279,14 +301,14 @@
 
     <!-- Haftalık Ders Programı & Canlı Kontenjan -->
     @if(($settings['show_schedule_section'] ?? '1') === '1')
-    <section id="program" class="py-16 bg-white border-y border-slate-200">
+    <section id="program" class="py-16 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-wrap justify-between items-end gap-4 mb-10">
                 <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">{{ $settings['section_schedule_badge'] ?? 'Canlı Salon Takvimi' }}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{{ $settings['section_schedule_badge'] ?? 'Canlı Salon Takvimi' }}</span>
                     <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_schedule_title'] ?? 'Haftalık Ders Programı & Kontenjanlar' }}</h2>
                 </div>
-                <span class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold">
+                <span class="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg font-semibold">
                     🟢 Kontenjan bilgisi yönetim panelinden anlık güncellenir
                 </span>
             </div>
@@ -296,25 +318,25 @@
                     @php
                         $remainingQuota = max(0, $grp->capacity - $grp->active_students_count);
                     @endphp
-                    <div class="rounded-2xl border border-slate-200 p-5 bg-slate-50/70 flex flex-col justify-between">
+                    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col justify-between">
                         <div>
                             <div class="flex flex-wrap justify-between items-start gap-2">
                                 <div>
-                                    <span class="text-xs font-bold text-indigo-600">{{ $grp->branch?->name }}</span>
-                                    <h3 class="text-lg font-extrabold text-slate-900">{{ $grp->name }}</h3>
+                                    <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ $grp->branch?->name }}</span>
+                                    <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">{{ $grp->name }}</h3>
                                 </div>
                                 @if($remainingQuota === 0)
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">Kontenjan Dolu (Yedek Liste)</span>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200">Kontenjan Dolu (Yedek Liste)</span>
                                 @elseif($remainingQuota <= 4)
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">🔥 Son {{ $remainingQuota }} Yer!</span>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">🔥 Son {{ $remainingQuota }} Yer!</span>
                                 @else
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">✅ Kayıt Açık ({{ $grp->active_students_count }}/{{ $grp->capacity }})</span>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">✅ Kayıt Açık ({{ $grp->active_students_count }}/{{ $grp->capacity }})</span>
                                 @endif
                             </div>
-                            <p class="text-xs text-slate-600 mt-1">👨‍🏫 Antrenör: <strong>{{ $grp->coach?->name ?? 'Kulüp Antrenörü' }}</strong> · 📍 Alan: <strong>{{ $grp->area }}</strong></p>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">👨‍🏫 Antrenör: <strong>{{ $grp->coach?->name ?? 'Kulüp Antrenörü' }}</strong> · 📍 Alan: <strong>{{ $grp->area }}</strong></p>
                             <div class="mt-4 flex flex-wrap gap-2">
                                 @foreach($grp->schedules as $sch)
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 shadow-sm">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-sm">
                                         🗓️ {{ $sch->day_of_week }}: {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }}
                                     </span>
                                 @endforeach
@@ -331,25 +353,25 @@
     @if(($settings['show_prices_section'] ?? '1') === '1')
     <section id="ucretler" class="py-16 max-w-7xl mx-auto px-4">
         <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-bold uppercase tracking-wider text-rose-600">{{ $settings['section_packages_badge'] ?? 'Şeffaf Fiyatlandırma' }}</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">{{ $settings['section_packages_badge'] ?? 'Şeffaf Fiyatlandırma' }}</span>
             <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_packages_title'] ?? 'Eğitim Paketleri ve İndirim Kuralları' }}</h2>
-            <p class="text-slate-600 text-sm mt-2">{{ $settings['section_packages_sub'] ?? 'Kardeş kaydında %15, 3 aylık peşin dönem kaydında %10 indirim otomatik uygulanır.' }}</p>
+            <p class="text-slate-600 dark:text-slate-400 text-sm mt-2">{{ $settings['section_packages_sub'] ?? 'Kardeş kaydında %15, 3 aylık peşin dönem kaydında %10 indirim otomatik uygulanır.' }}</p>
         </div>
         <div class="grid md:grid-cols-3 gap-6">
             @foreach($packages as $pkg)
-                <div class="bg-white rounded-2xl p-6 border-2 {{ $loop->iteration === 2 ? 'border-indigo-600 shadow-xl' : 'border-slate-200 shadow-sm' }} flex flex-col justify-between">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 {{ $loop->iteration === 2 ? 'border-indigo-600 shadow-xl' : 'border-slate-200 dark:border-slate-800 shadow-sm' }} flex flex-col justify-between">
                     <div>
                         @if($loop->iteration === 2)
                             <span class="inline-block text-[11px] font-extrabold uppercase tracking-wider bg-indigo-600 text-white px-3 py-1 rounded-full mb-3">En Çok Tercih Edilen</span>
                         @endif
-                        <h3 class="text-lg font-extrabold text-slate-900">{{ $pkg->name }}</h3>
+                        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">{{ $pkg->name }}</h3>
                         <div class="mt-4 flex items-baseline gap-1">
-                            <span class="text-3xl font-extrabold text-indigo-700">{{ number_format($pkg->price, 0, ',', '.') }} ₺</span>
-                            <span class="text-xs text-slate-500">/ {{ $pkg->lessons_count }} Ders</span>
+                            <span class="text-3xl font-extrabold text-indigo-700 dark:text-indigo-400">{{ number_format($pkg->price, 0, ',', '.') }} ₺</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">/ {{ $pkg->lessons_count }} Ders</span>
                         </div>
-                        <p class="text-sm text-slate-600 mt-3">{{ $pkg->description }}</p>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mt-3">{{ $pkg->description }}</p>
                     </div>
-                    <a href="#on-kayit" class="mt-6 block text-center py-3 rounded-xl font-bold text-xs {{ $loop->iteration === 2 ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200' }}">
+                    <a href="#on-kayit" class="mt-6 block text-center py-3 rounded-xl font-bold text-xs {{ $loop->iteration === 2 ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700' }}">
                         Bu Paket İçin Ön Kayıt Oluştur
                     </a>
                 </div>
@@ -392,11 +414,11 @@
                 <h2 class="text-2xl font-extrabold mb-6">📸 {{ $settings['section_gallery_title'] ?? 'Salonumuzdan Kareler' }}</h2>
                 <div class="grid sm:grid-cols-2 gap-4">
                     @foreach($gallery as $item)
-                        <div class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+                        <div class="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                             <img src="{{ $item->image_url }}" alt="{{ $item->title }}" class="w-full h-48 object-cover">
                             <div class="p-3">
-                                <span class="text-[11px] font-bold text-indigo-600">{{ $item->category }}</span>
-                                <h4 class="text-sm font-bold text-slate-900">{{ $item->title }}</h4>
+                                <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">{{ $item->category }}</span>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">{{ $item->title }}</h4>
                             </div>
                         </div>
                     @endforeach
@@ -407,22 +429,22 @@
                 <h2 class="text-2xl font-extrabold mb-6">📢 {{ $settings['section_faq_title'] ?? 'Güncel Duyurular & SSS' }}</h2>
                 <div class="space-y-3 mb-8">
                     @foreach($announcements as $ann)
-                        <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100">
-                            <span class="text-[11px] font-bold text-indigo-600">{{ $ann->created_at->format('d.m.Y') }}</span>
-                            <h3 class="font-bold text-sm text-slate-900 mt-0.5">{{ $ann->title }}</h3>
-                            <p class="text-xs text-slate-600 mt-1">{{ $ann->content }}</p>
+                        <div class="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900">
+                            <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">{{ $ann->created_at->format('d.m.Y') }}</span>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white mt-0.5">{{ $ann->title }}</h3>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">{{ $ann->content }}</p>
                         </div>
                     @endforeach
                 </div>
                 @if(($settings['show_faq_section'] ?? '1') === '1')
                 <div class="space-y-3">
                     @foreach($faqs as $faq)
-                        <details class="group bg-white rounded-xl border border-slate-200 p-4">
+                        <details class="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
                             <summary class="font-bold text-sm cursor-pointer list-none flex justify-between items-center">
                                 <span>❓ {{ $faq->question }}</span>
-                                <span class="text-indigo-600 font-extrabold">+</span>
+                                <span class="text-indigo-600 dark:text-indigo-400 font-extrabold">+</span>
                             </summary>
-                            <p class="text-xs text-slate-600 mt-2 leading-relaxed">{{ $faq->answer }}</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{{ $faq->answer }}</p>
                         </details>
                     @endforeach
                 </div>
@@ -459,6 +481,14 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        function enerjikToggleTheme() {
+            var html = document.documentElement;
+            var isDark = html.classList.toggle('dark');
+            try { localStorage.setItem('enerjik_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+        }
+    </script>
 
     @include('partials.pwa-install-prompt')
 

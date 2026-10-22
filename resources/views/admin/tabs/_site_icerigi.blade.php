@@ -38,6 +38,14 @@
                                 </div>
                             </div>
 
+                            <div>
+                                <label class="font-bold block mb-1">🎨 Marka Rengi (Sitedeki Butonlar, Rozetler, Vurgular)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" name="brand_color" value="{{ $settings['brand_color'] ?? '#9d174d' }}" class="h-10 w-14 border rounded-lg cursor-pointer shrink-0">
+                                    <span class="text-[11px] text-slate-500">Tek bir renk seçin — sitedeki tüm açık/koyu tonlar bu renkten otomatik üretilir. Kaydettikten sonra siteyi yenileyip kontrol edin.</span>
+                                </div>
+                            </div>
+
                             <div class="grid sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="font-bold block mb-1">Telefon Numarası</label>

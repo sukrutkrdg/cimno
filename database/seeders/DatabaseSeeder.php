@@ -856,6 +856,7 @@ class DatabaseSeeder extends Seeder
             ['key' => 'whatsapp_number', 'value' => '905388993159', 'group' => 'contact'],
             ['key' => 'address', 'value' => 'Tekirdağ Merkez / Süleymanpaşa', 'group' => 'contact'],
             ['key' => 'working_hours', 'value' => 'Salı - Pazar: 09:30 - 20:30 (Pazartesi İdari İzin)', 'group' => 'contact'],
+            ['key' => 'brand_color', 'value' => '#9d174d', 'group' => 'branding'],
             ['key' => 'kvkk_text', 'value' => '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, Tekirdağ Enerjik Cimnastik Spor Kulübü olarak veri sorumlusu sıfatıyla; reşit olmayan sporcularımızın ve velilerimizin kimlik, iletişim, sağlık beyanı ve görsel kayıt verilerini yalnızca kulüp faaliyetlerinin yürütülmesi, acil durum güvenliği ve Türkiye Cimnastik Federasyonu lisans süreçleri kapsamında işliyor, üçüncü kişilerle paylaşmıyoruz.', 'group' => 'kvkk'],
         ];
         foreach ($settings as $s) {
