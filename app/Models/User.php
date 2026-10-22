@@ -27,6 +27,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'permissions' => 'array',
             'is_active' => 'boolean',
+            'show_on_website' => 'boolean',
             'base_salary' => 'decimal:2',
             'per_lesson_rate' => 'decimal:2',
         ];

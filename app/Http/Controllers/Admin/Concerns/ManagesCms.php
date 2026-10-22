@@ -228,9 +228,19 @@ trait ManagesCms
             'name' => $request->input('name', $user->name),
             'specialty' => $request->input('specialty', $user->specialty),
             'bio' => $request->input('bio', $user->bio),
+            'show_on_website' => $request->boolean('show_on_website'),
         ]);
         AuditLog::record('antrenor_vitrin_guncellendi', "{$user->name} antrenör vitrin bilgileri güncellendi.");
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "{$user->name} antrenör tanıtım kartı güncellendi!");
+    }
+
+    // Antrenör Vitrin Kartını Tek Tıkla Sitede Göster/Gizle (Personel kaydını etkilemez)
+    public function toggleCoachVisibility(User $user)
+    {
+        $user->update(['show_on_website' => !$user->show_on_website]);
+        $durum = $user->show_on_website ? 'sitede gösterilecek' : 'siteden kaldırıldı';
+        AuditLog::record('antrenor_vitrin_gorunurluk', "{$user->name} antrenör kartı {$durum}.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "{$user->name} antrenör kartı {$durum}.");
     }
 
     // Dinamik Seçenek Havuzu (Salon Alanları, Yaş Grupları, Seviyeler, Gelir/Gider Kategorileri)

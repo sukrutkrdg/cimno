@@ -30,7 +30,7 @@ class PublicSiteController extends Controller
         $branches = Branch::where('is_active', true)->orderBy('sort_order')->get();
         $groups = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents')->where('is_active', true)->get();
         $packages = Package::where('is_active', true)->where('show_on_site', true)->get();
-        $coaches = User::where('role', 'coach')->where('is_active', true)->get();
+        $coaches = User::where('role', 'coach')->where('is_active', true)->where('show_on_website', true)->get();
         $announcements = Announcement::whereIn('target_audience', ['all', 'public_site'])->orderByDesc('is_pinned')->latest()->take(4)->get();
         $faqs = Faq::where('is_active', true)->orderBy('sort_order')->get();
         $gallery = GalleryItem::where('photo_consent_verified', true)->latest()->take(6)->get();

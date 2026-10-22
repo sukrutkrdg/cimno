@@ -494,26 +494,50 @@
                     <!-- Antrenör Vitrin Bilgileri (Sitede Görünen Uzmanlık & Bio) -->
                     <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 h-fit">
                         <h3 class="text-base font-extrabold border-b pb-2">🏅 8. Sitede Görünen Antrenör Tanıtım Kartları</h3>
-                        <p class="text-[11px] text-slate-500">Ana sayfadaki "Federasyon Belgeli Antrenörlerimiz" bölümünde yer alan unvan ve özgeçmiş yazılarını düzenleyin.</p>
+                        <p class="text-[11px] text-slate-500">Ana sayfadaki "Federasyon Belgeli Antrenörlerimiz" bölümünde yer alan unvan ve özgeçmiş yazılarını düzenleyin, kartı sitede göster/gizle. Yeni bir antrenör eklemek için <strong>10. Personel</strong> sekmesinden personel kaydı açın — buraya otomatik düşer.</p>
                         <div class="space-y-3">
-                            @foreach($staff->where('role', 'coach') as $coach)
-                                <form action="{{ route('admin.coaches.profile', $coach->id) }}" method="POST" class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2 text-xs">
-                                    @csrf
-                                    <div>
-                                        <label class="font-bold block mb-0.5">Antrenör Adı Soyadı</label>
-                                        <input type="text" name="name" value="{{ $coach->name }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-extrabold">
+                            @forelse($staff->where('role', 'coach') as $coach)
+                                <div class="p-3.5 rounded-xl border {{ $coach->show_on_website ? 'border-slate-200 bg-slate-50' : 'border-rose-200 bg-rose-50/50' }} space-y-2 text-xs">
+                                    <div class="flex justify-between items-center">
+                                        @if($coach->show_on_website)
+                                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">✅ Sitede Görünüyor</span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">🚫 Siteden Gizli</span>
+                                        @endif
+                                        @if(!$coach->is_active)
+                                            <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-bold text-[10px]">⏸️ Pasif Personel</span>
+                                        @endif
+                                        <form action="{{ route('admin.coaches.toggle_visibility', $coach->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1 rounded-lg {{ $coach->show_on_website ? 'bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700' : 'bg-emerald-100 hover:bg-emerald-600 hover:text-white text-emerald-700' }} font-bold">
+                                                {{ $coach->show_on_website ? '🚫 Siteden Kaldır' : '✅ Sitede Göster' }}
+                                            </button>
+                                        </form>
                                     </div>
-                                    <div>
-                                        <label class="font-bold block mb-0.5">Uzmanlık / Kademe Unvanı</label>
-                                        <input type="text" name="specialty" value="{{ $coach->specialty }}" placeholder="Ör: 2. Kademe Artistik Cimnastik Antrenörü" class="w-full border rounded-lg px-2.5 py-1.5 bg-white text-indigo-700 font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="font-bold block mb-0.5">Sitede Görünen Özgeçmiş / Tanıtım Metni</label>
-                                        <textarea name="bio" rows="2" class="w-full border rounded-lg p-2 bg-white">{{ $coach->bio }}</textarea>
-                                    </div>
-                                    <button type="submit" class="w-full py-2 rounded-lg bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Antrenör Vitrin Kartını Güncelle</button>
-                                </form>
-                            @endforeach
+                                    <form action="{{ route('admin.coaches.profile', $coach->id) }}" method="POST" class="space-y-2">
+                                        @csrf
+                                        <div>
+                                            <label class="font-bold block mb-0.5">Antrenör Adı Soyadı</label>
+                                            <input type="text" name="name" value="{{ $coach->name }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-extrabold">
+                                        </div>
+                                        <div>
+                                            <label class="font-bold block mb-0.5">Uzmanlık / Kademe Unvanı</label>
+                                            <input type="text" name="specialty" value="{{ $coach->specialty }}" placeholder="Ör: 2. Kademe Artistik Cimnastik Antrenörü" class="w-full border rounded-lg px-2.5 py-1.5 bg-white text-indigo-700 font-bold">
+                                        </div>
+                                        <div>
+                                            <label class="font-bold block mb-0.5">Sitede Görünen Özgeçmiş / Tanıtım Metni</label>
+                                            <textarea name="bio" rows="2" class="w-full border rounded-lg p-2 bg-white">{{ $coach->bio }}</textarea>
+                                        </div>
+                                        <label class="flex items-center gap-2 font-bold">
+                                            <input type="checkbox" name="show_on_website" value="1" {{ $coach->show_on_website ? 'checked' : '' }} class="rounded text-indigo-600">
+                                            Ana sayfada göster
+                                        </label>
+                                        <button type="submit" class="w-full py-2 rounded-lg bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Antrenör Vitrin Kartını Güncelle</button>
+                                    </form>
+                                </div>
+                            @empty
+                                <p class="text-xs text-slate-500">Henüz antrenör kaydı yok — Personel sekmesinden ekleyin.</p>
+                            @endforelse
                         </div>
                     </div>
                 </div>
