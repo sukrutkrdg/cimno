@@ -36,6 +36,7 @@ use App\Models\User;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -296,6 +297,72 @@ class AdminPanelController extends Controller
             '61_plus' => Invoice::whereIn('status', ['unpaid', 'partial'])->whereDate('due_date', '<', now()->subDays(60))->sum('remaining_amount'),
         ];
 
+        // Yoklama Analiz & Raporları (Çoklu Kriterli Filtre + Grafik Verisi)
+        $attFrom = $request->query('att_from', today()->subDays(29)->toDateString());
+        $attTo = $request->query('att_to', today()->toDateString());
+        $attBranchId = $request->query('att_branch_id');
+        $attGroupId = $request->query('att_group_id');
+        $attCoachId = $request->query('att_coach_id');
+
+        $attendanceBaseQuery = function () use ($attFrom, $attTo, $attGroupId, $attCoachId, $attBranchId) {
+            return Attendance::query()
+                ->whereBetween('attendances.attendance_date', [$attFrom, $attTo])
+                ->when($attGroupId, fn($q) => $q->where('attendances.group_id', $attGroupId))
+                ->when($attCoachId, fn($q) => $q->where('attendances.coach_id', $attCoachId))
+                ->when($attBranchId, fn($q) => $q->whereHas('group', fn($gq) => $gq->where('branch_id', $attBranchId)));
+        };
+
+        $attendanceStatusCounts = $attendanceBaseQuery()
+            ->select('attendances.status', DB::raw('count(*) as toplam'))
+            ->groupBy('attendances.status')
+            ->pluck('toplam', 'status');
+
+        $attendanceTotal = (int) $attendanceStatusCounts->sum();
+        $attendancePresentLike = (int) ($attendanceStatusCounts['present'] ?? 0) + (int) ($attendanceStatusCounts['makeup'] ?? 0);
+        $attendanceRate = $attendanceTotal > 0 ? round($attendancePresentLike / $attendanceTotal * 100, 1) : 0;
+
+        $attendanceDailyTrend = $attendanceBaseQuery()
+            ->select(
+                'attendances.attendance_date',
+                DB::raw("sum(case when attendances.status in ('present','makeup') then 1 else 0 end) as gelen"),
+                DB::raw('count(*) as toplam')
+            )
+            ->groupBy('attendances.attendance_date')
+            ->orderBy('attendances.attendance_date')
+            ->get();
+
+        $attendanceByBranch = $attendanceBaseQuery()
+            ->join('groups', 'groups.id', '=', 'attendances.group_id')
+            ->join('branches', 'branches.id', '=', 'groups.branch_id')
+            ->select(
+                'branches.name as branch_name',
+                DB::raw("sum(case when attendances.status in ('present','makeup') then 1 else 0 end) as gelen"),
+                DB::raw('count(*) as toplam')
+            )
+            ->groupBy('branches.id', 'branches.name')
+            ->orderByDesc('toplam')
+            ->get();
+
+        $attendanceByGroup = $attendanceBaseQuery()
+            ->join('groups', 'groups.id', '=', 'attendances.group_id')
+            ->select(
+                'groups.name as group_name',
+                DB::raw("sum(case when attendances.status in ('present','makeup') then 1 else 0 end) as gelen"),
+                DB::raw('count(*) as toplam')
+            )
+            ->groupBy('groups.id', 'groups.name')
+            ->orderByDesc('toplam')
+            ->get();
+
+        $attendanceTopAbsentees = $attendanceBaseQuery()
+            ->where('attendances.status', 'absent')
+            ->join('students', 'students.id', '=', 'attendances.student_id')
+            ->select('students.id as student_id', 'students.full_name', DB::raw('count(*) as devamsizlik'))
+            ->groupBy('students.id', 'students.full_name')
+            ->orderByDesc('devamsizlik')
+            ->take(10)
+            ->get();
+
         return view('admin.panel', compact(
             'authUser',
             'allowedTabs',
@@ -333,6 +400,18 @@ class AdminPanelController extends Controller
             'expiringMedicalStudents',
             'coachPayrolls',
             'agingBuckets',
+            'attFrom',
+            'attTo',
+            'attBranchId',
+            'attGroupId',
+            'attCoachId',
+            'attendanceStatusCounts',
+            'attendanceTotal',
+            'attendanceRate',
+            'attendanceDailyTrend',
+            'attendanceByBranch',
+            'attendanceByGroup',
+            'attendanceTopAbsentees',
             'hallAreas',
             'ageGroups',
             'groupLevels',

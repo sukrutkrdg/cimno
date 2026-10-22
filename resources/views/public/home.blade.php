@@ -44,15 +44,19 @@
 <body class="bg-slate-50 text-slate-900">
 
     <!-- Üst İletişim Barı (Sadece Ziyaretçi Bilgileri) -->
-    <div class="bg-indigo-950 text-indigo-100 text-xs py-2 px-4 border-b border-indigo-900">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-4 truncate">
-                <span>📍 {{ $settings['city_district'] ?? 'Tekirdağ' }} · {{ $settings['address'] ?? 'Süleymanpaşa' }}</span>
-                <span class="hidden sm:inline">☎️ {{ $settings['phone'] ?? '0538 899 31 59' }}</span>
+    <div class="bg-indigo-950 text-indigo-100 text-xs py-2 px-3 sm:px-4 border-b border-indigo-900">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                <span class="truncate">📍 {{ $settings['address'] ?? ($settings['city_district'] ?? 'Tekirdağ') }}</span>
+                <span class="hidden md:inline shrink-0 text-indigo-300">· ☎️ {{ $settings['phone'] ?? '0538 899 31 59' }}</span>
             </div>
-            <div class="flex items-center gap-4 font-semibold shrink-0">
-                <a href="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/enerjik.cimnastik/' }}" target="_blank" class="text-pink-400 hover:underline">📸 {{ $settings['instagram_handle'] ?? '@enerjik.cimnastik' }}</a>
-                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode($settings['whatsapp_welcome_msg'] ?? 'Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="text-emerald-400 hover:underline">💬 WhatsApp İletişim</a>
+            <div class="flex items-center gap-3 font-semibold shrink-0">
+                <a href="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/enerjik.cimnastik/' }}" target="_blank" class="text-pink-400 hover:underline flex items-center gap-1">
+                    <span>📸</span><span class="hidden sm:inline">{{ $settings['instagram_handle'] ?? '@enerjik.cimnastik' }}</span>
+                </a>
+                <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode($settings['whatsapp_welcome_msg'] ?? 'Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="hidden sm:flex text-emerald-400 hover:underline items-center gap-1">
+                    <span>💬</span><span>WhatsApp İletişim</span>
+                </a>
             </div>
         </div>
     </div>
