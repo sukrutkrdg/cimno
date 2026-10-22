@@ -41,6 +41,7 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        html, body { max-width: 100%; overflow-x: hidden; }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-tap-highlight-color: transparent;
@@ -169,13 +170,29 @@
 
                     <div class="p-4 space-y-4">
                         @if($sekme === 'cocuklarim' || $sekme === 'tumu')
+                            @php
+                                $todaySchedules = ($st->group?->schedules ?? collect())->where('day_of_week', $todayName);
+                            @endphp
+                            @if($todaySchedules->isNotEmpty())
+                                <!-- Bugünkü Ders Hatırlatması -->
+                                <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 shadow-md">
+                                    <div class="font-extrabold text-sm">🔥 Bugün Dersiniz Var!</div>
+                                    <div class="text-xs font-bold mt-0.5">
+                                        @foreach($todaySchedules as $sch)
+                                            ⏰ {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }} ({{ $sch->area }})@if(!$loop->last), @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <!-- Ders Saatleri -->
                             <div>
-                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">📅 Haftalık Antrenman Saatleri</h3>
+                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">📅 Haftalık Antrenman Saatleri (Takvim)</h3>
                                 <div class="flex flex-wrap gap-1.5">
                                     @foreach($st->group?->schedules ?? [] as $sch)
-                                        <span class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-900 font-bold text-xs">
-                                            🗓️ {{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }} ({{ $sch->area }})
+                                        @php $isToday = $sch->day_of_week === $todayName; @endphp
+                                        <span class="px-3 py-1.5 rounded-xl font-bold text-xs {{ $isToday ? 'bg-emerald-500 text-white ring-2 ring-emerald-300' : 'bg-indigo-50 text-indigo-900' }}">
+                                            {{ $isToday ? '🔥' : '🗓️' }} {{ $sch->day_of_week }} {{ substr($sch->start_time, 0, 5) }} - {{ substr($sch->end_time, 0, 5) }} ({{ $sch->area }})
                                         </span>
                                     @endforeach
                                 </div>

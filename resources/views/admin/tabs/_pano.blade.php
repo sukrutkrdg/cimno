@@ -41,6 +41,38 @@
                     </div>
                 </div>
 
+                <!-- Bugünkü Yoklama Özeti -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                    <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                        <h3 class="font-extrabold text-sm text-indigo-900">✅ Bugünkü Yoklama Durumu</h3>
+                        @if($currentRole === 'super_admin' && in_array('raporlar', $allowedTabs, true))
+                            <a href="{{ route('admin.index', ['tab' => 'raporlar', 'role_view' => $currentRole]) }}" class="text-[11px] text-indigo-600 font-bold underline">Detaylı Analiz & Grafikler →</a>
+                        @endif
+                    </div>
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border text-center">
+                            <div class="text-[11px] font-bold text-slate-500">Bugün Alınan Kayıt</div>
+                            <div class="text-xl font-extrabold text-slate-900 mt-0.5">{{ $todayAttendanceTotal }}</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                            <div class="text-[11px] font-bold text-emerald-700">✅ Geldi</div>
+                            <div class="text-xl font-extrabold text-emerald-700 mt-0.5">{{ $todayAttendanceCounts['present'] ?? 0 }}</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-center">
+                            <div class="text-[11px] font-bold text-rose-700">❌ Gelmedi</div>
+                            <div class="text-xl font-extrabold text-rose-700 mt-0.5">{{ $todayAttendanceCounts['absent'] ?? 0 }}</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-center">
+                            <div class="text-[11px] font-bold text-amber-700">🩺 Raporlu/🔄 Telafi</div>
+                            <div class="text-xl font-extrabold text-amber-700 mt-0.5">{{ ($todayAttendanceCounts['excused'] ?? 0) + ($todayAttendanceCounts['makeup'] ?? 0) }}</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-center">
+                            <div class="text-[11px] font-bold text-indigo-700">Son 7 Gün Katılım</div>
+                            <div class="text-xl font-extrabold text-indigo-700 mt-0.5">{{ $weekAttendanceRate !== null ? '%' . number_format($weekAttendanceRate, 1, ',', '.') : '—' }}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Periyodik Uyarılar: 2+ Ders Kaçıranlar & Sağlık Raporu Bitenler & WhatsApp Kuyruğu -->
                 <div class="grid lg:grid-cols-3 gap-6">
                     <div class="bg-white rounded-2xl border border-slate-200 p-5">

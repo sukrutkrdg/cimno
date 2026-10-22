@@ -159,13 +159,17 @@ class PublicSiteController extends Controller
         $sekme = $request->query('sekme', 'cocuklarim'); // cocuklarim, aidat, karne, duyurular
         $announcements = Announcement::whereIn('target_audience', ['all', 'parents'])->latest()->take(6)->get();
 
+        $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
+        $todayName = $turkishDays[now()->dayOfWeekIso] ?? null;
+
         return view('public.mobile-app', compact(
             'activePhone',
             'loginError',
             'students',
             'sekme',
             'settings',
-            'announcements'
+            'announcements',
+            'todayName'
         ));
     }
 

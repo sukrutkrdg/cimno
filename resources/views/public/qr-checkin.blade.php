@@ -35,7 +35,7 @@
         };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <style>html, body { font-family: 'Plus Jakarta Sans', sans-serif; max-width: 100%; overflow-x: hidden; }</style>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen pb-24">
 

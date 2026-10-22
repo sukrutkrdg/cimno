@@ -27,6 +27,8 @@ trait ManagesStudents
             'discount_rule_id' => 'nullable|exists:discount_rules,id',
             'parent_name' => 'required|string|max:120',
             'parent_phone' => 'required|string|max:30',
+            'secondary_parent_name' => 'nullable|string|max:120',
+            'secondary_parent_phone' => 'nullable|string|max:30',
             'emergency_contact_name' => 'nullable|string|max:120',
             'emergency_contact_phone' => 'nullable|string|max:30',
             'health_notes' => 'nullable|string',
@@ -51,6 +53,8 @@ trait ManagesStudents
             'portal_pin' => Student::portalPinFor($validated['parent_phone']),
             'parent_name' => $validated['parent_name'],
             'parent_phone' => $validated['parent_phone'],
+            'secondary_parent_name' => $validated['secondary_parent_name'] ?? null,
+            'secondary_parent_phone' => $validated['secondary_parent_phone'] ?? null,
             'emergency_contact_name' => $validated['emergency_contact_name'] ?? $validated['parent_name'],
             'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? $validated['parent_phone'],
             'health_notes' => $validated['health_notes'] ?? 'Spor yapmasında engel yoktur.',
@@ -72,6 +76,18 @@ trait ManagesStudents
             'message_text' => "Sayın {$student->parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
             'status' => 'queued',
         ]);
+
+        // İkinci Veli (varsa) Aynı PIN ile Ayrıca Bilgilendirilir — Her İki Veli de
+        // Kendi Telefonuyla Aynı Öğrenciye Giriş Yapabilir (bkz. PublicSiteController@mobilePwa).
+        if (!empty($student->secondary_parent_phone)) {
+            WhatsappMessage::create([
+                'student_id' => $student->id,
+                'recipient_name' => $student->secondary_parent_name ?: 'İkinci Veli',
+                'recipient_phone' => $student->secondary_parent_phone,
+                'message_text' => "Sayın {$student->secondary_parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->secondary_parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
+                'status' => 'queued',
+            ]);
+        }
 
         // Otomatik Borç Hesaplama
         $gross = (float) $package->price;
@@ -163,6 +179,8 @@ trait ManagesStudents
             'discount_rule_id' => $request->input('discount_rule_id') ?: null,
             'parent_name' => $request->input('parent_name', $student->parent_name),
             'parent_phone' => $request->input('parent_phone', $student->parent_phone),
+            'secondary_parent_name' => $request->input('secondary_parent_name', $student->secondary_parent_name),
+            'secondary_parent_phone' => $request->input('secondary_parent_phone', $student->secondary_parent_phone),
             'uniform_size' => $request->input('uniform_size', $student->uniform_size),
             'license_no' => $request->input('license_no', $student->license_no),
             'makeup_credits' => (int) $request->input('makeup_credits', $student->makeup_credits),
@@ -174,6 +192,7 @@ trait ManagesStudents
         ]);
 
         // Yeni PIN veliye iletilmezse veli portalına giremez kalır; otomatik bildir.
+        // PIN her iki veli için de ortak olduğundan, ikinci veli varsa o da ayrıca bilgilendirilir.
         if ($pinRegenerated) {
             WhatsappMessage::create([
                 'student_id' => $student->id,
@@ -182,6 +201,16 @@ trait ManagesStudents
                 'message_text' => "Sayın {$student->parent_name}, {$student->full_name} için veli portalı PIN kodunuz yenilendi. Yeni PIN: {$newPin} (Telefon: {$student->parent_phone}). Giriş: " . url('/mobil'),
                 'status' => 'queued',
             ]);
+
+            if (!empty($student->secondary_parent_phone)) {
+                WhatsappMessage::create([
+                    'student_id' => $student->id,
+                    'recipient_name' => $student->secondary_parent_name ?: 'İkinci Veli',
+                    'recipient_phone' => $student->secondary_parent_phone,
+                    'message_text' => "Sayın {$student->secondary_parent_name}, {$student->full_name} için veli portalı PIN kodunuz yenilendi. Yeni PIN: {$newPin} (Telefon: {$student->secondary_parent_phone}). Giriş: " . url('/mobil'),
+                    'status' => 'queued',
+                ]);
+            }
         }
 
         AuditLog::record('ogrenci_guncellendi', "{$student->full_name} sporcu/veli bilgileri güncellendi.", 'Student', $student->id);

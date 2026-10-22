@@ -248,6 +248,17 @@
                                     <input type="text" name="parent_phone" required placeholder="0532XXXXXXX" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                             </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="font-bold block mb-1">İkinci Veli Adı Soyadı (Opsiyonel)</label>
+                                    <input type="text" name="secondary_parent_name" placeholder="Ör: Ayşe Demir" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">İkinci Veli Telefon (Opsiyonel)</label>
+                                    <input type="text" name="secondary_parent_phone" placeholder="0532XXXXXXX" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-slate-400 -mt-1.5">İkinci veli girilirse, aynı PIN ile kendi telefon numarasıyla da veli portalına (📱 Mobil Uygulama) giriş yapıp öğrenciyi görüntüleyebilir.</p>
                             <div>
                                 <label class="font-bold block mb-1">Sağlık Bilgisi & Rapor Notu (Özel Nitelikli Veri)</label>
                                 <input type="text" name="health_notes" placeholder="Spor yapabilir raporu alındı, bilinen alerji yok." class="w-full border rounded-xl px-3 py-2">
@@ -306,6 +317,9 @@
                                         <td class="p-2.5">
                                             <div>{{ $st->parent_name }}</div>
                                             <div class="font-mono text-[11px]">{{ $st->parent_phone }}</div>
+                                            @if($st->secondary_parent_phone)
+                                                <div class="text-[11px] text-indigo-600 mt-0.5">👤 {{ $st->secondary_parent_name }} <span class="font-mono">{{ $st->secondary_parent_phone }}</span></div>
+                                            @endif
                                             <div class="mt-1">
                                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-mono text-[11px] font-extrabold" title="Veli Portalı (/mobil) giriş PIN'i — telefon numarasıyla birlikte kullanılır">
                                                     🔑 PIN: {{ $st->portal_pin ?? '—' }}
@@ -394,6 +408,14 @@
                                                     <div>
                                                         <label class="font-bold block mb-0.5">Veli Telefon *</label>
                                                         <input type="text" name="parent_phone" value="{{ $st->parent_phone }}" required class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-mono">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">İkinci Veli Adı (Opsiyonel)</label>
+                                                        <input type="text" name="secondary_parent_name" value="{{ $st->secondary_parent_name }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">İkinci Veli Telefon (Opsiyonel)</label>
+                                                        <input type="text" name="secondary_parent_phone" value="{{ $st->secondary_parent_phone }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-mono">
                                                     </div>
                                                     <div>
                                                         <label class="font-bold block mb-0.5">Beden / Lisans</label>

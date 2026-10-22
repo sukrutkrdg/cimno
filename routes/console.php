@@ -86,7 +86,62 @@ Artisan::command('enerjik:daily-tasks', function () {
         }
     }
 
+    // 3. Bugün dersi olan öğrencilere ders saati hatırlatması (birincil ve varsa ikincil veliye ayrı ayrı)
+    $tplLessonToday = WhatsappTemplate::where('trigger_event', 'lesson_today')->where('is_active', true)->first();
+    if ($tplLessonToday) {
+        $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
+        $todayName = $turkishDays[now()->dayOfWeekIso] ?? null;
+
+        if ($todayName) {
+            $studentsToday = Student::with(['group.schedules'])
+                ->where('status', 'active')
+                ->whereHas('group.schedules', fn($q) => $q->where('day_of_week', $todayName))
+                ->get();
+
+            foreach ($studentsToday as $st) {
+                $times = $st->group?->schedules
+                    ->where('day_of_week', $todayName)
+                    ->map(fn($s) => substr($s->start_time, 0, 5) . '-' . substr($s->end_time, 0, 5))
+                    ->implode(', ');
+                if (!$times) continue;
+
+                $recipients = collect([['name' => $st->parent_name, 'phone' => $st->parent_phone]]);
+                if (!empty($st->secondary_parent_phone)) {
+                    $recipients->push(['name' => $st->secondary_parent_name ?: $st->parent_name, 'phone' => $st->secondary_parent_phone]);
+                }
+
+                foreach ($recipients as $r) {
+                    if (empty($r['phone'])) continue;
+
+                    // Aynı gün cron birden fazla kez tetiklenirse (paylaşımlı hosting'de yaygın)
+                    // aynı veliye aynı hatırlatmanın tekrar kuyruğa eklenmesini önler.
+                    $alreadyQueuedToday = WhatsappMessage::where('template_id', $tplLessonToday->id)
+                        ->where('student_id', $st->id)
+                        ->where('recipient_phone', $r['phone'])
+                        ->whereDate('created_at', today())
+                        ->exists();
+                    if ($alreadyQueuedToday) continue;
+
+                    $text = str_replace(
+                        ['{veli_adi}', '{ogrenci_adi}', '{saat}', '{grup_adi}'],
+                        [$r['name'], $st->full_name, $times, $st->group?->name],
+                        $tplLessonToday->message_template
+                    );
+
+                    WhatsappMessage::create([
+                        'template_id' => $tplLessonToday->id,
+                        'student_id' => $st->id,
+                        'recipient_name' => $r['name'],
+                        'recipient_phone' => $r['phone'],
+                        'message_text' => $text,
+                        'status' => 'queued',
+                    ]);
+                }
+            }
+        }
+    }
+
     $this->info('Günlük görevler başarıyla tamamlandı.');
-})->purpose('Günlük aidat, doğum günü, sağlık raporu ve deneme dersi hatırlatmalarını WhatsApp Business kuyruğuna ekler');
+})->purpose('Günlük aidat, doğum günü, sağlık raporu, deneme dersi ve bugünkü ders saati hatırlatmalarını WhatsApp Business kuyruğuna ekler');
 
 Schedule::command('enerjik:daily-tasks')->dailyAt('09:00');

@@ -209,6 +209,25 @@ class AdminPanelController extends Controller
             ? $authUser->id
             : null;
 
+        // Pano: Bugünkü ve Son 7 Günlük Yoklama Özeti (antrenör görünümünde kendi gruplarıyla sınırlı)
+        $todayAttendanceCounts = Attendance::whereDate('attendance_date', today())
+            ->when($restrictToCoachId, fn($q) => $q->where('coach_id', $restrictToCoachId))
+            ->select('status', DB::raw('count(*) as toplam'))
+            ->groupBy('status')
+            ->pluck('toplam', 'status');
+        $todayAttendanceTotal = (int) $todayAttendanceCounts->sum();
+        $todayAttendanceRate = $todayAttendanceTotal > 0
+            ? round((((int) ($todayAttendanceCounts['present'] ?? 0) + (int) ($todayAttendanceCounts['makeup'] ?? 0)) / $todayAttendanceTotal) * 100, 1)
+            : null;
+
+        $weekAttendanceRow = Attendance::whereBetween('attendance_date', [today()->subDays(6), today()])
+            ->when($restrictToCoachId, fn($q) => $q->where('coach_id', $restrictToCoachId))
+            ->selectRaw("sum(case when status in ('present','makeup') then 1 else 0 end) as gelen, count(*) as toplam")
+            ->first();
+        $weekAttendanceRate = $weekAttendanceRow && $weekAttendanceRow->toplam > 0
+            ? round(($weekAttendanceRow->gelen / $weekAttendanceRow->toplam) * 100, 1)
+            : null;
+
         // Veriler
         $branches = Branch::withCount('students')->orderBy('sort_order')->get();
         $groupsQuery = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents');
@@ -412,6 +431,10 @@ class AdminPanelController extends Controller
             'attendanceByBranch',
             'attendanceByGroup',
             'attendanceTopAbsentees',
+            'todayAttendanceCounts',
+            'todayAttendanceTotal',
+            'todayAttendanceRate',
+            'weekAttendanceRate',
             'hallAreas',
             'ageGroups',
             'groupLevels',
