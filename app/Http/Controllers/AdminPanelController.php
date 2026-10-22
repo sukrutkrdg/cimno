@@ -196,6 +196,11 @@ class AdminPanelController extends Controller
             $activeTab = 'pano';
         }
 
+        // Her sekmede görünen üst bar rozeti: gönderilmeyi bekleyen WhatsApp mesajı sayısı
+        // (yeni öğrenci/PIN yenileme gibi işlemler mesajı otomatik kuyruğa yazar ama
+        // göndermek hâlâ elle tetiklenir; bu rozet unutulmasını önlemek içindir).
+        $pendingWhatsappCount = WhatsappMessage::where('status', 'queued')->count();
+
         // 1. Pano İstatistikleri
         $todayCollection = Payment::whereDate('payment_date', today())->sum('amount');
         $monthCollection = Payment::whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount');
@@ -387,6 +392,7 @@ class AdminPanelController extends Controller
             'allowedTabs',
             'activeTab',
             'currentRole',
+            'pendingWhatsappCount',
             'todayCollection',
             'monthCollection',
             'overdueTotal',

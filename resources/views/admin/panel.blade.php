@@ -69,6 +69,12 @@
                 </form>
             @endif
 
+            @if(in_array('mesajlar', $allowedTabs, true) && $pendingWhatsappCount > 0)
+                <a href="{{ route('admin.index', ['tab' => 'mesajlar', 'role_view' => $currentRole]) }}" class="flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 animate-pulse">
+                    💬 {{ $pendingWhatsappCount }} Bekleyen Mesaj
+                </a>
+            @endif
+
             <a href="{{ route('public.home') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700">🌐 Veli Sitesi</a>
             <a href="{{ route('public.mobile.pwa') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-600">📲 Mobil Uygulama</a>
             <a href="{{ route('public.qr.poster') }}" target="_blank" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400">🏁 QR Afişi</a>

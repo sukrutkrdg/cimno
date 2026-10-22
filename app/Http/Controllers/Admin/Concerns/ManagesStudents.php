@@ -144,7 +144,11 @@ trait ManagesStudents
 
         AuditLog::record('ogrenci_eklendi', "Yeni öğrenci kaydı açıldı: {$student->full_name} (İlk Tahsilat: {$paid} TL)", 'Student', $student->id);
 
-        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "Öğrenci kaydı ({$student->full_name}), aidat planı ve ilk tahsilat makbuzu başarıyla oluşturuldu!");
+        $guardianNote = !empty($student->secondary_parent_phone)
+            ? 'Her iki velinin de giriş bilgisi/PIN mesajı WhatsApp kuyruğuna eklendi'
+            : 'Veli giriş bilgisi/PIN mesajı WhatsApp kuyruğuna eklendi';
+
+        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "Öğrenci kaydı ({$student->full_name}), aidat planı ve ilk tahsilat makbuzu başarıyla oluşturuldu! {$guardianNote} — unutmadan Mesajlar sekmesinden gönderin.");
     }
 
     // MODÜL 3: Mevcut Öğrenciyi Düzenle
@@ -214,7 +218,7 @@ trait ManagesStudents
         }
 
         AuditLog::record('ogrenci_guncellendi', "{$student->full_name} sporcu/veli bilgileri güncellendi.", 'Student', $student->id);
-        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "'{$student->full_name}' sporcu bilgileri başarıyla güncellendi!" . ($pinRegenerated ? ' Yeni PIN WhatsApp kuyruğuna eklendi.' : ''));
+        return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "'{$student->full_name}' sporcu bilgileri başarıyla güncellendi!" . ($pinRegenerated ? ' Yeni PIN mesajı WhatsApp kuyruğuna eklendi — unutmadan Mesajlar sekmesinden gönderin.' : ''));
     }
 
     // Öğrenci Durum Değiştirme (Dondurma / Ayrılma / Arşivleme)
