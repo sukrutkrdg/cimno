@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait ManagesStudents
 {
@@ -39,110 +40,124 @@ trait ManagesStudents
             'cash_account_id' => 'nullable|exists:cash_accounts,id',
         ]);
 
-        $package = Package::findOrFail($validated['package_id']);
-        $discountRule = !empty($validated['discount_rule_id']) ? DiscountRule::find($validated['discount_rule_id']) : null;
+        // Bu işlem sırasıyla Student + 1-2 WhatsappMessage + Invoice + Payment + kasa
+        // bakiyesi artışı yazar. Transaction olmadan, ör. Payment ekleme bir DB kısıtı
+        // yüzünden yarıda başarısız olursa, öğrenci kaydı + borç kalır ama tahsilat/kasa
+        // güncellemesi hiç olmaz ya da tam tersi. Tek bir transaction ile ya hepsi ya hiçbiri.
+        $this->assertCoachOwnsGroup((int) $validated['group_id']);
 
-        $student = Student::create([
-            'full_name' => $validated['full_name'],
-            'birth_date' => $validated['birth_date'] ?? null,
-            'gender' => $validated['gender'],
-            'branch_id' => $validated['branch_id'],
-            'group_id' => $validated['group_id'],
-            'package_id' => $validated['package_id'],
-            'discount_rule_id' => $validated['discount_rule_id'] ?? null,
-            'portal_pin' => Student::portalPinFor($validated['parent_phone']),
-            'parent_name' => $validated['parent_name'],
-            'parent_phone' => $validated['parent_phone'],
-            'secondary_parent_name' => $validated['secondary_parent_name'] ?? null,
-            'secondary_parent_phone' => $validated['secondary_parent_phone'] ?? null,
-            'emergency_contact_name' => $validated['emergency_contact_name'] ?? $validated['parent_name'],
-            'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? $validated['parent_phone'],
-            'health_notes' => $validated['health_notes'] ?? 'Spor yapmasında engel yoktur.',
-            'medical_report_expires_at' => $validated['medical_report_expires_at'] ?? now()->addYear()->toDateString(),
-            'license_no' => $validated['license_no'] ?? null,
-            'uniform_size' => $validated['uniform_size'] ?? null,
-            'status' => 'active',
-            'kvkk_consent' => $request->boolean('kvkk_consent', true),
-            'health_data_consent' => $request->boolean('health_data_consent', true),
-            'photo_consent' => $request->boolean('photo_consent', true),
-            'marketing_consent' => $request->boolean('marketing_consent', false),
-        ]);
+        [$student, $paid] = DB::transaction(function () use ($validated, $request) {
+            $package = Package::findOrFail($validated['package_id']);
+            $discountRule = !empty($validated['discount_rule_id']) ? DiscountRule::find($validated['discount_rule_id']) : null;
 
-        // Veli Portalı Giriş Bilgisi (Telefon + PIN) WhatsApp ile Gönderilir
-        WhatsappMessage::create([
-            'student_id' => $student->id,
-            'recipient_name' => $student->parent_name,
-            'recipient_phone' => $student->parent_phone,
-            'message_text' => "Sayın {$student->parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
-            'status' => 'queued',
-        ]);
-
-        // İkinci Veli (varsa) Aynı PIN ile Ayrıca Bilgilendirilir — Her İki Veli de
-        // Kendi Telefonuyla Aynı Öğrenciye Giriş Yapabilir (bkz. PublicSiteController@mobilePwa).
-        if (!empty($student->secondary_parent_phone)) {
-            WhatsappMessage::create([
-                'student_id' => $student->id,
-                'recipient_name' => $student->secondary_parent_name ?: 'İkinci Veli',
-                'recipient_phone' => $student->secondary_parent_phone,
-                'message_text' => "Sayın {$student->secondary_parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->secondary_parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
-                'status' => 'queued',
+            $student = Student::create([
+                'full_name' => $validated['full_name'],
+                'birth_date' => $validated['birth_date'] ?? null,
+                'gender' => $validated['gender'],
+                'branch_id' => $validated['branch_id'],
+                'group_id' => $validated['group_id'],
+                'package_id' => $validated['package_id'],
+                'discount_rule_id' => $validated['discount_rule_id'] ?? null,
+                'portal_pin' => Student::portalPinFor($validated['parent_phone']),
+                'parent_name' => $validated['parent_name'],
+                'parent_phone' => $validated['parent_phone'],
+                'secondary_parent_name' => $validated['secondary_parent_name'] ?? null,
+                'secondary_parent_phone' => $validated['secondary_parent_phone'] ?? null,
+                'emergency_contact_name' => $validated['emergency_contact_name'] ?? $validated['parent_name'],
+                'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? $validated['parent_phone'],
+                'health_notes' => $validated['health_notes'] ?? 'Spor yapmasında engel yoktur.',
+                'medical_report_expires_at' => $validated['medical_report_expires_at'] ?? now()->addYear()->toDateString(),
+                'license_no' => $validated['license_no'] ?? null,
+                'uniform_size' => $validated['uniform_size'] ?? null,
+                'status' => 'active',
+                // HTML checkbox'lar işaretlenmediğinde hiç gönderilmez; varsayılanı true
+                // yapmak, personelin kutuyu işaretlemeyi unutmasını "rıza verildi" olarak
+                // kaydeder — KVKK/sağlık/foto izni gibi özel nitelikli veriler için bu
+                // tersine bir varsayılandır. Rıza yalnızca kutu fiilen işaretlenmişse geçerli.
+                'kvkk_consent' => $request->boolean('kvkk_consent', false),
+                'health_data_consent' => $request->boolean('health_data_consent', false),
+                'photo_consent' => $request->boolean('photo_consent', false),
+                'marketing_consent' => $request->boolean('marketing_consent', false),
             ]);
-        }
 
-        // Otomatik Borç Hesaplama
-        $gross = (float) $package->price;
-        $discAmount = 0;
-        if ($discountRule) {
-            $discAmount = $discountRule->percentage > 0
-                ? round($gross * ($discountRule->percentage / 100), 2)
-                : (float) $discountRule->fixed_amount;
-        }
-        $net = max(0, $gross - $discAmount);
-        $paid = (float) ($validated['initial_payment_amount'] ?? 0);
-        $paid = min($net, $paid);
-        $remaining = $net - $paid;
-
-        $invoice = Invoice::create([
-            'student_id' => $student->id,
-            'package_id' => $package->id,
-            'period_label' => now()->format('m/Y') . ' Dönem Aidatı',
-            'gross_amount' => $gross,
-            'discount_amount' => $discAmount,
-            'net_amount' => $net,
-            'paid_amount' => $paid,
-            'remaining_amount' => $remaining,
-            'due_date' => today(),
-            'status' => $remaining <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
-        ]);
-
-        if ($paid > 0) {
-            $cashAcc = !empty($validated['cash_account_id'])
-                ? CashAccount::find($validated['cash_account_id'])
-                : CashAccount::first();
-
-            $payment = Payment::createWithReceiptNo([
-                'invoice_id' => $invoice->id,
-                'student_id' => $student->id,
-                'cash_account_id' => $cashAcc->id,
-                'amount' => $paid,
-                'payment_method' => $cashAcc->type === 'pos' ? 'pos' : ($cashAcc->type === 'bank' ? 'bank_transfer' : 'cash'),
-                'payment_date' => today(),
-                'description' => "{$student->full_name} İlk Kayıt Tahsilatı",
-            ]);
-            $receiptNo = $payment->receipt_no;
-            $cashAcc->increment('balance', $paid);
-
-            // Makbuz WhatsApp Mesajı Kuyruğa Ekle
+            // Veli Portalı Giriş Bilgisi (Telefon + PIN) WhatsApp ile Gönderilir
             WhatsappMessage::create([
                 'student_id' => $student->id,
                 'recipient_name' => $student->parent_name,
                 'recipient_phone' => $student->parent_phone,
-                'message_text' => "Sayın {$student->parent_name}, sporcumuz {$student->full_name} kesin kaydı tamamlanmış ve {$paid} TL ödemeniz alınmıştır (Makbuz No: {$receiptNo}). Dijital makbuzunuz: " . $payment->receiptUrl(),
+                'message_text' => "Sayın {$student->parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
                 'status' => 'queued',
             ]);
-        }
 
-        AuditLog::record('ogrenci_eklendi', "Yeni öğrenci kaydı açıldı: {$student->full_name} (İlk Tahsilat: {$paid} TL)", 'Student', $student->id);
+            // İkinci Veli (varsa) Aynı PIN ile Ayrıca Bilgilendirilir — Her İki Veli de
+            // Kendi Telefonuyla Aynı Öğrenciye Giriş Yapabilir (bkz. PublicSiteController@mobilePwa).
+            if (!empty($student->secondary_parent_phone)) {
+                WhatsappMessage::create([
+                    'student_id' => $student->id,
+                    'recipient_name' => $student->secondary_parent_name ?: 'İkinci Veli',
+                    'recipient_phone' => $student->secondary_parent_phone,
+                    'message_text' => "Sayın {$student->secondary_parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->secondary_parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
+                    'status' => 'queued',
+                ]);
+            }
+
+            // Otomatik Borç Hesaplama
+            $gross = (float) $package->price;
+            $discAmount = 0;
+            if ($discountRule) {
+                $discAmount = $discountRule->percentage > 0
+                    ? round($gross * ($discountRule->percentage / 100), 2)
+                    : (float) $discountRule->fixed_amount;
+            }
+            $net = max(0, $gross - $discAmount);
+            $paid = (float) ($validated['initial_payment_amount'] ?? 0);
+            $paid = min($net, $paid);
+            $remaining = $net - $paid;
+
+            $invoice = Invoice::create([
+                'student_id' => $student->id,
+                'package_id' => $package->id,
+                'period_label' => now()->format('m/Y') . ' Dönem Aidatı',
+                'gross_amount' => $gross,
+                'discount_amount' => $discAmount,
+                'net_amount' => $net,
+                'paid_amount' => $paid,
+                'remaining_amount' => $remaining,
+                'due_date' => today(),
+                'status' => $remaining <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
+            ]);
+
+            if ($paid > 0) {
+                $cashAcc = !empty($validated['cash_account_id'])
+                    ? CashAccount::find($validated['cash_account_id'])
+                    : CashAccount::first();
+
+                $payment = Payment::createWithReceiptNo([
+                    'invoice_id' => $invoice->id,
+                    'student_id' => $student->id,
+                    'cash_account_id' => $cashAcc->id,
+                    'amount' => $paid,
+                    'payment_method' => $cashAcc->type === 'pos' ? 'pos' : ($cashAcc->type === 'bank' ? 'bank_transfer' : 'cash'),
+                    'payment_date' => today(),
+                    'description' => "{$student->full_name} İlk Kayıt Tahsilatı",
+                ]);
+                $receiptNo = $payment->receipt_no;
+                $cashAcc->increment('balance', $paid);
+
+                // Makbuz WhatsApp Mesajı Kuyruğa Ekle
+                WhatsappMessage::create([
+                    'student_id' => $student->id,
+                    'recipient_name' => $student->parent_name,
+                    'recipient_phone' => $student->parent_phone,
+                    'message_text' => "Sayın {$student->parent_name}, sporcumuz {$student->full_name} kesin kaydı tamamlanmış ve {$paid} TL ödemeniz alınmıştır (Makbuz No: {$receiptNo}). Dijital makbuzunuz: " . $payment->receiptUrl(),
+                    'status' => 'queued',
+                ]);
+            }
+
+            AuditLog::record('ogrenci_eklendi', "Yeni öğrenci kaydı açıldı: {$student->full_name} (İlk Tahsilat: {$paid} TL)", 'Student', $student->id);
+
+            return [$student, $paid];
+        });
 
         $guardianNote = !empty($student->secondary_parent_phone)
             ? 'Her iki velinin de giriş bilgisi/PIN mesajı WhatsApp kuyruğuna eklendi'

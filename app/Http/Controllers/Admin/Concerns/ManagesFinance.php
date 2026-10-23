@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait ManagesFinance
 {
@@ -28,27 +29,34 @@ trait ManagesFinance
         $cashAccount = CashAccount::findOrFail($validated['cash_account_id']);
         $amount = (float) $validated['amount'];
 
-        $payment = Payment::createWithReceiptNo([
-            'invoice_id' => $invoice->id,
-            'student_id' => $invoice->student_id,
-            'cash_account_id' => $cashAccount->id,
-            'recorded_by' => $this->getAuthenticatedStaff()?->id,
-            'amount' => $amount,
-            'payment_method' => $validated['payment_method'],
-            'payment_date' => today(),
-            'description' => $validated['description'] ?? ($invoice->student->full_name . ' - ' . $invoice->period_label),
-        ]);
-        $receiptNo = $payment->receipt_no;
+        // Fatura + makbuz + kasa bakiyesi birbirine bağlı üç yazma işlemidir; biri
+        // yarıda başarısız olursa (ör. DB kısıtı) kasa bakiyesi makbuzsuz artmış ya
+        // da borç güncellenmemiş halde kalabilir. Transaction, ya hepsi ya hiçbiri
+        // garantisi verir.
+        [$payment, $receiptNo, $newRemaining] = DB::transaction(function () use ($invoice, $cashAccount, $validated, $amount) {
+            $payment = Payment::createWithReceiptNo([
+                'invoice_id' => $invoice->id,
+                'student_id' => $invoice->student_id,
+                'cash_account_id' => $cashAccount->id,
+                'recorded_by' => $this->getAuthenticatedStaff()?->id,
+                'amount' => $amount,
+                'payment_method' => $validated['payment_method'],
+                'payment_date' => today(),
+                'description' => $validated['description'] ?? ($invoice->student->full_name . ' - ' . $invoice->period_label),
+            ]);
 
-        $newPaid = $invoice->paid_amount + $amount;
-        $newRemaining = max(0, $invoice->net_amount - $newPaid);
-        $invoice->update([
-            'paid_amount' => $newPaid,
-            'remaining_amount' => $newRemaining,
-            'status' => $newRemaining <= 0 ? 'paid' : 'partial',
-        ]);
+            $newPaid = $invoice->paid_amount + $amount;
+            $newRemaining = max(0, $invoice->net_amount - $newPaid);
+            $invoice->update([
+                'paid_amount' => $newPaid,
+                'remaining_amount' => $newRemaining,
+                'status' => $newRemaining <= 0 ? 'paid' : 'partial',
+            ]);
 
-        $cashAccount->increment('balance', $amount);
+            $cashAccount->increment('balance', $amount);
+
+            return [$payment, $payment->receipt_no, $newRemaining];
+        });
 
         // WhatsApp Business Makbuz Mesajı Hazırla
         $msgText = "Sayın {$invoice->student->parent_name}, sporcumuz {$invoice->student->full_name} için {$amount} TL tutarındaki ödemeniz alınmıştır (Makbuz No: {$receiptNo}, Kalan Borç: {$newRemaining} TL). Dijital Makbuz: " . $payment->receiptUrl();
@@ -69,20 +77,23 @@ trait ManagesFinance
     {
         // Silme işlemi kasa bakiyesini ve ilgili aidat borcunun kalan tutarını
         // GERİ ALMALI, aksi hâlde bakiye kalıcı olarak yanlış kalır.
-        $payment->cashAccount?->decrement('balance', $payment->amount);
+        DB::transaction(function () use ($payment) {
+            $payment->cashAccount?->decrement('balance', $payment->amount);
 
-        $invoice = $payment->invoice;
-        if ($invoice) {
-            $newPaid = max(0, $invoice->paid_amount - $payment->amount);
-            $newRemaining = max(0, $invoice->net_amount - $newPaid);
-            $invoice->update([
-                'paid_amount' => $newPaid,
-                'remaining_amount' => $newRemaining,
-                'status' => $newRemaining <= 0 ? 'paid' : ($newPaid > 0 ? 'partial' : 'unpaid'),
-            ]);
-        }
+            $invoice = $payment->invoice;
+            if ($invoice) {
+                $newPaid = max(0, $invoice->paid_amount - $payment->amount);
+                $newRemaining = max(0, $invoice->net_amount - $newPaid);
+                $invoice->update([
+                    'paid_amount' => $newPaid,
+                    'remaining_amount' => $newRemaining,
+                    'status' => $newRemaining <= 0 ? 'paid' : ($newPaid > 0 ? 'partial' : 'unpaid'),
+                ]);
+            }
 
-        $payment->delete();
+            $payment->delete();
+        });
+
         AuditLog::record('tahsilat_silindi', "Tahsilat makbuz kaydı silindi, kasa bakiyesi ve aidat borcu geri alındı ({$payment->amount} TL).", 'Payment', $payment->id);
         return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Tahsilat kaydı silindi, kasa bakiyesi ve borç durumu güncellendi.');
     }
@@ -134,8 +145,14 @@ trait ManagesFinance
     // MODÜL 8: Tekil Aidat / Borç Ekle & Düzenle
     public function storeSingleInvoice(Request $request)
     {
-        $student = Student::findOrFail($request->input('student_id'));
-        $net = (float) $request->input('net_amount', 3200);
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'net_amount' => 'required|numeric|min:0',
+            'period_label' => 'nullable|string|max:160',
+            'due_date' => 'nullable|date',
+        ]);
+        $student = Student::findOrFail($validated['student_id']);
+        $net = (float) $validated['net_amount'];
         $inv = Invoice::create([
             'student_id' => $student->id,
             'package_id' => $student->package_id,
@@ -156,15 +173,23 @@ trait ManagesFinance
     {
         $request->validate([
             'net_amount' => 'nullable|numeric|min:0',
-            'paid_amount' => 'nullable|numeric|min:0',
             'due_date' => 'nullable|date',
         ]);
         $net = (float) $request->input('net_amount', $invoice->net_amount);
-        $paid = (float) $request->input('paid_amount', $invoice->paid_amount);
+        // gross - discount = net özdeşliğini korumak için brüt tutar sabit tutulur,
+        // indirim tutarı net değişimine göre yeniden hesaplanır (önceden brüt de net'e
+        // eşitleniyordu, bu da indirimli faturalarda muhasebe kaydını bozuyordu).
+        // Ödenen tutar ise formdan asla kabul edilmez — gerçek tahsilat (Payment)
+        // kayıtlarının toplamından türetilir, aksi hâlde burada girilecek keyfi bir
+        // değer sonradan destroyPayment'in geri alma hesaplarını bozabilir.
+        $gross = max($net, (float) $invoice->gross_amount);
+        $discount = max(0, $gross - $net);
+        $paid = (float) $invoice->payments()->sum('amount');
         $rem = max(0, $net - $paid);
         $invoice->update([
             'period_label' => $request->input('period_label', $invoice->period_label),
-            'gross_amount' => $net,
+            'gross_amount' => $gross,
+            'discount_amount' => $discount,
             'net_amount' => $net,
             'paid_amount' => $paid,
             'remaining_amount' => $rem,
@@ -177,8 +202,16 @@ trait ManagesFinance
 
     public function destroyInvoice(Invoice $invoice)
     {
-        Payment::where('invoice_id', $invoice->id)->delete();
-        $invoice->delete();
+        // Ödemesi olan bir faturayı toplu silmek, o ödemelerin kasa bakiyesine
+        // eklediği tutarı geri almadan kayıtları yok ederdi — bakiye kalıcı olarak
+        // şişik kalırdı. Her ödemeyi destroyPayment ile aynı mantıkla tek tek geri al.
+        DB::transaction(function () use ($invoice) {
+            foreach ($invoice->payments as $payment) {
+                $payment->cashAccount?->decrement('balance', $payment->amount);
+                $payment->delete();
+            }
+            $invoice->delete();
+        });
         AuditLog::record('aidat_silindi', 'Aidat borç kaydı silindi.');
         return redirect()->route('admin.index', ['tab' => 'aidat'])->with('success', 'Aidat borç kaydı silindi.');
     }
@@ -196,24 +229,28 @@ trait ManagesFinance
             'is_recurring' => 'nullable|boolean',
         ]);
 
-        $tx = FinancialTransaction::create([
-            'direction' => $validated['direction'],
-            'category' => $validated['category'],
-            'cash_account_id' => $validated['cash_account_id'],
-            'title' => $validated['title'],
-            'amount' => $validated['amount'],
-            'transaction_date' => $validated['transaction_date'],
-            'is_recurring' => $request->boolean('is_recurring'),
-        ]);
+        $tx = DB::transaction(function () use ($validated, $request) {
+            $tx = FinancialTransaction::create([
+                'direction' => $validated['direction'],
+                'category' => $validated['category'],
+                'cash_account_id' => $validated['cash_account_id'],
+                'title' => $validated['title'],
+                'amount' => $validated['amount'],
+                'transaction_date' => $validated['transaction_date'],
+                'is_recurring' => $request->boolean('is_recurring'),
+            ]);
 
-        $acc = CashAccount::find($validated['cash_account_id']);
-        if ($acc) {
-            if ($validated['direction'] === 'income') {
-                $acc->increment('balance', $validated['amount']);
-            } else {
-                $acc->decrement('balance', $validated['amount']);
+            $acc = CashAccount::find($validated['cash_account_id']);
+            if ($acc) {
+                if ($validated['direction'] === 'income') {
+                    $acc->increment('balance', $validated['amount']);
+                } else {
+                    $acc->decrement('balance', $validated['amount']);
+                }
             }
-        }
+
+            return $tx;
+        });
 
         AuditLog::record('kasa_hareketi', "{$validated['direction']} kaydı: {$validated['title']} ({$validated['amount']} TL)", 'FinancialTransaction', $tx->id);
 
@@ -232,29 +269,31 @@ trait ManagesFinance
         // Eski tutarın eski kasa hesabı üzerindeki etkisini geri al, güncellemeyi
         // yap, sonra yeni tutarı yeni (veya aynı) kasa hesabına uygula. Aksi hâlde
         // bir hareketi düzenlemek bakiyeyi kalıcı olarak yanlış bırakır.
-        if ($transaction->direction === 'income') {
-            $transaction->cashAccount?->decrement('balance', $transaction->amount);
-        } else {
-            $transaction->cashAccount?->increment('balance', $transaction->amount);
-        }
+        DB::transaction(function () use ($request, $transaction) {
+            if ($transaction->direction === 'income') {
+                $transaction->cashAccount?->decrement('balance', $transaction->amount);
+            } else {
+                $transaction->cashAccount?->increment('balance', $transaction->amount);
+            }
 
-        $newDirection = $request->input('direction', $transaction->direction);
-        $newAmount = (float) $request->input('amount', $transaction->amount);
-        $newCashAccountId = $request->input('cash_account_id', $transaction->cash_account_id);
+            $newDirection = $request->input('direction', $transaction->direction);
+            $newAmount = (float) $request->input('amount', $transaction->amount);
+            $newCashAccountId = $request->input('cash_account_id', $transaction->cash_account_id);
 
-        $transaction->update([
-            'direction' => $newDirection,
-            'category' => $request->input('category', $transaction->category),
-            'title' => $request->input('title', $transaction->title),
-            'amount' => $newAmount,
-            'transaction_date' => $request->input('transaction_date', $transaction->transaction_date?->toDateString()),
-            'cash_account_id' => $newCashAccountId,
-        ]);
+            $transaction->update([
+                'direction' => $newDirection,
+                'category' => $request->input('category', $transaction->category),
+                'title' => $request->input('title', $transaction->title),
+                'amount' => $newAmount,
+                'transaction_date' => $request->input('transaction_date', $transaction->transaction_date?->toDateString()),
+                'cash_account_id' => $newCashAccountId,
+            ]);
 
-        $newAccount = CashAccount::find($newCashAccountId);
-        if ($newAccount) {
-            $newDirection === 'income' ? $newAccount->increment('balance', $newAmount) : $newAccount->decrement('balance', $newAmount);
-        }
+            $newAccount = CashAccount::find($newCashAccountId);
+            if ($newAccount) {
+                $newDirection === 'income' ? $newAccount->increment('balance', $newAmount) : $newAccount->decrement('balance', $newAmount);
+            }
+        });
 
         AuditLog::record('kasa_hareketi_guncellendi', "Kasa hareketi güncellendi: {$transaction->title}", 'FinancialTransaction', $transaction->id);
         return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$transaction->title}' kasa hareketi güncellendi, bakiye yeniden hesaplandı!");
@@ -265,13 +304,15 @@ trait ManagesFinance
         $title = $transaction->title;
 
         // Silme işlemi kasa bakiyesindeki etkisini GERİ ALMALI.
-        if ($transaction->direction === 'income') {
-            $transaction->cashAccount?->decrement('balance', $transaction->amount);
-        } else {
-            $transaction->cashAccount?->increment('balance', $transaction->amount);
-        }
+        DB::transaction(function () use ($transaction) {
+            if ($transaction->direction === 'income') {
+                $transaction->cashAccount?->decrement('balance', $transaction->amount);
+            } else {
+                $transaction->cashAccount?->increment('balance', $transaction->amount);
+            }
 
-        $transaction->delete();
+            $transaction->delete();
+        });
         AuditLog::record('kasa_hareketi_silindi', "Kasa hareketi silindi, bakiye geri alındı: {$title} ({$transaction->amount} TL)");
         return redirect()->route('admin.index', ['tab' => 'kasa'])->with('success', "'{$title}' kasa hareketi silindi, bakiye güncellendi.");
     }

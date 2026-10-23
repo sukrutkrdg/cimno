@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait ManagesAttendance
 {
@@ -16,6 +17,10 @@ trait ManagesAttendance
     {
         $groupId = $request->input('group_id');
         $this->assertCoachOwnsGroup($groupId ? (int) $groupId : null);
+        $request->validate([
+            'statuses' => 'required|array',
+            'statuses.*' => 'in:present,absent,excused,makeup',
+        ]);
         $date = $request->input('attendance_date', today()->toDateString());
         $statuses = $request->input('statuses', []);
         $notes = $request->input('notes', []);
@@ -25,42 +30,43 @@ trait ManagesAttendance
         // sahip, grubun ATANMIŞ antrenörüdür — ilk bulunan antrenör değil.
         $coachId = Group::find($groupId)?->coach_id ?? $this->getAuthenticatedStaff()?->id;
 
-        foreach ($statuses as $studentId => $status) {
-            Attendance::updateOrCreate(
-                [
-                    'group_id' => $groupId,
-                    'student_id' => $studentId,
-                    'attendance_date' => $date,
-                ],
-                [
-                    'coach_id' => $coachId,
-                    'status' => $status,
-                    'note' => $notes[$studentId] ?? null,
-                ]
-            );
+        DB::transaction(function () use ($groupId, $date, $statuses, $notes, $coachId) {
+            foreach ($statuses as $studentId => $status) {
+                // updateOrCreate'in eşleştirme sorgusu, attendance_date'i olduğu gibi
+                // (saat bileşeni olmadan) karşılaştırır — ama Eloquent'in 'date' cast'i
+                // yalnızca OKURKEN 'Y-m-d'ye kısaltır, YAZARKEN bağlantının tam
+                // tarih-saat biçimini kullanır. Sonuç: aynı tarih için ikinci bir
+                // yoklama gönderimi (ör. hatalı girilen durumu düzeltmek) var olan
+                // kaydı asla bulamaz, tekrar INSERT dener ve UNIQUE kısıtını ihlal
+                // ederek 500 hatası verirdi. whereDate() bu uyumsuzluğu by-pass eder.
+                $attendance = Attendance::where('group_id', $groupId)
+                    ->where('student_id', $studentId)
+                    ->whereDate('attendance_date', $date)
+                    ->first();
 
-            $student = Student::find($studentId);
-            if ($student) {
-                if ($status === 'absent') {
-                    $student->increment('consecutive_absences');
-                    if ($student->consecutive_absences >= 2) {
-                        WhatsappMessage::create([
-                            'student_id' => $student->id,
-                            'recipient_name' => $student->parent_name,
-                            'recipient_phone' => $student->parent_phone,
-                            'message_text' => "Merhaba {$student->parent_name}, sporcumuz {$student->full_name} üst üste {$student->consecutive_absences} antrenmana katılamamıştır. Her şeyin yolunda olduğunu umuyoruz 🙏 Telafi planlaması için bize yazabilirsiniz.",
-                            'status' => 'queued',
-                        ]);
-                    }
-                } elseif ($status === 'excused') {
-                    $student->increment('makeup_credits');
-                } elseif ($status === 'present') {
-                    $student->update(['consecutive_absences' => 0]);
-                } elseif ($status === 'makeup' && $student->makeup_credits > 0) {
-                    $student->decrement('makeup_credits');
+                if ($attendance) {
+                    $attendance->update([
+                        'coach_id' => $coachId,
+                        'status' => $status,
+                        'note' => $notes[$studentId] ?? null,
+                    ]);
+                } else {
+                    Attendance::create([
+                        'group_id' => $groupId,
+                        'student_id' => $studentId,
+                        'attendance_date' => $date,
+                        'coach_id' => $coachId,
+                        'status' => $status,
+                        'note' => $notes[$studentId] ?? null,
+                    ]);
+                }
+
+                $student = Student::find($studentId);
+                if ($student) {
+                    $this->recalculateAttendanceCounters($student);
                 }
             }
-        }
+        });
 
         AuditLog::record('yoklama_alindi', "Grup #{$groupId} için {$date} tarihli yoklama kaydedildi.", 'Group', (int) $groupId);
 
@@ -70,8 +76,71 @@ trait ManagesAttendance
     public function destroyAttendance(Attendance $attendance)
     {
         $this->assertCoachOwnsGroup($attendance->group_id);
-        $attendance->delete();
+        $studentId = $attendance->student_id;
+
+        DB::transaction(function () use ($attendance, $studentId) {
+            $attendance->delete();
+            $student = Student::find($studentId);
+            if ($student) {
+                $this->recalculateAttendanceCounters($student);
+            }
+        });
+
         AuditLog::record('yoklama_silindi', 'Yoklama kaydı silindi.');
         return redirect()->route('admin.index', ['tab' => 'yoklama'])->with('success', 'Yoklama kaydı silindi.');
+    }
+
+    /**
+     * consecutive_absences ve makeup_credits, her storeAttendance çağrısında
+     * increment/decrement edilen bağımsız sayaçlar olarak tutulursa, bir yoklamayı
+     * düzeltmek (ör. "Gelmedi" → "Raporlu") ya da aynı formu iki kez göndermek
+     * sayaçları kalıcı olarak gerçek durumdan saptırır (çift sayma). Bunun yerine
+     * her iki değer de öğrencinin gerçek yoklama geçmişinden, çağrıldığı her
+     * seferde sıfırdan yeniden hesaplanır — bu sayede sayaç her zaman mevcut
+     * kayıtlarla tutarlıdır, aradaki düzeltme/silme adımlarından bağımsız olarak.
+     */
+    protected function recalculateAttendanceCounters(Student $student): void
+    {
+        $previousConsecutiveAbsences = $student->consecutive_absences;
+
+        $consecutiveAbsences = 0;
+        $recentAttendances = Attendance::where('student_id', $student->id)
+            ->orderByDesc('attendance_date')
+            ->orderByDesc('id')
+            ->get(['status']);
+
+        foreach ($recentAttendances as $att) {
+            if ($att->status === 'absent') {
+                $consecutiveAbsences++;
+            } elseif ($att->status === 'present') {
+                break;
+            }
+            // 'excused' ve 'makeup' serinin dışında tutulur (ne sayılır ne de seriyi
+            // bozar) — orijinal davranışla aynı: raporlu/telafi bir ders, üst üste
+            // devamsızlık sayacını ne artırır ne sıfırlar.
+        }
+
+        $makeupCredits = max(0,
+            Attendance::where('student_id', $student->id)->where('status', 'excused')->count()
+            - Attendance::where('student_id', $student->id)->where('status', 'makeup')->count()
+        );
+
+        $student->update([
+            'consecutive_absences' => $consecutiveAbsences,
+            'makeup_credits' => $makeupCredits,
+        ]);
+
+        // Uyarı mesajı yalnızca sayaç yeni yeni 2'ye ulaştığında (önceki değer
+        // 2'nin altındaysa) kuyruğa eklenir — aksi hâlde aynı yoklamayı tekrar
+        // kaydetmek veli WhatsApp kuyruğunu aynı uyarıyla doldururdu.
+        if ($consecutiveAbsences >= 2 && $previousConsecutiveAbsences < 2) {
+            WhatsappMessage::create([
+                'student_id' => $student->id,
+                'recipient_name' => $student->parent_name,
+                'recipient_phone' => $student->parent_phone,
+                'message_text' => "Merhaba {$student->parent_name}, sporcumuz {$student->full_name} üst üste {$consecutiveAbsences} antrenmana katılamamıştır. Her şeyin yolunda olduğunu umuyoruz 🙏 Telafi planlaması için bize yazabilirsiniz.",
+                'status' => 'queued',
+            ]);
+        }
     }
 }

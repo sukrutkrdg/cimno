@@ -10,22 +10,41 @@ use App\Models\Package;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait ManagesLeads
 {
     // MODÜL 2: Yeni Aday Ekle & Mevcut Adayı Düzenle
     public function storeLead(Request $request)
     {
+        $validated = $request->validate([
+            'student_name' => 'nullable|string|max:120',
+            'student_age' => 'nullable|integer|min:1|max:80',
+            'parent_name' => 'nullable|string|max:120',
+            'parent_phone' => 'nullable|string|max:30',
+            'branch_id' => 'nullable|exists:branches,id',
+            'trial_group_id' => 'nullable|exists:groups,id',
+            'source' => 'nullable|string|max:60',
+            'status' => 'nullable|in:new,trial_scheduled,thinking,converted,not_converted',
+            'notes' => 'nullable|string',
+        ]);
+
         $lead = Lead::create([
-            'student_name' => $request->input('student_name', 'Yeni Aday'),
-            'student_age' => (int) $request->input('student_age', 6),
-            'parent_name' => $request->input('parent_name', ''),
-            'parent_phone' => $request->input('parent_phone', ''),
-            'branch_id' => $request->input('branch_id') ?: null,
-            'trial_group_id' => $request->input('trial_group_id') ?: null,
-            'source' => $request->input('source', 'website'),
-            'status' => $request->input('status', 'new'),
-            'notes' => $request->input('notes'),
+            'student_name' => $validated['student_name'] ?? 'Yeni Aday',
+            'student_age' => (int) ($validated['student_age'] ?? 6),
+            'parent_name' => $validated['parent_name'] ?? '',
+            'parent_phone' => $validated['parent_phone'] ?? '',
+            'branch_id' => $validated['branch_id'] ?? null,
+            'trial_group_id' => $validated['trial_group_id'] ?? null,
+            'source' => $validated['source'] ?? 'website',
+            'status' => $validated['status'] ?? 'new',
+            'notes' => $validated['notes'] ?? null,
+            // Panelden personel tarafından manuel eklenen adaylar için (bu, veli
+            // onayı gerektiren kvkk_approved='accepted' kısıtına sahip genel
+            // siteden gelen deneme talebinden farklıdır): KVKK onayı burada henüz
+            // alınmadığından varsayılan false, kesin kayda dönüştürülürken gerçek
+            // onay o aşamada ayrıca alınmalıdır.
+            'kvkk_approved' => false,
         ]);
         AuditLog::record('aday_eklendi', "Yeni deneme/ön kayıt adayı eklendi: {$lead->student_name}", 'Lead', $lead->id);
         return redirect()->route('admin.index', ['tab' => 'adaylar'])->with('success', "'{$lead->student_name}' aday listesine eklendi!");
@@ -63,52 +82,64 @@ trait ManagesLeads
     // MODÜL 2: Adayı Tek Tıkla Kesin Kayda Dönüştür
     public function convertLeadToStudent(Request $request, Lead $lead)
     {
-        $group = $lead->trialGroup ?? Group::where('branch_id', $lead->branch_id)->first() ?? Group::first();
-        $package = Package::where('billing_cycle', 'monthly')->first() ?? Package::first();
+        // Student + Invoice + Lead durumu + WhatsApp mesajı birlikte yazılır; biri
+        // yarıda başarısız olursa aday "converted" işaretlenip öğrenci/borç kaydı
+        // hiç oluşmamış ya da öğrenci oluşup borcu açılmamış halde kalabilirdi.
+        [$student, $group] = DB::transaction(function () use ($lead) {
+            $group = $lead->trialGroup ?? Group::where('branch_id', $lead->branch_id)->first() ?? Group::first();
+            $package = Package::where('billing_cycle', 'monthly')->first() ?? Package::first();
 
-        $student = Student::create([
-            'full_name' => $lead->student_name,
-            'birth_date' => now()->subYears($lead->student_age)->format('Y-m-d'),
-            'branch_id' => $lead->branch_id ?? $group?->branch_id,
-            'group_id' => $group?->id,
-            'package_id' => $package?->id,
-            'parent_name' => $lead->parent_name,
-            'parent_phone' => $lead->parent_phone,
-            'portal_pin' => Student::portalPinFor($lead->parent_phone),
-            'medical_report_expires_at' => now()->addYear()->toDateString(),
-            'billing_day' => 1,
-            'status' => 'active',
-            'kvkk_consent' => true,
-            'health_data_consent' => true,
-            'photo_consent' => true,
-        ]);
-
-        if ($package) {
-            Invoice::create([
-                'student_id' => $student->id,
-                'package_id' => $package->id,
-                'period_label' => now()->translatedFormat('F Y') . ' İlk Kayıt Aidatı',
-                'gross_amount' => $package->price,
-                'discount_amount' => 0,
-                'net_amount' => $package->price,
-                'paid_amount' => 0,
-                'remaining_amount' => $package->price,
-                'due_date' => today()->addDays(3),
-                'status' => 'unpaid',
+            $student = Student::create([
+                'full_name' => $lead->student_name,
+                'birth_date' => now()->subYears($lead->student_age)->format('Y-m-d'),
+                'branch_id' => $lead->branch_id ?? $group?->branch_id,
+                'group_id' => $group?->id,
+                'package_id' => $package?->id,
+                'parent_name' => $lead->parent_name,
+                'parent_phone' => $lead->parent_phone,
+                'portal_pin' => Student::portalPinFor($lead->parent_phone),
+                'medical_report_expires_at' => now()->addYear()->toDateString(),
+                'billing_day' => 1,
+                'status' => 'active',
+                // Genel iletişim/KVKK onayı, adayın deneme dersi formunda zaten
+                // zorunlu olarak verdiği onaydan devralınır. Sağlık verisi ve
+                // fotoğraf/video izni ise o formda hiç sorulmamıştır — kesin kayda
+                // dönüştürmek bunları otomatik vermiş saymamalı; sekreterlik bu
+                // izinleri öğrenci kaydını düzenleme ekranından ayrıca almalıdır.
+                'kvkk_consent' => (bool) $lead->kvkk_approved,
+                'health_data_consent' => false,
+                'photo_consent' => false,
             ]);
-        }
 
-        $lead->update(['status' => 'converted']);
+            if ($package) {
+                Invoice::create([
+                    'student_id' => $student->id,
+                    'package_id' => $package->id,
+                    'period_label' => now()->translatedFormat('F Y') . ' İlk Kayıt Aidatı',
+                    'gross_amount' => $package->price,
+                    'discount_amount' => 0,
+                    'net_amount' => $package->price,
+                    'paid_amount' => 0,
+                    'remaining_amount' => $package->price,
+                    'due_date' => today()->addDays(3),
+                    'status' => 'unpaid',
+                ]);
+            }
 
-        WhatsappMessage::create([
-            'student_id' => $student->id,
-            'recipient_name' => $student->parent_name,
-            'recipient_phone' => $student->parent_phone,
-            'message_text' => "Hoş geldiniz Sayın {$student->parent_name}! 🌟 Sporcumuz {$student->full_name} kesin kaydı '{$group?->name}' grubuna yapılmıştır. Veli portalı giriş bilgileriniz — Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
-            'status' => 'queued',
-        ]);
+            $lead->update(['status' => 'converted']);
 
-        AuditLog::record('aday_kayda_donusturuldu', "Aday {$lead->student_name} tek tıkla kesin kayda dönüştürüldü ve ilk aidat borcu açıldı.", 'Student', $student->id);
+            WhatsappMessage::create([
+                'student_id' => $student->id,
+                'recipient_name' => $student->parent_name,
+                'recipient_phone' => $student->parent_phone,
+                'message_text' => "Hoş geldiniz Sayın {$student->parent_name}! 🌟 Sporcumuz {$student->full_name} kesin kaydı '{$group?->name}' grubuna yapılmıştır. Veli portalı giriş bilgileriniz — Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
+                'status' => 'queued',
+            ]);
+
+            AuditLog::record('aday_kayda_donusturuldu', "Aday {$lead->student_name} tek tıkla kesin kayda dönüştürüldü ve ilk aidat borcu açıldı.", 'Student', $student->id);
+
+            return [$student, $group];
+        });
 
         return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "{$student->full_name} başarıyla kesin kayda dönüştürüldü, ilk aidat borcu açıldı ve WhatsApp hoş geldin mesajı kuyruğa eklendi!");
     }
