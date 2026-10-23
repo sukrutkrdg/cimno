@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Invoice;
+use App\Models\Lead;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WhatsappMessage;
@@ -26,6 +27,8 @@ Artisan::command('admin:sifre-sifirla {email} {sifre}', function (string $email,
 // Natro cPanel Paylaşımlı Hosting Zamanlayıcı Görevleri (cron * * * * * php artisan schedule:run)
 Artisan::command('enerjik:daily-tasks', function () {
     $this->info('Enerjik Cimnastik günlük otomatik bildirim ve aidat kontrolleri çalıştırılıyor...');
+
+    $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
 
     // 1. Doğum günü olan öğrencilere otomatik kutlama mesajı kuyruklama
     $tplBirthday = WhatsappTemplate::where('trigger_event', 'birthday')->where('is_active', true)->first();
@@ -89,7 +92,6 @@ Artisan::command('enerjik:daily-tasks', function () {
     // 3. Bugün dersi olan öğrencilere ders saati hatırlatması (birincil ve varsa ikincil veliye ayrı ayrı)
     $tplLessonToday = WhatsappTemplate::where('trigger_event', 'lesson_today')->where('is_active', true)->first();
     if ($tplLessonToday) {
-        $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
         $todayName = $turkishDays[now()->dayOfWeekIso] ?? null;
 
         if ($todayName) {
@@ -138,6 +140,78 @@ Artisan::command('enerjik:daily-tasks', function () {
                     ]);
                 }
             }
+        }
+    }
+
+    // 4. Yarın deneme dersi planlanan adaylara 1 gün önceden hatırlatma
+    $tplTrial = WhatsappTemplate::where('trigger_event', 'trial_reminder')->where('is_active', true)->first();
+    if ($tplTrial) {
+        $targetDate = today()->addDays(abs($tplTrial->days_offset ?: 1));
+        $targetDayName = $turkishDays[$targetDate->dayOfWeekIso] ?? null;
+
+        $trialLeads = Lead::with('trialGroup.schedules')
+            ->where('status', 'trial_scheduled')
+            ->whereNotNull('trial_group_id')
+            ->whereDate('trial_date', $targetDate)
+            ->get();
+
+        foreach ($trialLeads as $lead) {
+            $schedule = $targetDayName
+                ? $lead->trialGroup?->schedules->firstWhere('day_of_week', $targetDayName)
+                : null;
+            $saat = $schedule ? substr($schedule->start_time, 0, 5) . '-' . substr($schedule->end_time, 0, 5) : '-';
+
+            $alreadyQueuedToday = WhatsappMessage::where('template_id', $tplTrial->id)
+                ->where('recipient_phone', $lead->parent_phone)
+                ->whereDate('created_at', today())
+                ->exists();
+            if ($alreadyQueuedToday) continue;
+
+            $text = str_replace(
+                ['{veli_adi}', '{ogrenci_adi}', '{tarih}', '{saat}'],
+                [$lead->parent_name, $lead->student_name, $targetDate->format('d.m.Y'), $saat],
+                $tplTrial->message_template
+            );
+
+            WhatsappMessage::create([
+                'template_id' => $tplTrial->id,
+                'recipient_name' => $lead->parent_name . ' (Aday - ' . $lead->student_name . ')',
+                'recipient_phone' => $lead->parent_phone,
+                'message_text' => $text,
+                'status' => 'queued',
+            ]);
+        }
+    }
+
+    // 5. Sağlık raporu süresi yaklaşan öğrencilere otomatik hatırlatma
+    $tplMedical = WhatsappTemplate::where('trigger_event', 'medical_report_expiring')->where('is_active', true)->first();
+    if ($tplMedical) {
+        $targetDate = today()->addDays(abs($tplMedical->days_offset ?: 15));
+        $expiringStudents = Student::where('status', 'active')
+            ->whereDate('medical_report_expires_at', $targetDate)
+            ->get();
+
+        foreach ($expiringStudents as $st) {
+            $alreadyQueuedToday = WhatsappMessage::where('template_id', $tplMedical->id)
+                ->where('student_id', $st->id)
+                ->whereDate('created_at', today())
+                ->exists();
+            if ($alreadyQueuedToday) continue;
+
+            $text = str_replace(
+                ['{veli_adi}', '{ogrenci_adi}', '{vade}'],
+                [$st->parent_name, $st->full_name, $st->medical_report_expires_at->format('d.m.Y')],
+                $tplMedical->message_template
+            );
+
+            WhatsappMessage::create([
+                'template_id' => $tplMedical->id,
+                'student_id' => $st->id,
+                'recipient_name' => $st->parent_name,
+                'recipient_phone' => $st->parent_phone,
+                'message_text' => $text,
+                'status' => 'queued',
+            ]);
         }
     }
 

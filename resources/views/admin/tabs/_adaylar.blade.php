@@ -123,6 +123,20 @@
                                                 </select>
                                             </div>
                                             <div>
+                                                <label class="font-bold block mb-1">Deneme Grubu</label>
+                                                <select name="trial_group_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                    <option value="">Seçilmedi</option>
+                                                    @foreach($groups as $g)
+                                                        <option value="{{ $g->id }}" {{ (int) $lead->trial_group_id === $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Deneme Tarihi</label>
+                                                <input type="date" name="trial_date" value="{{ $lead->trial_date?->toDateString() }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                <p class="text-[10px] text-slate-400 mt-0.5">Tarih + grup girilirse 1 gün önce otomatik WhatsApp hatırlatması kuyruğa eklenir.</p>
+                                            </div>
+                                            <div>
                                                 <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Güncelle</button>
                                             </div>
                                         </form>

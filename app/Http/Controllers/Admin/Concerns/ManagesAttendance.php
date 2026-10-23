@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Group;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
+use App\Models\WhatsappTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -134,11 +135,21 @@ trait ManagesAttendance
         // 2'nin altındaysa) kuyruğa eklenir — aksi hâlde aynı yoklamayı tekrar
         // kaydetmek veli WhatsApp kuyruğunu aynı uyarıyla doldururdu.
         if ($consecutiveAbsences >= 2 && $previousConsecutiveAbsences < 2) {
+            $tplAbsence = WhatsappTemplate::where('trigger_event', 'absence_warning')->where('is_active', true)->first();
+            $text = $tplAbsence
+                ? str_replace(
+                    ['{veli_adi}', '{ogrenci_adi}', '{sayi}'],
+                    [$student->parent_name, $student->full_name, (string) $consecutiveAbsences],
+                    $tplAbsence->message_template
+                )
+                : "Merhaba {$student->parent_name}, sporcumuz {$student->full_name} üst üste {$consecutiveAbsences} antrenmana katılamamıştır. Her şeyin yolunda olduğunu umuyoruz 🙏 Telafi planlaması için bize yazabilirsiniz.";
+
             WhatsappMessage::create([
+                'template_id' => $tplAbsence?->id,
                 'student_id' => $student->id,
                 'recipient_name' => $student->parent_name,
                 'recipient_phone' => $student->parent_phone,
-                'message_text' => "Merhaba {$student->parent_name}, sporcumuz {$student->full_name} üst üste {$consecutiveAbsences} antrenmana katılamamıştır. Her şeyin yolunda olduğunu umuyoruz 🙏 Telafi planlaması için bize yazabilirsiniz.",
+                'message_text' => $text,
                 'status' => 'queued',
             ]);
         }

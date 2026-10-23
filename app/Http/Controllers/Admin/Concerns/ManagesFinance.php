@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
+use App\Models\WhatsappTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -58,9 +59,19 @@ trait ManagesFinance
             return [$payment, $payment->receipt_no, $newRemaining];
         });
 
-        // WhatsApp Business Makbuz Mesajı Hazırla
-        $msgText = "Sayın {$invoice->student->parent_name}, sporcumuz {$invoice->student->full_name} için {$amount} TL tutarındaki ödemeniz alınmıştır (Makbuz No: {$receiptNo}, Kalan Borç: {$newRemaining} TL). Dijital Makbuz: " . $payment->receiptUrl();
+        // WhatsApp Business Makbuz Mesajı Hazırla (Mesajlar sekmesindeki "Ödeme Alındı"
+        // şablonu düzenlenebilir hale getirildi — var ve aktifse onun metni kullanılır).
+        $tplReceipt = WhatsappTemplate::where('trigger_event', 'payment_received')->where('is_active', true)->first();
+        $msgText = $tplReceipt
+            ? str_replace(
+                ['{veli_adi}', '{ogrenci_adi}', '{tutar}', '{makbuz_no}', '{kalan_borc}', '{makbuz_linki}'],
+                [$invoice->student->parent_name, $invoice->student->full_name, number_format($amount, 0, ',', '.'), $receiptNo, number_format($newRemaining, 0, ',', '.'), $payment->receiptUrl()],
+                $tplReceipt->message_template
+            )
+            : "Sayın {$invoice->student->parent_name}, sporcumuz {$invoice->student->full_name} için {$amount} TL tutarındaki ödemeniz alınmıştır (Makbuz No: {$receiptNo}, Kalan Borç: {$newRemaining} TL). Dijital Makbuz: " . $payment->receiptUrl();
+
         WhatsappMessage::create([
+            'template_id' => $tplReceipt?->id,
             'student_id' => $invoice->student_id,
             'recipient_name' => $invoice->student->parent_name,
             'recipient_phone' => $invoice->student->parent_phone,

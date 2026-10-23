@@ -680,7 +680,7 @@ class DatabaseSeeder extends Seeder
             'category' => 'utility',
             'days_offset' => 0,
             'send_time' => '09:00:00',
-            'message_template' => 'Sayın {veli_adi}, sporcumuz {ogrenci_adi} için {tutar} TL tutarındaki ödemeniz alınmıştır (Makbuz No: {makbuz_no}). Dijital makbuzunuzu Veli Panelinden görüntüleyebilirsiniz. Enerjik Cimnastik ailesi olarak teşekkür ederiz! 🌟',
+            'message_template' => 'Sayın {veli_adi}, sporcumuz {ogrenci_adi} için {tutar} TL tutarındaki ödemeniz alınmıştır (Makbuz No: {makbuz_no}, Kalan Borç: {kalan_borc} TL). Dijital Makbuz: {makbuz_linki}. Enerjik Cimnastik ailesi olarak teşekkür ederiz! 🌟',
         ]);
 
         $tplAbsence = WhatsappTemplate::create([
@@ -690,7 +690,7 @@ class DatabaseSeeder extends Seeder
             'category' => 'utility',
             'days_offset' => 0,
             'send_time' => '20:00:00',
-            'message_template' => 'Merhaba {veli_adi}, sporcumuz {ogrenci_adi} son 2 antrenmanımıza katılamamıştır. Her şeyin yolunda olduğunu umuyoruz 🙏 Raporlu veya izinli durumlarda telafi dersi planlaması için bizimle iletişime geçebilirsiniz.',
+            'message_template' => 'Merhaba {veli_adi}, sporcumuz {ogrenci_adi} üst üste {sayi} antrenmana katılamamıştır. Her şeyin yolunda olduğunu umuyoruz 🙏 Raporlu veya izinli durumlarda telafi dersi planlaması için bizimle iletişime geçebilirsiniz.',
         ]);
 
         $tplMedical = WhatsappTemplate::create([

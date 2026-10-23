@@ -18,7 +18,6 @@ use App\Models\SiteSetting;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WhatsappMessage;
-use App\Models\WhatsappTemplate;
 use Illuminate\Http\Request;
 
 class PublicSiteController extends Controller
@@ -74,11 +73,12 @@ class PublicSiteController extends Controller
             'kvkk_approved_at' => now(),
         ]);
 
-        $tpl = WhatsappTemplate::where('trigger_event', 'trial_reminder')->first();
+        // Not: "trial_reminder" şablonu ({tarih}/{saat} içerir) deneme dersinden 1 gün
+        // önce otomatik hatırlatma içindir (bkz. routes/console.php), bu an için değil —
+        // bu yüzden burada o şablona bağlanmıyor, kendi sabit karşılama metnini kullanıyor.
         $msgText = "Merhaba {$lead->parent_name} 👋 Enerjik Cimnastik Spor Kulübü'ne {$lead->student_name} için yaptığınız ücretsiz deneme dersi başvurusu alınmıştır! Uygun grup ve saat planlaması için sizinle iletişime geçiyoruz. 🤸";
 
         WhatsappMessage::create([
-            'template_id' => $tpl?->id,
             'recipient_name' => $lead->parent_name . ' (Aday - ' . $lead->student_name . ')',
             'recipient_phone' => $lead->parent_phone,
             'message_text' => $msgText,

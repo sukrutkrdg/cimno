@@ -81,13 +81,35 @@
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                     <h3 class="text-base font-extrabold mb-3">⚙️ WhatsApp Business Hazır Cevap Kısayolları & Otomatik Kurallar (Düzenle & Sil)</h3>
                     <div class="grid md:grid-cols-2 gap-4">
+                        @php
+                            // Her tetikleyici olayın gerçekte mesaja gömdüğü placeholder'lar —
+                            // böylece hangi şablonun otomatik gönderildiği ve hangi kodları
+                            // destekleyeceği net görünür (daha önce bu alan tüm şablonlar için
+                            // sabit ve bazılarında yanlış placeholder'lar gösteriyordu).
+                            $triggerPlaceholders = [
+                                'trial_reminder' => '{veli_adi}, {ogrenci_adi}, {tarih}, {saat}',
+                                'due_approaching' => '{veli_adi}, {ogrenci_adi}, {donem}, {tutar}, {vade}',
+                                'due_overdue' => '{veli_adi}, {ogrenci_adi}, {donem}, {tutar}, {vade}',
+                                'payment_received' => '{veli_adi}, {ogrenci_adi}, {tutar}, {makbuz_no}, {kalan_borc}, {makbuz_linki}',
+                                'absence_warning' => '{veli_adi}, {ogrenci_adi}, {sayi}',
+                                'medical_report_expiring' => '{veli_adi}, {ogrenci_adi}, {vade}',
+                                'birthday' => '{veli_adi}, {ogrenci_adi}',
+                                'lesson_today' => '{veli_adi}, {ogrenci_adi}, {saat}, {grup_adi}',
+                            ];
+                            $autoTriggers = array_keys($triggerPlaceholders);
+                        @endphp
                         @foreach($whatsappTemplates as $tpl)
                             <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5 text-xs">
                                 <form action="{{ route('admin.whatsapp.template.update', $tpl->id) }}" method="POST" class="space-y-2.5">
                                     @csrf
-                                    <div class="flex justify-between items-center">
+                                    <div class="flex justify-between items-center gap-2">
                                         <span class="font-extrabold text-sm text-indigo-900">{{ $tpl->title }}</span>
-                                        <input type="text" name="shortcut" value="{{ $tpl->shortcut }}" class="w-32 font-mono font-bold text-indigo-700 bg-white border rounded-lg px-2 py-1 text-right">
+                                        @if(in_array($tpl->trigger_event, $autoTriggers, true))
+                                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] shrink-0">⚙️ Otomatik Gönderiliyor</span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-bold text-[10px] shrink-0">✍️ Yalnızca Manuel</span>
+                                        @endif
+                                        <input type="text" name="shortcut" value="{{ $tpl->shortcut }}" class="w-28 font-mono font-bold text-indigo-700 bg-white border rounded-lg px-2 py-1 text-right shrink-0">
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
@@ -100,7 +122,7 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="font-bold text-slate-600 block mb-1">Mesaj Şablonu ({veli_adi}, {ogrenci_adi}, {tutar}, {vade})</label>
+                                        <label class="font-bold text-slate-600 block mb-1">Mesaj Şablonu ({{ $triggerPlaceholders[$tpl->trigger_event] ?? 'bu kısayol otomatik tetiklenmiyor, serbest metin' }})</label>
                                         <textarea name="message_template" rows="3" class="w-full border rounded-xl p-2.5 bg-white text-xs">{{ $tpl->message_template }}</textarea>
                                     </div>
                                     <div class="flex justify-between items-center pt-1">
