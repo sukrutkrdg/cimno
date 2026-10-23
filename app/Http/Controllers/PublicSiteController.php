@@ -14,6 +14,7 @@ use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\PushSubscription;
 use App\Models\SiteSetting;
 use App\Models\Student;
 use App\Models\User;
@@ -299,6 +300,41 @@ class PublicSiteController extends Controller
         $settings = SiteSetting::pluck('value', 'key')->toArray();
 
         return view('public.receipt', compact('payment', 'settings'));
+    }
+
+    // Veli Portalı: Web Push Bildirim Aboneliği (Ders Saati Yaklaşıyor Hatırlatması)
+    // Giriş yapmış veli oturumuna (logged_parent_phone) bağlıdır — PIN'siz, anonim
+    // bir abonelik oluşturulamaz, aksi hâlde herkesin telefonuna bildirim gönderilebilirdi.
+    public function subscribePush(Request $request)
+    {
+        $phone = session('logged_parent_phone');
+        if (!$phone) {
+            return response()->json(['message' => 'Oturum bulunamadı.'], 403);
+        }
+
+        $validated = $request->validate([
+            'endpoint' => 'required|string|max:500',
+            'keys.p256dh' => 'required|string',
+            'keys.auth' => 'required|string',
+        ]);
+
+        PushSubscription::updateOrCreate(
+            ['endpoint' => $validated['endpoint']],
+            [
+                'parent_phone' => preg_replace('/\D+/', '', $phone),
+                'public_key' => $validated['keys']['p256dh'],
+                'auth_token' => $validated['keys']['auth'],
+            ]
+        );
+
+        return response()->json(['status' => 'subscribed']);
+    }
+
+    public function unsubscribePush(Request $request)
+    {
+        $validated = $request->validate(['endpoint' => 'required|string|max:500']);
+        PushSubscription::where('endpoint', $validated['endpoint'])->delete();
+        return response()->json(['status' => 'unsubscribed']);
     }
 
     // Veli Portalı: Ders programını telefon/bilgisayar takvimine (.ics) abonelik

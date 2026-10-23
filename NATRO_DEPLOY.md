@@ -68,7 +68,20 @@ Günlük hatırlatma kuyruğu (`routes/console.php` → `enerjik:daily-tasks`) i
 * * * * * cd /home/kullaniciadi/public_html && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Bu kurulmazsa doğum günü/vade hatırlatma mesajları hiç üretilmez.
+Bu kurulmazsa doğum günü/vade hatırlatma mesajları hiç üretilmez. Aynı satır,
+15 dakikada bir çalışan `enerjik:ders-bildirimi-gonder` (Web Push "ders saati
+yaklaşıyor" bildirimi) görevini de tetikler — ayrı bir cron satırı eklemenize
+gerek yok, Laravel zamanlayıcısı ikisini de bu tek `schedule:run` çağrısından yönetir.
+
+### Web Push Bildirimleri (Ders Saati Yaklaşıyor) — Tek Seferlik Kurulum
+
+```
+php artisan enerjik:vapid-anahtar-uret
+```
+
+Çıktıdaki `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` satırlarını `.env` dosyasına
+yapıştırın. Bu adım atlanırsa veli portalındaki "🔔 Bildirimler" butonu pasif
+kalır, sistemin geri kalanı (WhatsApp hatırlatmaları dâhil) etkilenmez.
 
 ## 7. Dosya İzinleri
 
@@ -103,3 +116,4 @@ emin olun.
 - [ ] `/panel/giris` sayfasında "Hızlı Rol Testi" bölümü **görünmüyor** (yalnızca local/testing ortamında görünür; production'da otomatik gizlenir, ekstra işlem gerekmez)
 - [ ] Varsayılan demo şifreler değiştirildi
 - [ ] `storage/` ve `bootstrap/cache/` yazılabilir
+- [ ] `php artisan enerjik:vapid-anahtar-uret` çalıştırılıp `.env`'e eklendi (Web Push bildirimleri için, opsiyonel ama önerilir)

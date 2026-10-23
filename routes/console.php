@@ -2,13 +2,20 @@
 
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\PushSubscription;
+use App\Models\Schedule as LessonSchedule;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappTemplate;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Carbon;
+use Minishlink\WebPush\Subscription;
+use Minishlink\WebPush\VAPID;
+use Minishlink\WebPush\WebPush;
 
 // Acil Durum: Personel Şifresi Sıfırlama (e-posta/SMTP kurulana kadar tek kurtarma yolu)
 // Sunucuda SSH/cPanel Terminal üzerinden çalıştırılır: php artisan admin:sifre-sifirla eposta@ornek.com YeniSifre123
@@ -219,3 +226,121 @@ Artisan::command('enerjik:daily-tasks', function () {
 })->purpose('Günlük aidat, doğum günü, sağlık raporu, deneme dersi ve bugünkü ders saati hatırlatmalarını WhatsApp Business kuyruğuna ekler');
 
 Schedule::command('enerjik:daily-tasks')->dailyAt('09:00');
+
+// Tek Seferlik Kurulum: Web Push için VAPID anahtar çifti üretir. Çıktıyı .env
+// dosyasına VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY olarak elle ekleyin.
+Artisan::command('enerjik:vapid-anahtar-uret', function () {
+    $keys = VAPID::createVapidKeys();
+    $this->info('Aşağıdaki iki satırı .env dosyanıza ekleyin ve sunucuyu yeniden başlatın:');
+    $this->line('VAPID_PUBLIC_KEY=' . $keys['publicKey']);
+    $this->line('VAPID_PRIVATE_KEY=' . $keys['privateKey']);
+    return self::SUCCESS;
+})->purpose('Web Push bildirimleri için bir VAPID anahtar çifti üretir (yalnızca bir kez, ilk kurulumda çalıştırılır)');
+
+// Ders Saati Yaklaşıyor Bildirimi: her 15 dakikada bir, 20-35 dakika içinde
+// başlayacak dersleri bulup o gruptaki aktif öğrencilerin (hem birincil hem
+// ikincil) velisine, veli portalına ekledikleri kısayoldan Web Push bildirimi
+// gönderir. WhatsApp'tan farklı olarak gerçek zamanlıdır (günde bir kez değil).
+Artisan::command('enerjik:ders-bildirimi-gonder', function () {
+    $publicKey = config('services.vapid.public_key');
+    $privateKey = config('services.vapid.private_key');
+    if (!$publicKey || !$privateKey) {
+        $this->warn('VAPID anahtarları tanımlı değil (php artisan enerjik:vapid-anahtar-uret ile üretin), push bildirimi atlanıyor.');
+        return self::SUCCESS;
+    }
+
+    $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
+    $todayName = $turkishDays[now()->dayOfWeekIso] ?? null;
+    if (!$todayName) {
+        return self::SUCCESS;
+    }
+
+    $windowStart = now()->addMinutes(20);
+    $windowEnd = now()->addMinutes(35);
+    $todayDate = today()->toDateString();
+
+    $upcoming = LessonSchedule::with('group')
+        ->where('day_of_week', $todayName)
+        ->get()
+        ->filter(function ($sch) use ($todayDate, $windowStart, $windowEnd) {
+            $start = Carbon::parse($todayDate . ' ' . $sch->start_time);
+            return $start->between($windowStart, $windowEnd);
+        });
+
+    if ($upcoming->isEmpty()) {
+        $this->info('20-35 dakika içinde başlayacak ders bulunamadı.');
+        return self::SUCCESS;
+    }
+
+    $webPush = new WebPush(['VAPID' => [
+        'subject' => config('services.vapid.subject'),
+        'publicKey' => $publicKey,
+        'privateKey' => $privateKey,
+    ]]);
+    $queued = 0;
+
+    foreach ($upcoming as $sch) {
+        // Aynı ders aralığı birden fazla cron tetiklemesine denk gelebilir (ör.
+        // zamanlayıcı birkaç dakika gecikmeli çalışırsa); her ders+gün için tek
+        // seferlik gönderim garantisi için kısa süreli bir önbellek kilidi kullanılır.
+        $dedupKey = "push-ders-{$sch->id}-{$todayDate}";
+        if (Cache::has($dedupKey)) {
+            continue;
+        }
+        Cache::put($dedupKey, true, now()->addHours(20));
+
+        $students = Student::where('group_id', $sch->group_id)->where('status', 'active')->get();
+        if ($students->isEmpty()) {
+            continue;
+        }
+
+        $phones = collect();
+        foreach ($students as $st) {
+            $phones->push(preg_replace('/\D+/', '', (string) $st->parent_phone));
+            if (!empty($st->secondary_parent_phone)) {
+                $phones->push(preg_replace('/\D+/', '', (string) $st->secondary_parent_phone));
+            }
+        }
+        $phones = $phones->filter()->unique()->values();
+        if ($phones->isEmpty()) {
+            continue;
+        }
+
+        $subs = PushSubscription::whereIn('parent_phone', $phones)->get();
+        $saat = substr($sch->start_time, 0, 5);
+        $payload = json_encode([
+            'title' => '🤸 Ders Saati Yaklaşıyor',
+            'body' => ($sch->group?->name ?? 'Dersiniz') . " dersi saat {$saat}'de başlıyor!",
+            'url' => '/mobil',
+            'tag' => $dedupKey,
+        ], JSON_UNESCAPED_UNICODE);
+
+        foreach ($subs as $sub) {
+            $webPush->queueNotification(
+                Subscription::create([
+                    'endpoint' => $sub->endpoint,
+                    'publicKey' => $sub->public_key,
+                    'authToken' => $sub->auth_token,
+                    'contentEncoding' => $sub->content_encoding,
+                ]),
+                $payload
+            );
+            $queued++;
+        }
+    }
+
+    if ($queued > 0) {
+        foreach ($webPush->flush() as $report) {
+            // Tarayıcı/kullanıcı aboneliği kalıcı olarak iptal ettiyse (ör. bildirim
+            // izni geri alındı) artık geçersiz olan kaydı veritabanından temizle.
+            if (!$report->isSuccess() && $report->isSubscriptionExpired()) {
+                PushSubscription::where('endpoint', $report->getEndpoint())->delete();
+            }
+        }
+    }
+
+    $this->info("{$queued} push bildirimi gönderildi.");
+    return self::SUCCESS;
+})->purpose('20-35 dakika içinde başlayacak derslerin velilerine Web Push "ders saati yaklaşıyor" bildirimi gönderir');
+
+Schedule::command('enerjik:ders-bildirimi-gonder')->everyFifteenMinutes();

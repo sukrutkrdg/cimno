@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Veli Girişi & Mobil Panel | Tekirdağ Enerjik Cimnastik</title>
 
     <!-- PWA & iOS / Android Ana Ekran Kısayol Etiketleri -->
@@ -78,6 +79,11 @@
                 <button onclick="enerjikToggleTheme()" class="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-[13px]" aria-label="Tema Değiştir">
                     <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
                 </button>
+                @if($activePhone && $students->isNotEmpty())
+                    <button id="pushToggleBtn" onclick="enerjikPush.toggle()" class="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-[11px] font-bold" aria-label="Ders Saati Bildirimleri">
+                        🔔 <span id="pushToggleLabel">Bildirimler</span>
+                    </button>
+                @endif
                 <button onclick="enerjikPwa.install()" class="px-2.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow">
                     📲 Ana Ekrana Ekle
                 </button>
@@ -323,6 +329,110 @@
             try { localStorage.setItem('enerjik_theme', isDark ? 'dark' : 'light'); } catch (e) {}
         }
     </script>
+
+    @if($activePhone && $students->isNotEmpty())
+        <script>
+            // Ders saati yaklaşıyor Web Push bildirimi aboneliği. VAPID_PUBLIC_KEY
+            // (gizli olmayan, adının gereği "public" anahtar) sunucu tarafında
+            // .env'de tanımlıysa burada bastırılır; tanımlı değilse buton pasif kalır.
+            window.enerjikPush = (function () {
+                const VAPID_PUBLIC_KEY = @json(config('services.vapid.public_key'));
+                const btn = document.getElementById('pushToggleBtn');
+                const label = document.getElementById('pushToggleLabel');
+
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                    const raw = window.atob(base64);
+                    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+                }
+
+                function csrfToken() {
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    return meta ? meta.content : '';
+                }
+
+                function setLabel(subscribed) {
+                    if (!btn || !label) return;
+                    label.textContent = subscribed ? 'Açık' : 'Bildirimler';
+                    btn.classList.toggle('bg-emerald-500', subscribed);
+                    btn.classList.toggle('bg-white/15', !subscribed);
+                }
+
+                async function getSubscription() {
+                    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+                    const reg = await navigator.serviceWorker.ready;
+                    return reg.pushManager.getSubscription();
+                }
+
+                async function refreshButtonState() {
+                    const sub = await getSubscription();
+                    setLabel(!!sub);
+                }
+
+                async function subscribe() {
+                    if (!VAPID_PUBLIC_KEY) {
+                        alert('Bildirim sistemi henüz kurulmadı, lütfen salon yönetimine bildirin.');
+                        return;
+                    }
+                    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                        alert('Bu tarayıcı bildirimleri desteklemiyor.');
+                        return;
+                    }
+                    try {
+                        const permission = await Notification.requestPermission();
+                        if (permission !== 'granted') return;
+
+                        const reg = await navigator.serviceWorker.ready;
+                        const sub = await reg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                        });
+
+                        await fetch('{{ route('public.push.subscribe') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(sub.toJSON()),
+                        });
+                        setLabel(true);
+                    } catch (e) {
+                        console.error('Push aboneliği başarısız:', e);
+                    }
+                }
+
+                async function unsubscribe() {
+                    const sub = await getSubscription();
+                    if (!sub) { setLabel(false); return; }
+                    await fetch('{{ route('public.push.unsubscribe') }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ endpoint: sub.endpoint }),
+                    });
+                    await sub.unsubscribe();
+                    setLabel(false);
+                }
+
+                async function toggle() {
+                    const sub = await getSubscription();
+                    if (sub) {
+                        await unsubscribe();
+                    } else {
+                        await subscribe();
+                    }
+                }
+
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        navigator.serviceWorker.ready.then(refreshButtonState).catch(() => {});
+                    });
+                }
+
+                return { toggle, subscribe, unsubscribe };
+            })();
+        </script>
+    @endif
 
     @include('partials.pwa-install-prompt')
 </body>

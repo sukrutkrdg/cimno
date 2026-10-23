@@ -20,6 +20,8 @@ Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.
 Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('public.sitemap');
 Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->name('public.receipt')->middleware('signed');
 Route::get('/takvim/{student}', [PublicSiteController::class, 'calendarIcs'])->name('public.calendar.ics')->middleware('signed');
+Route::post('/push-abone', [PublicSiteController::class, 'subscribePush'])->middleware('throttle:10,1')->name('public.push.subscribe');
+Route::post('/push-abone/iptal', [PublicSiteController::class, 'unsubscribePush'])->middleware('throttle:10,1')->name('public.push.unsubscribe');
 
 // 2. Yönetim Paneli (Yetkili Giriş + 16 Modül: Salon Sahibi, Sekreter, Antrenör)
 Route::prefix('panel')->group(function () {
