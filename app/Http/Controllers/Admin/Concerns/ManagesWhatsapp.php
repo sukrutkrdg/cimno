@@ -13,13 +13,20 @@ trait ManagesWhatsapp
     // MODÜL 11: Yeni WhatsApp Hazır Cevap Şablonu Ekle / Sil & Kuyruğa Özel Mesaj Ekle
     public function storeWhatsappTemplate(Request $request)
     {
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:160',
+            'shortcut' => 'required|string|max:60|unique:whatsapp_templates,shortcut',
+            'days_offset' => 'nullable|integer',
+            'send_time' => 'nullable|date_format:H:i',
+            'message_template' => 'nullable|string',
+        ]);
         $tpl = WhatsappTemplate::create([
-            'title' => $request->input('title', 'Yeni Hazır Cevap'),
-            'shortcut' => $request->input('shortcut', '/mesaj'),
+            'title' => $validated['title'] ?? 'Yeni Hazır Cevap',
+            'shortcut' => $validated['shortcut'],
             'trigger_event' => $request->input('trigger_event', 'custom'),
-            'days_offset' => (int) $request->input('days_offset', 0),
-            'send_time' => $request->input('send_time', '10:00'),
-            'message_template' => $request->input('message_template', 'Merhaba {veli_adi}, '),
+            'days_offset' => (int) ($validated['days_offset'] ?? 0),
+            'send_time' => $validated['send_time'] ?? '10:00',
+            'message_template' => $validated['message_template'] ?? 'Merhaba {veli_adi}, ',
             'is_active' => true,
         ]);
         AuditLog::record('whatsapp_sablon_eklendi', "Yeni WhatsApp şablonu eklendi: {$tpl->title}", 'WhatsappTemplate', $tpl->id);
@@ -29,6 +36,13 @@ trait ManagesWhatsapp
     // MODÜL 11: WhatsApp Business Hazır Cevap & Kural Güncelleme (Kabul Kriteri #4)
     public function updateWhatsappTemplate(Request $request, WhatsappTemplate $template)
     {
+        $request->validate([
+            'title' => 'nullable|string|max:160',
+            'shortcut' => 'nullable|string|max:60|unique:whatsapp_templates,shortcut,' . $template->id,
+            'days_offset' => 'nullable|integer',
+            'send_time' => 'nullable|date_format:H:i',
+            'message_template' => 'nullable|string',
+        ]);
         $template->update([
             'title' => $request->input('title', $template->title),
             'shortcut' => $request->input('shortcut', $template->shortcut),
@@ -53,10 +67,15 @@ trait ManagesWhatsapp
 
     public function storeWhatsappMessage(Request $request)
     {
+        $validated = $request->validate([
+            'recipient_name' => 'nullable|string|max:120',
+            'recipient_phone' => 'required|string|max:30',
+            'message_text' => 'required|string',
+        ]);
         WhatsappMessage::create([
-            'recipient_name' => $request->input('recipient_name', 'Veli'),
-            'recipient_phone' => $request->input('recipient_phone', ''),
-            'message_text' => $request->input('message_text', ''),
+            'recipient_name' => $validated['recipient_name'] ?? 'Veli',
+            'recipient_phone' => $validated['recipient_phone'],
+            'message_text' => $validated['message_text'],
             'status' => 'queued',
         ]);
         return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', 'Yeni mesaj gönderim kuyruğuna eklendi!');

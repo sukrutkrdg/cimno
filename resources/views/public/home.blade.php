@@ -168,7 +168,7 @@
     <section class="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 text-white py-16 lg:py-24">
         <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-12 gap-10 items-center">
             <div class="lg:col-span-7 space-y-6">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-800/80 border border-indigo-600/50 text-xs font-semibold text-amber-300">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-indigo-800/80 border border-indigo-600/50 text-xs font-semibold text-amber-300 max-w-full">
                     <span>{{ $settings['hero_badge'] ?? '🏆 3-16 Yaş Çocuk & Yetişkin Cimnastik Okulu' }}</span>
                 </div>
                 <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
@@ -211,7 +211,7 @@
                     </div>
 
                     @if(session('trial_success'))
-                        <div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-sm font-semibold">
+                        <div class="mb-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 text-sm font-semibold">
                             ✅ {{ session('trial_success') }}
                         </div>
                     @endif

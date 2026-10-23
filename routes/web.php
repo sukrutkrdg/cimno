@@ -7,12 +7,13 @@ use Illuminate\Support\Facades\Route;
 // 1. Ön Yüz (Veli & Aday Veli Web Sitesi + Mobil Web Kısayol Uygulaması + Veli QR Yoklama)
 Route::get('/', [PublicSiteController::class, 'home'])->name('public.home');
 Route::post('/on-kayit', [PublicSiteController::class, 'submitTrialLead'])->middleware('throttle:10,1')->name('public.trial.submit');
-// throttle:30,1: PIN ile telefon+PIN eşleşmesi burada kontrol edildiği için (bkz.
+// PIN ile telefon+PIN eşleşmesi burada kontrol edildiği için (bkz.
 // PublicSiteController@mobilePwa), bu rotalar aynı zamanda PIN deneme/kaba kuvvet
-// yüzeyidir. 30/dk, normal sekme gezinmesine yetecek kadar cömert ama PIN taramasını
-// pratik olmaktan çıkarır.
-Route::get('/mobil', [PublicSiteController::class, 'mobilePwa'])->middleware('throttle:30,1')->name('public.mobile.pwa');
-Route::get('/qr-yoklama', [PublicSiteController::class, 'qrCheckinPage'])->middleware('throttle:30,1')->name('public.qr.checkin');
+// yüzeyidir (4 haneli PIN, 10.000 olasılık). Salt IP bazlı bir limit rotasyonlu
+// IP'lerle aşılabileceğinden, 'pin-login' limiter'ı (bkz. AppServiceProvider)
+// asıl olarak GÖNDERİLEN TELEFON NUMARASINA göre sınırlar.
+Route::get('/mobil', [PublicSiteController::class, 'mobilePwa'])->middleware('throttle:pin-login')->name('public.mobile.pwa');
+Route::get('/qr-yoklama', [PublicSiteController::class, 'qrCheckinPage'])->middleware('throttle:pin-login')->name('public.qr.checkin');
 Route::post('/qr-yoklama', [PublicSiteController::class, 'submitQrCheckin'])->middleware('throttle:20,1')->name('public.qr.checkin.submit');
 Route::get('/veli-portali', [PublicSiteController::class, 'parentPortal'])->name('public.parent.portal');
 Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.qr.poster');

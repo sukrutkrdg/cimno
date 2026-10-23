@@ -179,7 +179,12 @@
                                     @foreach($coachPayrolls as $cp)
                                         <tr>
                                             <td class="p-2.5 font-bold">{{ $cp['coach']->name }}</td>
-                                            <td class="p-2.5">{{ $cp['lesson_count'] }} Ders</td>
+                                            <td class="p-2.5">
+                                                {{ $cp['lesson_count'] }} Ders
+                                                @if($cp['is_estimated'])
+                                                    <span class="text-[10px] text-amber-600 font-bold" title="Bu ay henüz yoklama kaydı yok, program bazlı tahmini sayı gösteriliyor.">(tahmini)</span>
+                                                @endif
+                                            </td>
                                             <td class="p-2.5">{{ number_format($cp['base_salary'], 0, ',', '.') }} ₺</td>
                                             <td class="p-2.5">{{ number_format($cp['lesson_earnings'], 0, ',', '.') }} ₺</td>
                                             <td class="p-2.5 text-right font-extrabold text-indigo-700">{{ number_format($cp['total_payable'], 0, ',', '.') }} ₺</td>

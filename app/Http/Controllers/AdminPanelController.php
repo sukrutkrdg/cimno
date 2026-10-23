@@ -292,13 +292,28 @@ class AdminPanelController extends Controller
             ->get();
 
         // Antrenör Hakediş Hesabı (Bu Ay Yoklamadan Otomatik)
-        $coachPayrolls = User::where('role', 'coach')->get()->map(function ($coach) {
-            $lessonsGiven = Attendance::where('coach_id', $coach->id)
-                ->whereMonth('attendance_date', now()->month)
-                ->distinct()
-                ->count('attendance_date');
-            // En azından programdaki aktif derslerinden örnek baz hesap
-            $lessonCount = max($lessonsGiven, $coach->groups()->count() * 8);
+        // Not: whereMonth() yıl kontrolü yapmadığından önceki yıllarda aynı ayda
+        // alınmış yoklamalar da sayıma karışıyordu; whereYear eklendi.
+        // lessonsGiven = coach_id'nin GERÇEKTEN yoklama aldığı ayrı gün sayısı; bu
+        // ay hiç yoklama alınmamışsa (yeni işe başlama, izin, hiç ders verilmemiş
+        // hafta) tahmini taban (grup sayısı × 8) yalnızca o durumda kullanılır —
+        // eskiden max() ile taban her zaman GERÇEK sayıyı ezip fazla ödemeye yol açıyordu.
+        $lessonsGivenByCoach = Attendance::where('coach_id', '!=', null)
+            ->whereMonth('attendance_date', now()->month)
+            ->whereYear('attendance_date', now()->year)
+            ->selectRaw('coach_id, count(distinct attendance_date) as lesson_days')
+            ->groupBy('coach_id')
+            ->pluck('lesson_days', 'coach_id');
+
+        $groupCountByCoach = Group::where('coach_id', '!=', null)
+            ->selectRaw('coach_id, count(*) as grp_count')
+            ->groupBy('coach_id')
+            ->pluck('grp_count', 'coach_id');
+
+        $coachPayrolls = User::where('role', 'coach')->get()->map(function ($coach) use ($lessonsGivenByCoach, $groupCountByCoach) {
+            $lessonsGiven = (int) ($lessonsGivenByCoach[$coach->id] ?? 0);
+            $estimatedBaseline = (int) ($groupCountByCoach[$coach->id] ?? 0) * 8;
+            $lessonCount = $lessonsGiven > 0 ? $lessonsGiven : $estimatedBaseline;
             $lessonFeeTotal = ($coach->compensation_type === 'per_lesson' || $coach->compensation_type === 'both')
                 ? $lessonCount * $coach->per_lesson_rate
                 : 0;
@@ -308,6 +323,7 @@ class AdminPanelController extends Controller
             return [
                 'coach' => $coach,
                 'lesson_count' => $lessonCount,
+                'is_estimated' => $lessonsGiven === 0,
                 'base_salary' => $base,
                 'lesson_earnings' => $lessonFeeTotal,
                 'total_payable' => $base + $lessonFeeTotal,

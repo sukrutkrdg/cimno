@@ -191,7 +191,7 @@
     <div id="qrScanOverlay" class="fixed inset-0 z-[60] bg-black hidden flex-col">
         <div class="flex items-center justify-between p-3 bg-black/70">
             <span class="text-white text-xs font-extrabold">📷 Salon Giriş QR Kodunu Okutun</span>
-            <button type="button" id="qrScanClose" class="text-white text-xl font-extrabold px-3 leading-none">✕</button>
+            <button type="button" id="qrScanClose" aria-label="Kamerayı Kapat" class="text-white text-xl font-extrabold px-3 leading-none">✕</button>
         </div>
         <div class="relative flex-1 flex items-center justify-center overflow-hidden bg-black">
             <video id="qrScanVideo" class="absolute inset-0 w-full h-full object-cover" playsinline muted autoplay></video>

@@ -48,13 +48,13 @@
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 p-6 print:bg-white transition-colors">
     <div class="max-w-4xl mx-auto print:hidden flex justify-end mb-3">
-        <button onclick="enerjikToggleTheme()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold shadow-sm">
+        <button onclick="enerjikToggleTheme()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs font-bold shadow-sm">
             <span class="dark:hidden">🌙 Karanlık Tema</span><span class="hidden dark:inline">☀️ Aydınlık Tema</span>
         </button>
     </div>
-    <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 print:bg-white rounded-3xl border-2 border-purple-700 p-8 shadow-xl text-center space-y-5">
+    <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 print:bg-white text-slate-900 dark:text-slate-100 print:text-slate-900 rounded-3xl border-2 border-purple-700 p-8 shadow-xl text-center space-y-5">
         <img src="/icons/logo.jpg" alt="Enerjik Cimnastik Logo" class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-purple-600 shadow-lg">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-950 print:bg-purple-100 text-purple-900 dark:text-purple-300 print:text-purple-900 text-xs font-extrabold">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-purple-100 dark:bg-purple-950 print:bg-purple-100 text-purple-900 dark:text-purple-300 print:text-purple-900 text-xs font-extrabold max-w-full">
             🟣 {{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik Spor Kulübü' }}
         </div>
         <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white print:text-slate-900 leading-tight">

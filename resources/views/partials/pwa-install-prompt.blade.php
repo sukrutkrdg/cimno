@@ -28,7 +28,7 @@
     <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100">
         <div class="flex justify-between items-center">
             <h3 class="text-lg font-extrabold">📲 Telefon Ana Ekranına Kısayol Ekle</h3>
-            <button type="button" onclick="enerjikPwa.closeModal()" class="text-slate-400 font-extrabold text-lg">✕</button>
+            <button type="button" onclick="enerjikPwa.closeModal()" aria-label="Kapat" class="text-slate-400 font-extrabold text-lg">✕</button>
         </div>
         <p class="text-xs text-slate-600 dark:text-slate-400">Mağaza indirmesi gerekmeden uygulamamızı 5 saniyede telefon ekranınıza ekleyebilirsiniz:</p>
 
