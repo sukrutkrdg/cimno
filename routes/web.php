@@ -19,6 +19,7 @@ Route::get('/veli-portali', [PublicSiteController::class, 'parentPortal'])->name
 Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.qr.poster');
 Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('public.sitemap');
 Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->name('public.receipt')->middleware('signed');
+Route::get('/takvim/{student}', [PublicSiteController::class, 'calendarIcs'])->name('public.calendar.ics')->middleware('signed');
 
 // 2. Yönetim Paneli (Yetkili Giriş + 16 Modül: Salon Sahibi, Sekreter, Antrenör)
 Route::prefix('panel')->group(function () {

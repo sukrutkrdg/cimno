@@ -292,7 +292,16 @@
 
                     <!-- Kayıtlı Öğrenciler Listesi -->
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm overflow-x-auto">
-                        <h3 class="text-lg font-extrabold mb-3">📋 Kayıtlı Sporcular ({{ $students->count() }})</h3>
+                        <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                            <h3 class="text-lg font-extrabold">📋 Kayıtlı Sporcular ({{ $students->count() }})</h3>
+                            <div class="flex flex-wrap gap-1.5 text-[11px] font-bold" id="student-status-filters">
+                                <button type="button" onclick="enerjikFilterStudents('all')" data-filter-btn="all" class="px-2.5 py-1 rounded-lg border">Tümü ({{ $students->count() }})</button>
+                                <button type="button" onclick="enerjikFilterStudents('active')" data-filter-btn="active" class="px-2.5 py-1 rounded-lg border bg-emerald-50 text-emerald-800 border-emerald-200">✅ Aktif ({{ $students->where('status', 'active')->count() }})</button>
+                                <button type="button" onclick="enerjikFilterStudents('waiting_list')" data-filter-btn="waiting_list" class="px-2.5 py-1 rounded-lg border bg-purple-50 text-purple-800 border-purple-200">⏳ Bekleme Listesi ({{ $students->where('status', 'waiting_list')->count() }})</button>
+                                <button type="button" onclick="enerjikFilterStudents('frozen')" data-filter-btn="frozen" class="px-2.5 py-1 rounded-lg border bg-amber-50 text-amber-800 border-amber-200">⏸️ Donduruldu ({{ $students->where('status', 'frozen')->count() }})</button>
+                                <button type="button" onclick="enerjikFilterStudents('left')" data-filter-btn="left" class="px-2.5 py-1 rounded-lg border bg-slate-100 text-slate-600 border-slate-200">📦 Ayrıldı ({{ $students->where('status', 'left')->count() }})</button>
+                            </div>
+                        </div>
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 border-b text-slate-600 uppercase">
                                 <tr>
@@ -305,7 +314,7 @@
                             </thead>
                             <tbody class="divide-y">
                                 @foreach($students as $st)
-                                    <tr>
+                                    <tr data-student-status="{{ $st->status }}">
                                         <td class="p-2.5">
                                             <div class="font-extrabold text-slate-900">{{ $st->full_name }}</div>
                                             <div class="text-[11px] text-slate-500">Telafi: {{ $st->makeup_credits }} · Lisans: {{ $st->license_no ?? '-' }}</div>
@@ -313,6 +322,9 @@
                                         <td class="p-2.5">
                                             <div class="font-bold text-indigo-700">{{ $st->group?->name }}</div>
                                             <div class="text-[11px] text-slate-500">{{ $st->package?->name }}</div>
+                                            @if($st->status === 'waiting_list')
+                                                <span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-extrabold">⏳ Bekleme Listesinde</span>
+                                            @endif
                                         </td>
                                         <td class="p-2.5">
                                             <div>{{ $st->parent_name }}</div>
@@ -337,8 +349,9 @@
                                                 </button>
                                                 <form action="{{ route('admin.students.status', $st->id) }}" method="POST">
                                                     @csrf
-                                                    <select name="status" onchange="this.form.submit()" class="text-[11px] font-bold rounded-lg border px-2 py-1 {{ $st->status === 'active' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }}">
+                                                    <select name="status" onchange="this.form.submit()" class="text-[11px] font-bold rounded-lg border px-2 py-1 {{ $st->status === 'active' ? 'bg-emerald-50 text-emerald-800' : ($st->status === 'waiting_list' ? 'bg-purple-50 text-purple-800' : 'bg-amber-50 text-amber-800') }}">
                                                         <option value="active" {{ $st->status === 'active' ? 'selected' : '' }}>Aktif</option>
+                                                        <option value="waiting_list" {{ $st->status === 'waiting_list' ? 'selected' : '' }}>⏳ Bekleme Listesi</option>
                                                         <option value="frozen" {{ $st->status === 'frozen' ? 'selected' : '' }}>Donduruldu</option>
                                                         <option value="left" {{ $st->status === 'left' ? 'selected' : '' }}>Ayrıldı (Arşiv)</option>
                                                     </select>
@@ -456,3 +469,15 @@
                         </table>
                     </div>
                 </div>
+
+                <script>
+                    function enerjikFilterStudents(status) {
+                        document.querySelectorAll('tr[data-student-status]').forEach(function (row) {
+                            row.style.display = (status === 'all' || row.dataset.studentStatus === status) ? '' : 'none';
+                        });
+                        document.querySelectorAll('[data-filter-btn]').forEach(function (btn) {
+                            btn.classList.toggle('ring-2', btn.dataset.filterBtn === status);
+                            btn.classList.toggle('ring-offset-1', btn.dataset.filterBtn === status);
+                        });
+                    }
+                </script>

@@ -17,6 +17,9 @@
                         <span class="text-xs font-bold text-slate-500">Aktif Kayıtlı Sporcu</span>
                         <div class="text-3xl font-extrabold text-indigo-700 mt-1">{{ $activeStudentsCount }}</div>
                         <span class="text-[11px] text-emerald-600 font-semibold">{{ $groups->count() }} Aktif Grup</span>
+                        @if($waitingListCount > 0 && in_array('ogrenciler', $allowedTabs, true))
+                            <a href="{{ route('admin.index', ['tab' => 'ogrenciler', 'role_view' => $currentRole]) }}" class="block text-[11px] text-purple-700 font-bold mt-1">⏳ {{ $waitingListCount }} Bekleme Listesinde →</a>
+                        @endif
                     </div>
                     @if($currentRole === 'super_admin')
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">

@@ -301,6 +301,60 @@ class PublicSiteController extends Controller
         return view('public.receipt', compact('payment', 'settings'));
     }
 
+    // Veli Portalı: Ders programını telefon/bilgisayar takvimine (.ics) abonelik
+    // olarak ekleme. Haftalık tekrarlı (RRULE) etkinlikler üretir; imzalı URL
+    // (Student::calendarUrl()) sayesinde takvim uygulaması oturum açmadan periyodik
+    // olarak bu adresi tekrar çekebilir.
+    public function calendarIcs(Student $student)
+    {
+        $turkishToIcalDay = [
+            'Pazartesi' => 'MO', 'Salı' => 'TU', 'Çarşamba' => 'WE', 'Perşembe' => 'TH',
+            'Cuma' => 'FR', 'Cumartesi' => 'SA', 'Pazar' => 'SU',
+        ];
+        $turkishDayIso = [
+            'Pazartesi' => 1, 'Salı' => 2, 'Çarşamba' => 3, 'Perşembe' => 4,
+            'Cuma' => 5, 'Cumartesi' => 6, 'Pazar' => 7,
+        ];
+
+        $schedules = $student->group?->schedules ?? collect();
+
+        $lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Enerjik Cimnastik//Ders Programi//TR', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:' . $student->full_name . ' - Antrenman Programı'];
+
+        foreach ($schedules as $sch) {
+            $isoDay = $turkishDayIso[$sch->day_of_week] ?? null;
+            $icalDay = $turkishToIcalDay[$sch->day_of_week] ?? null;
+            if (!$isoDay || !$icalDay) {
+                continue;
+            }
+
+            $firstDate = today();
+            while ($firstDate->dayOfWeekIso !== $isoDay) {
+                $firstDate = $firstDate->addDay();
+            }
+
+            $dtStart = \Illuminate\Support\Carbon::parse($firstDate->toDateString() . ' ' . $sch->start_time, 'Europe/Istanbul')->setTimezone('UTC');
+            $dtEnd = \Illuminate\Support\Carbon::parse($firstDate->toDateString() . ' ' . $sch->end_time, 'Europe/Istanbul')->setTimezone('UTC');
+
+            $lines[] = 'BEGIN:VEVENT';
+            $lines[] = 'UID:enerjik-schedule-' . $sch->id . '@enerjikcimnastik';
+            $lines[] = 'DTSTAMP:' . now()->setTimezone('UTC')->format('Ymd\THis\Z');
+            $lines[] = 'DTSTART:' . $dtStart->format('Ymd\THis\Z');
+            $lines[] = 'DTEND:' . $dtEnd->format('Ymd\THis\Z');
+            $lines[] = 'RRULE:FREQ=WEEKLY;BYDAY=' . $icalDay;
+            $lines[] = 'SUMMARY:🤸 ' . ($student->group?->name ?? 'Antrenman') . ' Dersi';
+            $lines[] = 'LOCATION:' . ($sch->area ?? 'Enerjik Cimnastik');
+            $lines[] = 'DESCRIPTION:' . $student->full_name . ' için ' . ($student->group?->branch?->name ?? '') . ' antrenmanı.';
+            $lines[] = 'END:VEVENT';
+        }
+
+        $lines[] = 'END:VCALENDAR';
+
+        return response(implode("\r\n", $lines), 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'inline; filename="enerjik-cimnastik-ders-programi.ics"',
+        ]);
+    }
+
     // SEO: Google/Bing gibi arama motorlarına sitedeki herkese açık sayfaları bildirir.
     // url('/') kullanıldığından (sabit domain yazılmadığından) local/Vercel/Natro
     // ortamlarının hepsinde APP_URL'e göre doğru adresleri üretir.

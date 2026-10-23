@@ -207,6 +207,7 @@ class AdminPanelController extends Controller
         $overdueTotal = Invoice::whereIn('status', ['unpaid', 'partial'])->whereDate('due_date', '<', today())->sum('remaining_amount');
         $pendingTotal = Invoice::whereIn('status', ['unpaid', 'partial'])->sum('remaining_amount');
         $activeStudentsCount = Student::where('status', 'active')->count();
+        $waitingListCount = Student::where('status', 'waiting_list')->count();
         $newLeadsCount = Lead::whereIn('status', ['new', 'trial_scheduled', 'thinking'])->count();
 
         // Antrenör sadece kendi gruplarını görsün mü?
@@ -414,6 +415,7 @@ class AdminPanelController extends Controller
             'overdueTotal',
             'pendingTotal',
             'activeStudentsCount',
+            'waitingListCount',
             'newLeadsCount',
             'branches',
             'groups',

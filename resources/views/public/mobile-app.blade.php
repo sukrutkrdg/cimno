@@ -204,7 +204,12 @@
 
                             <!-- Ders Saatleri -->
                             <div>
-                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">📅 Haftalık Antrenman Saatleri (Takvim)</h3>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-xs font-extrabold uppercase text-slate-500">📅 Haftalık Antrenman Saatleri (Takvim)</h3>
+                                    @if(($st->group?->schedules ?? collect())->isNotEmpty())
+                                        <a href="{{ $st->calendarUrl() }}" class="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 underline">📲 Takvime Ekle</a>
+                                    @endif
+                                </div>
                                 <div class="flex flex-wrap gap-1.5">
                                     @foreach($st->group?->schedules ?? [] as $sch)
                                         @php $isToday = $sch->day_of_week === $todayName; @endphp

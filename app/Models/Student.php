@@ -4,11 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\URL;
 
 class Student extends Model
 {
     use SoftDeletes;
     protected $guarded = [];
+
+    // Veli, ders programını telefon/bilgisayar takvimine "abone" olarak ekleyebilsin
+    // diye kalıcı (süresiz) imzalı bir bağlantı — takvim uygulamaları bu adresi
+    // periyodik olarak kendi başına tekrar çeker, bu yüzden receiptUrl()'deki gibi
+    // günlerle sınırlı bir süre burada uygun olmaz.
+    public function calendarUrl(): string
+    {
+        return URL::signedRoute('public.calendar.ics', ['student' => $this->id]);
+    }
 
     protected $casts = [
         'birth_date' => 'date',

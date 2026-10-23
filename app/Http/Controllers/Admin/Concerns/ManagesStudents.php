@@ -190,6 +190,8 @@ trait ManagesStudents
             'makeup_credits' => (int) $request->input('makeup_credits', $student->makeup_credits),
             'medical_report_expires_at' => $request->input('medical_report_expires_at') ?: $student->medical_report_expires_at,
             'health_notes' => $request->input('health_notes', $student->health_notes),
+            'kvkk_consent' => $request->boolean('kvkk_consent', $student->kvkk_consent),
+            'health_data_consent' => $request->boolean('health_data_consent', $student->health_data_consent),
             'photo_consent' => $request->boolean('photo_consent', $student->photo_consent),
             'status' => $request->input('status', $student->status),
             'portal_pin' => $newPin,
