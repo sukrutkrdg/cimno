@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'super_admin',
             'compensation_type' => 'none',
             'password' => Hash::make('enerjik2026'),
-            'api_token' => 'token-super-admin-enerjik-2026',
+            'api_token' => Str::random(40),
             'permissions' => ['all' => true],
         ]);
 
@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
             'compensation_type' => 'fixed',
             'base_salary' => 28500,
             'password' => Hash::make('enerjik2026'),
-            'api_token' => 'token-secretary-enerjik-2026',
+            'api_token' => Str::random(40),
             'permissions' => [
                 'view_expenses' => false,
                 'view_profit' => false,
@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
             'base_salary' => 22000,
             'per_lesson_rate' => 450,
             'password' => Hash::make('enerjik2026'),
-            'api_token' => 'token-coach1-enerjik-2026',
+            'api_token' => Str::random(40),
         ]);
 
         $coach2 = User::create([
@@ -87,7 +87,7 @@ class DatabaseSeeder extends Seeder
             'base_salary' => 0,
             'per_lesson_rate' => 600,
             'password' => Hash::make('enerjik2026'),
-            'api_token' => 'token-coach2-enerjik-2026',
+            'api_token' => Str::random(40),
         ]);
 
         $parent1 = User::create([
@@ -97,7 +97,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'parent',
             'otp_code' => '123456',
             'password' => Hash::make('enerjik2026'),
-            'api_token' => 'token-parent1-enerjik-2026',
+            'api_token' => Str::random(40),
         ]);
 
         $parent2 = User::create([
@@ -107,7 +107,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'parent',
             'otp_code' => '123456',
             'password' => Hash::make('enerjik2026'),
-            'api_token' => 'token-parent2-enerjik-2026',
+            'api_token' => Str::random(40),
         ]);
 
         // 2. Branşlar

@@ -80,26 +80,11 @@ trait ManagesStudents
                 'marketing_consent' => $request->boolean('marketing_consent', false),
             ]);
 
-            // Veli Portalı Giriş Bilgisi (Telefon + PIN) WhatsApp ile Gönderilir
-            WhatsappMessage::create([
-                'student_id' => $student->id,
-                'recipient_name' => $student->parent_name,
-                'recipient_phone' => $student->parent_phone,
-                'message_text' => "Sayın {$student->parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
-                'status' => 'queued',
-            ]);
-
-            // İkinci Veli (varsa) Aynı PIN ile Ayrıca Bilgilendirilir — Her İki Veli de
-            // Kendi Telefonuyla Aynı Öğrenciye Giriş Yapabilir (bkz. PublicSiteController@mobilePwa).
-            if (!empty($student->secondary_parent_phone)) {
-                WhatsappMessage::create([
-                    'student_id' => $student->id,
-                    'recipient_name' => $student->secondary_parent_name ?: 'İkinci Veli',
-                    'recipient_phone' => $student->secondary_parent_phone,
-                    'message_text' => "Sayın {$student->secondary_parent_name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$student->secondary_parent_phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil'),
-                    'status' => 'queued',
-                ]);
-            }
+            // Veli Portalı Giriş Bilgisi (Telefon + PIN) — hem birincil hem (varsa)
+            // ikincil veliye kendi telefonuyla ayrı ayrı WhatsApp ile gönderilir.
+            $this->queuePortalMessageForGuardians($student, fn (string $name, string $phone) =>
+                "Sayın {$name}, {$student->full_name} kaydı için veli portalı giriş bilgileriniz: Telefon: {$phone}, PIN: {$student->portal_pin}. Giriş: " . url('/mobil')
+            );
 
             // Otomatik Borç Hesaplama
             $gross = (float) $package->price;
@@ -213,23 +198,9 @@ trait ManagesStudents
         // Yeni PIN veliye iletilmezse veli portalına giremez kalır; otomatik bildir.
         // PIN her iki veli için de ortak olduğundan, ikinci veli varsa o da ayrıca bilgilendirilir.
         if ($pinRegenerated) {
-            WhatsappMessage::create([
-                'student_id' => $student->id,
-                'recipient_name' => $student->parent_name,
-                'recipient_phone' => $student->parent_phone,
-                'message_text' => "Sayın {$student->parent_name}, {$student->full_name} için veli portalı PIN kodunuz yenilendi. Yeni PIN: {$newPin} (Telefon: {$student->parent_phone}). Giriş: " . url('/mobil'),
-                'status' => 'queued',
-            ]);
-
-            if (!empty($student->secondary_parent_phone)) {
-                WhatsappMessage::create([
-                    'student_id' => $student->id,
-                    'recipient_name' => $student->secondary_parent_name ?: 'İkinci Veli',
-                    'recipient_phone' => $student->secondary_parent_phone,
-                    'message_text' => "Sayın {$student->secondary_parent_name}, {$student->full_name} için veli portalı PIN kodunuz yenilendi. Yeni PIN: {$newPin} (Telefon: {$student->secondary_parent_phone}). Giriş: " . url('/mobil'),
-                    'status' => 'queued',
-                ]);
-            }
+            $this->queuePortalMessageForGuardians($student, fn (string $name, string $phone) =>
+                "Sayın {$name}, {$student->full_name} için veli portalı PIN kodunuz yenilendi. Yeni PIN: {$newPin} (Telefon: {$phone}). Giriş: " . url('/mobil')
+            );
         }
 
         AuditLog::record('ogrenci_guncellendi', "{$student->full_name} sporcu/veli bilgileri güncellendi.", 'Student', $student->id);
@@ -260,5 +231,35 @@ trait ManagesStudents
         AuditLog::record('ogrenci_silindi', "{$name} sporcu ve veli giriş kaydı silindi.", 'Student', $student->id);
 
         return redirect()->route('admin.index', ['tab' => 'ogrenciler'])->with('success', "{$name} sporcu/veli kaydı başarıyla silindi.");
+    }
+
+    /**
+     * Hem birincil hem (varsa) ikincil veliye, kendi adı/telefonuyla aynı mesaj
+     * kalıbını ayrı ayrı WhatsApp kuyruğuna ekler — her iki veli de aynı PIN'i
+     * paylaştığından yalnızca hitap ve telefon numarası değişir (bkz.
+     * PublicSiteController@mobilePwa'daki telefon+PIN eşleştirme sorgusu).
+     *
+     * @param  \Closure(string $name, string $phone): string  $messageFor
+     */
+    private function queuePortalMessageForGuardians(Student $student, \Closure $messageFor): void
+    {
+        WhatsappMessage::create([
+            'student_id' => $student->id,
+            'recipient_name' => $student->parent_name,
+            'recipient_phone' => $student->parent_phone,
+            'message_text' => $messageFor($student->parent_name, $student->parent_phone),
+            'status' => 'queued',
+        ]);
+
+        if (!empty($student->secondary_parent_phone)) {
+            $secondaryName = $student->secondary_parent_name ?: 'İkinci Veli';
+            WhatsappMessage::create([
+                'student_id' => $student->id,
+                'recipient_name' => $secondaryName,
+                'recipient_phone' => $student->secondary_parent_phone,
+                'message_text' => $messageFor($secondaryName, $student->secondary_parent_phone),
+                'status' => 'queued',
+            ]);
+        }
     }
 }
