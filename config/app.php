@@ -65,7 +65,11 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Salon Türkiye'de (Tekirdağ) faaliyet gösteriyor; UTC bırakılırsa "bugün"/"şu an"
+    // hesapları (günlük WhatsApp hatırlatma saati, aidat vade/raporlama, yoklama
+    // tarihleri) 3 saat kayar — ör. 09:00'da çalışması gereken günlük görev UTC ile
+    // yerel saatle 12:00'de çalışırdı.
+    'timezone' => env('APP_TIMEZONE', 'Europe/Istanbul'),
 
     /*
     |--------------------------------------------------------------------------

@@ -30,6 +30,7 @@ APP_NAME="Tekirdağ Enerjik Cimnastik"
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://siteniz.com
+APP_TIMEZONE=Europe/Istanbul
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
