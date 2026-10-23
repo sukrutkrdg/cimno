@@ -1,2 +1,7 @@
 User-agent: *
-Disallow:
+Disallow: /panel
+Disallow: /mobil
+Disallow: /qr-yoklama
+Disallow: /makbuz
+
+Sitemap: /sitemap.xml

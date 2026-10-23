@@ -300,4 +300,19 @@ class PublicSiteController extends Controller
 
         return view('public.receipt', compact('payment', 'settings'));
     }
+
+    // SEO: Google/Bing gibi arama motorlarına sitedeki herkese açık sayfaları bildirir.
+    // url('/') kullanıldığından (sabit domain yazılmadığından) local/Vercel/Natro
+    // ortamlarının hepsinde APP_URL'e göre doğru adresleri üretir.
+    public function sitemap()
+    {
+        $urls = [
+            ['loc' => url('/'), 'changefreq' => 'weekly', 'priority' => '1.0'],
+            ['loc' => route('public.qr.poster'), 'changefreq' => 'monthly', 'priority' => '0.3'],
+        ];
+
+        $xml = view('public.sitemap', ['urls' => $urls])->render();
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
 }

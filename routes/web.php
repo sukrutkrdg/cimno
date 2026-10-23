@@ -17,6 +17,7 @@ Route::get('/qr-yoklama', [PublicSiteController::class, 'qrCheckinPage'])->middl
 Route::post('/qr-yoklama', [PublicSiteController::class, 'submitQrCheckin'])->middleware('throttle:20,1')->name('public.qr.checkin.submit');
 Route::get('/veli-portali', [PublicSiteController::class, 'parentPortal'])->name('public.parent.portal');
 Route::get('/qr-afis', [PublicSiteController::class, 'qrPoster'])->name('public.qr.poster');
+Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('public.sitemap');
 Route::get('/makbuz/{payment}', [PublicSiteController::class, 'receiptView'])->name('public.receipt')->middleware('signed');
 
 // 2. Yönetim Paneli (Yetkili Giriş + 16 Modül: Salon Sahibi, Sekreter, Antrenör)

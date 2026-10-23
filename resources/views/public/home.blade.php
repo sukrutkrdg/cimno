@@ -4,7 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $settings['seo_title'] ?? 'Enerjik Cimnastik Spor Kulübü' }}</title>
-    <meta name="description" content="{{ $settings['hero_subtitle'] ?? '' }} - {{ $settings['city_district'] ?? '' }}">
+    @php
+        $seoDescription = trim($settings['hero_subtitle'] ?? '') !== ''
+            ? $settings['hero_subtitle']
+            : ($settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik') . ' — ' . ($settings['city_district'] ?? 'Tekirdağ') . ' bölgesinde çocuk ve yetişkinler için cimnastik eğitimi, ücretsiz deneme dersi.';
+        $seoImage = url($settings['logo_url'] ?? '/icons/logo.jpg');
+    @endphp
+    <meta name="description" content="{{ $seoDescription }}">
+    <link rel="canonical" href="{{ url('/') }}">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:site_name" content="{{ $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik' }}">
+    <meta property="og:title" content="{{ $settings['seo_title'] ?? 'Enerjik Cimnastik Spor Kulübü' }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ url('/') }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $settings['seo_title'] ?? 'Enerjik Cimnastik Spor Kulübü' }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'SportsActivityLocation',
+            'name' => $settings['club_name'] ?? 'Tekirdağ Enerjik Cimnastik',
+            'image' => $seoImage,
+            'url' => url('/'),
+            'telephone' => $settings['phone'] ?? '',
+            'address' => [
+                '@type' => 'PostalAddress',
+                'streetAddress' => $settings['address'] ?? '',
+                'addressLocality' => $settings['city_district'] ?? 'Tekirdağ',
+                'addressCountry' => 'TR',
+            ],
+            'openingHours' => $settings['working_hours'] ?? '',
+            'sameAs' => array_values(array_filter([$settings['instagram_url'] ?? null])),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1E1B4B">
     <meta name="apple-mobile-web-app-capable" content="yes">
