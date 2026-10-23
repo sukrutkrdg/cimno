@@ -338,6 +338,25 @@ class AdminPanelController extends Controller
             '61_plus' => Invoice::whereIn('status', ['unpaid', 'partial'])->whereDate('due_date', '<', now()->subDays(60))->sum('remaining_amount'),
         ];
 
+        // Aylık Gelir-Gider Trendi (Raporlar Grafiği — son 12 ay)
+        // Gelir = tahsilat (Payment) + diğer gelir hareketleri (FinancialTransaction
+        // direction=income, ör. ürün satışı); Gider = FinancialTransaction direction=expense.
+        $monthlyFinanceTrend = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = (clone $monthStart)->endOfMonth();
+
+            $paymentIncome = (float) Payment::whereBetween('payment_date', [$monthStart, $monthEnd])->sum('amount');
+            $otherIncome = (float) FinancialTransaction::where('direction', 'income')->whereBetween('transaction_date', [$monthStart, $monthEnd])->sum('amount');
+            $expense = (float) FinancialTransaction::where('direction', 'expense')->whereBetween('transaction_date', [$monthStart, $monthEnd])->sum('amount');
+
+            $monthlyFinanceTrend[] = [
+                'label' => $monthStart->translatedFormat('M Y'),
+                'gelir' => $paymentIncome + $otherIncome,
+                'gider' => $expense,
+            ];
+        }
+
         // Yoklama Analiz & Raporları (Çoklu Kriterli Filtre + Grafik Verisi)
         $attFrom = $request->query('att_from', today()->subDays(29)->toDateString());
         $attTo = $request->query('att_to', today()->toDateString());
@@ -443,6 +462,7 @@ class AdminPanelController extends Controller
             'expiringMedicalStudents',
             'coachPayrolls',
             'agingBuckets',
+            'monthlyFinanceTrend',
             'attFrom',
             'attTo',
             'attBranchId',

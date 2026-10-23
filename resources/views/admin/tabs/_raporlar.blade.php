@@ -36,6 +36,39 @@
                     </div>
                 </div>
 
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+
+                <!-- ==================================================== -->
+                <!-- AYLIK GELİR-GİDER TRENDİ (Son 12 Ay)                 -->
+                <!-- ==================================================== -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase text-indigo-600">Finansal Trend</span>
+                        <h3 class="font-extrabold text-base">💹 Aylık Gelir-Gider Trendi (Son 12 Ay)</h3>
+                        <p class="text-xs text-slate-500">Gelir: tahsilatlar + diğer gelir hareketleri (ör. ürün satışı). Gider: kasa modülündeki gider kayıtları.</p>
+                    </div>
+                    <canvas id="chartFinanceTrend" height="90"></canvas>
+                </div>
+                <script>
+                (function () {
+                    const trend = @json($monthlyFinanceTrend);
+                    new Chart(document.getElementById('chartFinanceTrend'), {
+                        type: 'bar',
+                        data: {
+                            labels: trend.map(r => r.label),
+                            datasets: [
+                                { label: 'Gelir', data: trend.map(r => r.gelir), backgroundColor: '#059669', borderRadius: 4 },
+                                { label: 'Gider', data: trend.map(r => r.gider), backgroundColor: '#e11d48', borderRadius: 4 },
+                            ],
+                        },
+                        options: {
+                            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                            scales: { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { font: { size: 10 } } } },
+                        },
+                    });
+                })();
+                </script>
+
                 <!-- ==================================================== -->
                 <!-- YOKLAMA ANALİZ & RAPORLARI (Çoklu Kriter + Grafik)   -->
                 <!-- ==================================================== -->
@@ -154,7 +187,6 @@
                             </div>
                         </div>
 
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
                         <script>
                         (function () {
                             const statusLabels = { present: 'Geldi', absent: 'Gelmedi', excused: 'Raporlu/İzinli', makeup: 'Telafi' };
