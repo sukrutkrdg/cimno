@@ -134,6 +134,20 @@ elle ürettik**, SSH olmadan:
 geçerli, güvenilir bir sertifikayla çalışıyor (Let's Encrypt, 90 gün
 geçerli, kuruluş: 2026-10-25, bitiş: 2027-01-23).
 
+**ÖNEMLİ — `public_html/.htaccess` repodakinden farklı**: SSL kurulduktan
+sonra `public_html/.htaccess`'e (sadece sunucuda, repodaki
+`public/.htaccess`'te DEĞİL) `RewriteEngine On`'dan hemen sonra bir
+"Force HTTPS" bloğu eklendi:
+```
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+```
+Gelecekte `public/` değişikliklerini `public_html`'e kopyalarken
+`.htaccess`'i de kör kör üzerine yazma — bu blok kaybolursa HTTP'den
+HTTPS'e otomatik yönlendirme durur (site yine çalışır ama
+`SESSION_SECURE_COOKIE=true` olduğu için biri düz `http://` ile
+girerse formlar yine 419 verir, bkz. aşağıdaki "Kritik bulgu").
+
 **ÖNEMLİ — yenileme otomatik DEĞİL**: Let's Encrypt sertifikaları 90
 günde bir yenilenmeli. Bu hesapta gerçek `certbot renew` cron'u kurmak
 mümkün değil (SSH yok). Sertifika süresi dolmadan önce (örn. ~60.
