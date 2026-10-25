@@ -1,119 +1,110 @@
-# Natro Hosting'e Deploy Checklist
+# Natro Hosting Deploy — Nasıl Kuruldu (cPanel)
 
-Bu proje Vercel yerine Natro (paylaşımlı/VPS cPanel hosting) üzerinde çalışacak
-şekilde hazırlandı. Aşağıdaki adımları sırayla takip edin.
+Bu proje Natro "Sınırsız Pro Hosting" üzerinde **cPanel** (CloudLinux,
+LiteSpeed) ile canlıya alındı — `enerjikcimnastik.com`, 2026-10-25.
+İlk denemede hesap Plesk üzerindeydi ve PHP 7.4/MariaDB 5.5 ile
+Laravel 12 çalışmıyordu; Natro destek "cPanel kullanın, istediğiniz PHP
+sürümünü ve güncel MariaDB'yi kullanabilirsiniz" dedi ve hesap cPanel'e
+geçirildi. Bu dosya gerçekte izlenen adımları anlatır — ileride tekrar
+deploy etmek ya da başka bir hesapta aynısını yapmak için.
 
-## 1. Sunucu Gereksinimleri
+## Hesap Bilgileri
 
-- **PHP 8.3+** (cPanel → "MultiPHP Manager" üzerinden seçin)
-- **MySQL 5.7+ / MariaDB 10.3+**
-- Gerekli PHP eklentileri: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `fileinfo` (çoğu cPanel PHP paketinde varsayılan açık gelir, MultiPHP Manager → "PHP Extensions" sekmesinden kontrol edin)
+- Panel: `https://cpls24.srvpanel.com:2083` (cPanel kullanıcı: `u2920424`)
+- SSH yok, Composer paneli yok — **Git™ Version Control** (cPanel'in
+  kendi aracı) ve **Cron Jobs** üzerinden deploy edildi.
+- PHP: **8.5** (Select PHP Version aracından seçildi — yerel geliştirme
+  ortamıyla aynı sürüm).
+- Veritabanı: MariaDB **10.6.27** (InnoDB destekli, JSON kolon sorunu yok).
 
-## 2. Dosyaları Yükleme
+## Kurulum Adımları (özet)
 
-- Git erişimi varsa (Natro bazı planlarda SSH/Git sunar): `git clone` + `composer install --no-dev --optimize-autoloader`
-- Yoksa: `vendor/` klasörünü **yerel bilgisayarınızda** `composer install --no-dev --optimize-autoloader` ile üretip, projenin tamamını FTP/cPanel File Manager ile yükleyin (`vendor/` ve `node_modules` hariç `.gitignore` kurallarına bakın — `node_modules` yok, `public/uploads` ve `.env` yüklenmemeli, onları ayrıca elle oluşturacaksınız).
+1. **Git clone**: cPanel → Git™ Version Control → "Clone a Repository" →
+   `https://github.com/sukrutkrdg/cimno.git` → path `enerjikcimnastik`
+   (sonuç: `/home/u2920424/enerjikcimnastik`, repo dizini web kökü
+   *dışında*, güvenli).
+2. **`vendor/` yükleme**: SSH/Composer olmadığı için `vendor/` yerelde
+   `composer install --no-dev --optimize-autoloader` ile üretildi, zip'lenip
+   cPanel Dosya Yöneticisi'nden `enerjikcimnastik/` içine yüklenip orada
+   açıldı (Çıkar).
+3. **`.env`**: Yerelde `.env.production` olarak hazırlanıp (taze `APP_KEY`,
+   taze VAPID anahtarları, gerçek veritabanı bilgileri ile) sunucuya
+   `enerjikcimnastik/.env` olarak yüklendi.
+4. **Veritabanı**: cPanel → MySQL® Veritabanları'ndan `u2920424_app`
+   veritabanı ve `u2920424_app` kullanıcısı oluşturuldu (tam yetkiyle).
+5. **`config/database.php`**: `'engine' => 'InnoDB'` eklendi — bu sunucunun
+   varsayılan tablo motoru MyISAM'dı (max key length 1000 bayt), bu da
+   `failed_jobs` tablosundaki composite index migration'ını kırıyordu.
+   InnoDB'yi açıkça istemek sorunu çözdü.
+6. **Migration + seed**: SSH olmadığından, cPanel **Cron Jobs** aracında
+   geçici bir görev olarak çalıştırıldı:
+   ```
+   /usr/bin/php /home/u2920424/enerjikcimnastik/artisan migrate:fresh --seed --force
+   ```
+   (çıktısı bir log dosyasına yönlendirilip kontrol edildi, sonra görev
+   silindi — tek seferlik işlemler için bu yöntem kullanılacak).
+7. **Belge kökü (document root) cPanel'de değiştirilemiyor** (bu hesapta
+   "Alan Adları" aracı 403 veriyor — ana domain için sabit `public_html`).
+   Bunun yerine klasik cPanel-Laravel çözümü uygulandı:
+   - `enerjikcimnastik/public/*` içeriği `public_html/`'e **kopyalandı**
+     (taşınmadı — kaynak `public/` dizini de olduğu gibi duruyor, gelecekte
+     güncellemelerde tekrar kopyalanacak).
+   - `public_html/index.php` düzenlendi: `__DIR__.'/../vendor/...'` ve
+     `__DIR__.'/../bootstrap/...'` yolları `__DIR__.'/../enerjikcimnastik/vendor/...'`
+     ve `.../enerjikcimnastik/bootstrap/...` olarak değiştirildi (gerçek
+     Laravel uygulaması `public_html` dışında, `enerjikcimnastik/` içinde
+     yaşıyor).
+   - **ÖNEMLİ — `.htaccess`**: `public/` içindeki `.htaccess` dosyası da
+     `public_html`'e kopyalanmalı! İlk denemede Dosya Yöneticisi'nde
+     "gizli dosyaları göster" kapalıyken "Tümünü Seç" yapıldığından
+     `.htaccess` kopyalanmadı ve `public_html`'de Natro'nun eski
+     varsayılan `.htaccess`'i kaldı — bu da ana sayfa dışındaki tüm
+     rotaların (`/panel`, `/mobil` vb.) 404 vermesine yol açtı (LiteSpeed
+     seviyesinde, Laravel'e hiç ulaşmadan). Dosya Yöneticisi
+     Ayarlar'dan "Gizli Dosyaları Göster (dotfiles)" **açılmalı**, sonra
+     `.htaccess` ayrıca kopyalanmalı.
+   - Eski `public_html` içeriği (Natro'nun varsayılan "coming soon"
+     şablonu: bootstrap-3.3.7, index.html vb.) silinmeden
+     `/home/u2920424/eski-site-yedek/` klasörüne taşındı (web kökü
+     dışında, zararsız duruyor).
+8. **Cron (kalıcı)**: cPanel Cron Jobs'a eklendi:
+   ```
+   * * * * * /usr/bin/php /home/u2920424/enerjikcimnastik/artisan schedule:run >> /dev/null 2>&1
+   ```
+   Hem günlük hatırlatma kuyruğunu hem de 15 dakikada bir çalışan Web
+   Push "ders saati yaklaşıyor" görevini bu tek satır yönetiyor.
+9. **Bir Blade bug'ı da bu oturumda bulunup düzeltildi**: `home.blade.php`
+   içindeki JSON-LD `'@context'` anahtarı, Laravel 12'nin yeni `@context`
+   Blade direktifiyle çakışıp sayfaya ham PHP kodu sızdırıyordu. Düzeltme:
+   `'@@context'` (Blade'in `@`'i literal yazdırma kaçışı).
 
-## 3. Doküman Kökü (Document Root)
+## Hâlâ Yapılacaklar
 
-Laravel'in `public/` klasörü, alan adının kök dizini olmalı. cPanel'de:
+- [ ] **SSL/HTTPS**: Bu hesabın "smb" (sınırlı) panel görünümünde manuel
+      Let's Encrypt butonu yok; cPanel'in AutoSSL'i sunucu seviyesinde
+      otomatik/periyodik çalışıyor olmalı (genelde domain DNS doğru
+      işaret ettikten sonraki ilk döngüde, birkaç saat içinde). Birkaç
+      saat sonra `https://enerjikcimnastik.com` kontrol edilmeli; hâlâ
+      çalışmıyorsa Natro destek'e "AutoSSL bu domain için hiç çalışmadı,
+      manuel tetikleyebilir misiniz?" diye sorulmalı. Kamera ile QR okuma
+      özelliği SSL olmadan çalışmaz.
+- [ ] **Varsayılan admin şifresi değiştirilmeli**: `yonetici@enerjikcimnastik.com`
+      / `enerjik2026` — canlıya tam geçmeden önce Personel sekmesinden
+      değiştirilmeli.
+- [ ] `database/vercel.sqlite` / Vercel deployment'ı artık gerekli mi
+      karar verilmeli (DNS zaten Natro'ya bakıyor).
 
-- **Seçenek A (önerilen, SSH/Terminal varsa):** Domain'in document root'unu doğrudan projenin `public/` klasörüne ayarlayın (cPanel → "Domains" → "Document Root" alanını düzenleyin).
-- **Seçenek B (document root değiştirilemiyorsa):** Projeyi `public_html` dışına yükleyip, `public/` içeriğini `public_html`'e kopyalayın ve `public_html/index.php` içindeki `require __DIR__.'/../vendor/autoload.php'` ve `$app = require_once __DIR__.'/../bootstrap/app.php';` satırlarındaki yolları projenin gerçek konumuna göre düzeltin.
+## Gelecekte Kod Güncellemesi Nasıl Yapılır
 
-## 4. `.env` Dosyası
-
-Sunucuda `.env.example`'ı kopyalayıp düzenleyin:
-
-```
-APP_NAME="Tekirdağ Enerjik Cimnastik"
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://siteniz.com
-APP_TIMEZONE=Europe/Istanbul
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=kullaniciadi_enerjik
-DB_USERNAME=kullaniciadi_dbuser
-DB_PASSWORD=guclu-bir-sifre
-
-SESSION_DRIVER=database
-SESSION_SECURE_COOKIE=true
-```
-
-- `APP_KEY` boş bırakmayın: `php artisan key:generate` çalıştırın (SSH yoksa yerelde üretip `.env`'e yapıştırın).
-- **`APP_DEBUG=false` kritiktir** — `true` kalırsa hata sayfalarında veritabanı bilgileri ve stack trace sızabilir.
-- cPanel'de oluşturduğunuz MySQL veritabanı ve kullanıcı adları genelde `cpaneluser_` önekiyle gelir; `DB_DATABASE`/`DB_USERNAME` buna göre ayarlanmalı.
-
-## 5. Veritabanı Migrasyonları
-
-```
-php artisan migrate --force
-```
-
-Demo verisiyle başlamak isterseniz (**dikkat: gerçek veriye dokunmadan önce** test ortamında deneyin):
-
-```
-php artisan db:seed --force
-```
-
-## 6. Zamanlanmış Görevler (Cron)
-
-Günlük hatırlatma kuyruğu (`routes/console.php` → `enerjik:daily-tasks`) için cPanel'de
-**Cron Jobs** bölümünden şu satırı ekleyin (her dakika çalışır, Laravel kendi içinde saatini kontrol eder):
-
-```
-* * * * * cd /home/kullaniciadi/public_html && php artisan schedule:run >> /dev/null 2>&1
-```
-
-Bu kurulmazsa doğum günü/vade hatırlatma mesajları hiç üretilmez. Aynı satır,
-15 dakikada bir çalışan `enerjik:ders-bildirimi-gonder` (Web Push "ders saati
-yaklaşıyor" bildirimi) görevini de tetikler — ayrı bir cron satırı eklemenize
-gerek yok, Laravel zamanlayıcısı ikisini de bu tek `schedule:run` çağrısından yönetir.
-
-### Web Push Bildirimleri (Ders Saati Yaklaşıyor) — Tek Seferlik Kurulum
-
-```
-php artisan enerjik:vapid-anahtar-uret
-```
-
-Çıktıdaki `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` satırlarını `.env` dosyasına
-yapıştırın. Bu adım atlanırsa veli portalındaki "🔔 Bildirimler" butonu pasif
-kalır, sistemin geri kalanı (WhatsApp hatırlatmaları dâhil) etkilenmez.
-
-## 7. Dosya İzinleri
-
-```
-chmod -R 755 storage bootstrap/cache
-```
-
-`storage/` ve `bootstrap/cache/` dizinlerinin web sunucusu tarafından yazılabilir olması gerekir. Galeri fotoğraf yüklemeleri için `public/uploads/` otomatik oluşturulur; önceden oluşturup `chmod 755 public/uploads` yapmanız da sorun değildir.
-
-## 8. SSL / HTTPS
-
-Kamera ile QR okuma özelliği (veli ekranındaki "Kamerayı Aç ve Salon QR Afişini Okut")
-**yalnızca HTTPS üzerinde çalışır**. Natro'nun ücretsiz Let's Encrypt SSL'ini
-cPanel → "SSL/TLS Status" üzerinden aktif edin ve `APP_URL`'in `https://` ile başladığından
-emin olun.
-
-## 9. İlk Giriş & Acil Durum Şifre Sıfırlama
-
-- Demo seed çalıştırıldıysa varsayılan giriş: `yonetici@enerjikcimnastik.com` / seed'de tanımlı şifre. **Canlıya geçmeden önce bu şifreyi değiştirin** (Personel sekmesinden kendi hesabınızın şifresini güncelleyin).
-- Süper yönetici şifresini unutursanız, SSH/Terminal erişiminiz varsa:
-  ```
-  php artisan admin:sifre-sifirla yonetici@enerjikcimnastik.com YeniGuvenliSifre123
-  ```
-
-## 10. Son Kontrol Listesi
-
-- [ ] `APP_ENV=production`, `APP_DEBUG=false`
-- [ ] `.env` dosyası `.gitignore`'da (asla repoya commit edilmemeli)
-- [ ] `php artisan migrate --force` hatasız tamamlandı
-- [ ] Cron job eklendi (`schedule:run`)
-- [ ] SSL aktif, site `https://` ile açılıyor
-- [ ] `/panel/giris` sayfasında "Hızlı Rol Testi" bölümü **görünmüyor** (yalnızca local/testing ortamında görünür; production'da otomatik gizlenir, ekstra işlem gerekmez)
-- [ ] Varsayılan demo şifreler değiştirildi
-- [ ] `storage/` ve `bootstrap/cache/` yazılabilir
-- [ ] `php artisan enerjik:vapid-anahtar-uret` çalıştırılıp `.env`'e eklendi (Web Push bildirimleri için, opsiyonel ama önerilir)
+SSH yok, bu yüzden her kod değişikliğinde:
+1. Yerelde commit + `git push origin main`.
+2. cPanel → Git™ Version Control → `cimno` → Yönet → Pull or Deploy →
+   **Update from Remote**.
+3. `public/` klasöründe değişen statik dosya varsa (ör. yeni bir
+   görsel, `manifest.json`), aynı dosyaları tekrar `public_html`'e
+   kopyalamayı unutma (otomatik senkronize olmuyor).
+4. Veritabanı şeması değiştiyse, Cron Jobs'tan geçici bir
+   `php artisan migrate --force` görevi ekleyip çalıştır, sonra sil.
+5. Blade/view değişikliği sonrası görünüm eskiyse, aynı şekilde geçici
+   `php artisan view:clear` görevi çalıştırılabilir (genelde gerekmez,
+   Laravel dosya zaman damgasına göre otomatik yeniden derler).
