@@ -703,8 +703,7 @@ class DatabaseSeeder extends Seeder
             'message_template' => 'Sayın {veli_adi}, sporcumuz {ogrenci_adi} ait "Spor Yapabilir Sağlık Raporu" süresi {vade} tarihinde dolacaktır. Antrenmanlara kesintisiz devam edebilmesi için yenilenen raporu sekreterliğimize veya WhatsApp hattımıza iletmenizi rica ederiz.',
         ]);
 
-        $tplLessonToday = WhatsappTemplate::create([
-            'shortcut' => '/bugun_ders',
+        $tplLessonToday = WhatsappTemplate::updateOrCreate(['shortcut' => '/bugun_ders'], [
             'title' => 'Bugün Dersiniz Var Hatırlatması',
             'trigger_event' => 'lesson_today',
             'category' => 'utility',
