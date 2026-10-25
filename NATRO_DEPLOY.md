@@ -78,6 +78,30 @@ deploy etmek ya da başka bir hesapta aynısını yapmak için.
    Blade direktifiyle çakışıp sayfaya ham PHP kodu sızdırıyordu. Düzeltme:
    `'@@context'` (Blade'in `@`'i literal yazdırma kaçışı).
 
+## Otomatik Deploy (2026-10-25'ten itibaren)
+
+`git` binary'si sunucuda mevcut (`/usr/bin/git`) ve cPanel Git
+Version Control'un dışından da (plain `git pull`) çalışıyor. Bu yüzden
+kalıcı bir Cron Job eklendi:
+
+```
+*/5 * * * * cd /home/u2920424/enerjikcimnastik && git pull origin main > /home/u2920424/deploy.log 2>&1
+```
+
+Bu sayede `main` dalına her `git push` yapıldığında, en geç 5 dakika
+içinde kod sunucuda otomatik güncelleniyor — cPanel panelinde "Update
+from Remote" butonuna manuel basmaya gerek yok. Çıktı
+`/home/u2920424/deploy.log` dosyasına yazılıyor (her çalıştırmada
+üzerine yazılıyor, en son durumu gösterir).
+
+**Önemli sınır — bu cron SADECE `enerjikcimnastik/` reposunu günceller:**
+- `public/` içinde değişen statik dosyalar (görsel, `manifest.json` vb.)
+  otomatik olarak `public_html/`'e kopyalanmıyor — bu hâlâ manuel.
+- Veritabanı şeması değiştiyse (yeni migration), `migrate --force` hâlâ
+  ayrı bir geçici Cron Jobs görevi olarak elle tetiklenmeli.
+- Blade/view önbelleği normalde dosya zaman damgasına göre otomatik
+  yenileniyor, ek işlem gerekmiyor.
+
 ## Hâlâ Yapılacaklar
 
 - [ ] **SSL/HTTPS**: Bu hesabın "smb" (sınırlı) panel görünümünde manuel
@@ -96,13 +120,17 @@ deploy etmek ya da başka bir hesapta aynısını yapmak için.
 
 ## Gelecekte Kod Güncellemesi Nasıl Yapılır
 
-SSH yok, bu yüzden her kod değişikliğinde:
+SSH yok, ama artık otomatik deploy cron'u var (yukarıdaki bölüme bakın).
+Her kod değişikliğinde:
 1. Yerelde commit + `git push origin main`.
-2. cPanel → Git™ Version Control → `cimno` → Yönet → Pull or Deploy →
-   **Update from Remote**.
+2. En geç 5 dakika içinde cron otomatik `git pull` yapıp sunucudaki
+   `enerjikcimnastik/` reposunu günceller — manuel "Update from Remote"
+   tıklamaya gerek yok (istenirse yine de cPanel → Git™ Version
+   Control'den anında tetiklenebilir).
 3. `public/` klasöründe değişen statik dosya varsa (ör. yeni bir
    görsel, `manifest.json`), aynı dosyaları tekrar `public_html`'e
-   kopyalamayı unutma (otomatik senkronize olmuyor).
+   kopyalamayı unutma (otomatik senkronize olmuyor, cron sadece git
+   reposunu günceller).
 4. Veritabanı şeması değiştiyse, Cron Jobs'tan geçici bir
    `php artisan migrate --force` görevi ekleyip çalıştır, sonra sil.
 5. Blade/view değişikliği sonrası görünüm eskiyse, aynı şekilde geçici
