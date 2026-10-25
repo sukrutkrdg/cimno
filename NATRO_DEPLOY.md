@@ -102,21 +102,74 @@ from Remote" butonuna manuel basmaya gerek yok. Çıktı
 - Blade/view önbelleği normalde dosya zaman damgasına göre otomatik
   yenileniyor, ek işlem gerekmiyor.
 
+## SSL/HTTPS — kendi ürettiğimiz Let's Encrypt sertifikası (2026-10-25)
+
+Bu hesabın cPanel panelinde (SSL/TLS Status sayfası) **hiçbir manuel
+AutoSSL tetikleme butonu yok** — sadece salt-okunur bir durum görünümü.
+AutoSSL'in Natro tarafında gerçekten otomatik çalışıp çalışmayacağı
+belirsizdi ve Natro'nun müşteri panelinde ("Aktif SSL Hizmetleri")
+domain için ücretli bir "Sectigo PositiveSSL" ürünü teklif edildiği
+görüldü — bu AutoSSL'den tamamen ayrı, isteğe bağlı bir satış kalemi.
+Natro'yu beklemek yerine **kendi ücretsiz Let's Encrypt sertifikamızı
+elle ürettik**, SSH olmadan:
+
+1. Sunucuda `git` gibi `openssl` da mevcut (`/usr/bin/openssl` değil,
+   yerelde — bu adım tamamen **yerel makinede**, Claude'un kendi
+   bilgisayarında, Python stdlib + yerel `openssl` CLI kullanılarak
+   çalıştırıldı, sunucuya hiçbir ek yazılım kurulmadı).
+2. Minimal bir ACME v2 istemcisi yazıldı (certbot/acme.sh kurmadan):
+   hesap anahtarı üret → ACME hesabı oluştur → `enerjikcimnastik.com`
+   ve `www.enerjikcimnastik.com` için order aç → HTTP-01 challenge
+   token dosyalarını cPanel Dosya Yöneticisi üzerinden
+   `public_html/.well-known/acme-challenge/<token>` olarak yükle →
+   Let's Encrypt'e doğrulat → CSR ile finalize et → sertifikayı indir.
+3. Sertifika + özel anahtar, cPanel → SSL/TLS → **"Bir SSL Web Sitesi
+   Yükle"** aracına (Sertifika/CRT + Özel Anahtar/KEY alanlarına)
+   yapıştırılıp kuruldu. CA paketi (CABUNDLE) cPanel tarafından
+   otomatik doğru bulundu.
+4. `SESSION_SECURE_COOKIE` gerçek SSL geldiği için tekrar `true`
+   yapıldı (bkz. "Kritik bulgu" bölümü).
+
+**Sonuç**: `https://enerjikcimnastik.com` ve `https://www.enerjikcimnastik.com`
+geçerli, güvenilir bir sertifikayla çalışıyor (Let's Encrypt, 90 gün
+geçerli, kuruluş: 2026-10-25, bitiş: 2027-01-23).
+
+**ÖNEMLİ — yenileme otomatik DEĞİL**: Let's Encrypt sertifikaları 90
+günde bir yenilenmeli. Bu hesapta gerçek `certbot renew` cron'u kurmak
+mümkün değil (SSH yok). Sertifika süresi dolmadan önce (örn. ~60.
+günde) bu işlem elle tekrarlanmalı:
+- Yerel `acme-account.key` dosyası varsa onu tekrar kullanılabilir
+  (artık silinmiş olabilir, scratchpad'e özeldi — gerekirse yeniden
+  üretilir, sorun değil).
+- `public_html/.well-known/acme-challenge/` klasörü duruyor, tekrar
+  kullanılabilir.
+- Aynı adımlar (order → challenge dosyalarını yükle → validate →
+  finalize → cPanel SSL install'a yapıştır) tekrarlanır.
+- **Bu session'ı/bir sonraki konuşmayı bu tarihe yakın hatırlat.**
+
 ## Hâlâ Yapılacaklar
 
-- [ ] **SSL/HTTPS**: Bu hesabın "smb" (sınırlı) panel görünümünde manuel
-      Let's Encrypt butonu yok; cPanel'in AutoSSL'i sunucu seviyesinde
-      otomatik/periyodik çalışıyor olmalı (genelde domain DNS doğru
-      işaret ettikten sonraki ilk döngüde, birkaç saat içinde). Birkaç
-      saat sonra `https://enerjikcimnastik.com` kontrol edilmeli; hâlâ
-      çalışmıyorsa Natro destek'e "AutoSSL bu domain için hiç çalışmadı,
-      manuel tetikleyebilir misiniz?" diye sorulmalı. Kamera ile QR okuma
-      özelliği SSL olmadan çalışmaz.
+- [x] ~~SSL/HTTPS~~ — 2026-10-25'te kendi ürettiğimiz ücretsiz Let's
+      Encrypt sertifikasıyla çözüldü (yukarıya bakın). **90 günde bir
+      elle yenilenmesi gerekiyor.**
 - [ ] **Varsayılan admin şifresi değiştirilmeli**: `yonetici@enerjikcimnastik.com`
       / `enerjik2026` — canlıya tam geçmeden önce Personel sekmesinden
       değiştirilmeli.
 - [ ] `database/vercel.sqlite` / Vercel deployment'ı artık gerekli mi
       karar verilmeli (DNS zaten Natro'ya bakıyor).
+
+## Kritik bulgu — SESSION_SECURE_COOKIE ve SSL ilişkisi (2026-10-25)
+
+`.env`'de `SESSION_SECURE_COOKIE=true` iken SSL henüz aktif değilken
+(sadece HTTP), tarayıcılar "Secure" işaretli session/CSRF çerezini HTTP
+üzerinden hiç saklamıyor — bu da **her form gönderimini (ön kayıt
+formu, admin girişi, her şey) 419 "Page Expired" hatasıyla
+başarısız kılıyordu**. SSL kurulana kadar bu değer geçici olarak
+`false` yapılıp test edildi, SSL kurulduktan sonra tekrar `true`'ya
+çevrildi. **Ders**: SSL'siz bir ortamda `SESSION_SECURE_COOKIE=true`
+bırakmak sadece "QR kamera özelliğini" değil, sitenin TÜM form
+gönderimlerini (kayıt, giriş) kırar — bu yüzden gelecekte SSL geçici
+olarak düşerse önce bunu kontrol edin.
 
 ## Gelecekte Kod Güncellemesi Nasıl Yapılır
 
