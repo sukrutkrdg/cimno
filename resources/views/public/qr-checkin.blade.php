@@ -95,30 +95,51 @@
             📷 Kamerayı Aç ve Salon QR Afişini Okut
         </button>
 
-        <!-- Veli Telefon Seçimi / Girişi (Tarayıcıda Hatırlanır) -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div class="flex justify-between items-center">
+        @if($students->isNotEmpty())
+            <!-- Zaten Tanınan Veli: Belirgin Giriş Onayı -->
+            <div class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-2xl p-4 flex justify-between items-center gap-3">
                 <div>
-                    <span class="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400">1. Adım: Veli Telefon Numaranız</span>
-                    <h2 class="text-sm font-extrabold">Kayıtlı Sporcularınızı Görüntüleyin</h2>
+                    <span class="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400">✅ Giriş Yapıldı</span>
+                    <h2 class="text-sm font-extrabold text-emerald-900 dark:text-emerald-200">Merhaba, {{ $students->first()->parent_name }}! Sporcularınız aşağıda.</h2>
                 </div>
-                <span class="text-xl">📲</span>
+                <a href="{{ route('public.qr.checkin', ['cikis' => 1]) }}" class="shrink-0 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 underline">Çıkış Yap</a>
             </div>
-
-            <form method="GET" action="{{ route('public.qr.checkin') }}" class="space-y-2.5" id="phone-lookup-form">
-                <div class="flex gap-2">
-                    <input type="tel" name="phone" id="parent-phone-input" value="{{ $phone }}" placeholder="05XX XXX XX XX" class="flex-1 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold">
-                    <input type="tel" inputmode="numeric" maxlength="4" name="pin" placeholder="PIN" class="w-20 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold text-center tracking-[0.2em]">
-                    <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-extrabold">
-                        Sporcumu Bul
-                    </button>
+            <details class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <summary class="cursor-pointer p-4 text-xs font-bold text-slate-500">👤 Farklı bir veli misiniz? Buradan giriş yapın</summary>
+                <form method="GET" action="{{ route('public.qr.checkin') }}" class="space-y-2.5 px-4 pb-4" id="phone-lookup-form">
+                    <div class="flex gap-2">
+                        <input type="tel" name="phone" id="parent-phone-input" value="" placeholder="05XX XXX XX XX" class="flex-1 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold">
+                        <input type="tel" inputmode="numeric" maxlength="4" name="pin" placeholder="PIN" class="w-20 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold text-center tracking-[0.2em]">
+                        <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-extrabold">Sporcumu Bul</button>
+                    </div>
+                </form>
+            </details>
+        @else
+            <!-- Veli Telefon Seçimi / Girişi (Tarayıcıda Hatırlanır) -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400">1. Adım: Veli Telefon Numaranız</span>
+                        <h2 class="text-sm font-extrabold">Kayıtlı Sporcularınızı Görüntüleyin</h2>
+                    </div>
+                    <span class="text-xl">📲</span>
                 </div>
-                <p class="text-[11px] text-slate-400">PIN kodunuzu bilmiyorsanız salon sekreterliğimizden öğrenebilirsiniz.</p>
-                @if(app()->environment(['local', 'testing']))
-                    <p class="text-[11px] text-amber-600">⚠️ Geliştirme ortamı: 0533 222 33 44 / PIN 8178 (Murat Arslan)</p>
-                @endif
-            </form>
-        </div>
+
+                <form method="GET" action="{{ route('public.qr.checkin') }}" class="space-y-2.5" id="phone-lookup-form">
+                    <div class="flex gap-2">
+                        <input type="tel" name="phone" id="parent-phone-input" value="{{ $phone }}" placeholder="05XX XXX XX XX" class="flex-1 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 text-sm font-bold">
+                        <input type="tel" inputmode="numeric" maxlength="4" name="pin" placeholder="PIN" class="w-20 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3 py-2.5 text-sm font-bold text-center tracking-[0.2em]">
+                        <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-extrabold">
+                            Sporcumu Bul
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-400">PIN kodunuzu bilmiyorsanız salon sekreterliğimizden öğrenebilirsiniz.</p>
+                    @if(app()->environment(['local', 'testing']))
+                        <p class="text-[11px] text-amber-600">⚠️ Geliştirme ortamı: 0533 222 33 44 / PIN 8178 (Murat Arslan)</p>
+                    @endif
+                </form>
+            </div>
+        @endif
 
         <!-- Sporcu Kartları ve Tek Dokunuşla QR Yoklama Butonu -->
         <div class="space-y-3">

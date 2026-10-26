@@ -93,4 +93,44 @@ class QrCheckinTest extends TestCase
 
         $this->assertDatabaseMissing('attendances', ['student_id' => $student->id]);
     }
+
+    public function test_already_logged_in_parent_sees_a_clear_login_confirmation_instead_of_the_login_form(): void
+    {
+        $group = $this->makeGroup('d');
+        Student::create([
+            'full_name' => 'Tanınan Öğrenci', 'branch_id' => $group->branch_id, 'group_id' => $group->id,
+            'parent_name' => 'Tanınan Veli', 'parent_phone' => '5331110005', 'portal_pin' => '5555', 'status' => 'active',
+        ]);
+
+        // Giriş yapılmamışken sabit "1. Adım" formu görünür, "Giriş Yapıldı" rozeti görünmez.
+        $this->get('/qr-yoklama')
+            ->assertOk()
+            ->assertSee('1. Adım: Veli Telefon Numaranız')
+            ->assertDontSee('Giriş Yapıldı');
+
+        // Telefon+PIN ile giriş yapınca artık "Giriş Yapıldı" rozeti görünür, sabit form görünmez
+        // (bu, sitenin sahibinin bildirdiği "zaten içerideyken yine giriş istiyor" sorununu çözer).
+        $response = $this->get('/qr-yoklama?phone=5331110005&pin=5555');
+        $response->assertOk()
+            ->assertSee('Giriş Yapıldı')
+            ->assertSee('Tanınan Veli')
+            ->assertDontSee('1. Adım: Veli Telefon Numaranız');
+    }
+
+    public function test_cikis_link_clears_the_qr_checkin_session(): void
+    {
+        $group = $this->makeGroup('e');
+        Student::create([
+            'full_name' => 'Çıkış Testi Öğrenci', 'branch_id' => $group->branch_id, 'group_id' => $group->id,
+            'parent_name' => 'Çıkış Testi Veli', 'parent_phone' => '5331110006', 'portal_pin' => '6666', 'status' => 'active',
+        ]);
+
+        $this->withSession(['logged_parent_phone' => '5331110006', 'logged_parent_pin' => '6666'])
+            ->get('/qr-yoklama?cikis=1')
+            ->assertRedirect(route('public.qr.checkin'));
+
+        $this->assertNull(session('logged_parent_phone'));
+
+        $this->get('/qr-yoklama')->assertOk()->assertDontSee('Giriş Yapıldı');
+    }
 }

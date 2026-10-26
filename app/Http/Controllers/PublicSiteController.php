@@ -186,6 +186,12 @@ class PublicSiteController extends Controller
     // gösterilmez (bkz. mobilePwa() üstündeki not).
     public function qrCheckinPage(Request $request)
     {
+        // Çıkış yapılmak istendiyse (bkz. mobilePwa()'daki aynı desen).
+        if ($request->boolean('cikis')) {
+            session()->forget(['logged_parent_phone', 'logged_parent_pin']);
+            return redirect()->route('public.qr.checkin');
+        }
+
         $loginError = null;
         $queryPhone = $request->query('phone');
         $queryPin = $request->query('pin');
