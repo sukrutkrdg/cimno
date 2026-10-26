@@ -245,7 +245,7 @@
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">Veli Telefon (WhatsApp) *</label>
-                                    <input type="text" name="parent_phone" required placeholder="0532XXXXXXX" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="parent_phone" required placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2.5">
@@ -255,7 +255,7 @@
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">İkinci Veli Telefon (Opsiyonel)</label>
-                                    <input type="text" name="secondary_parent_phone" placeholder="0532XXXXXXX" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="secondary_parent_phone" placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                             </div>
                             <p class="text-[11px] text-slate-400 -mt-1.5">İkinci veli girilirse, aynı PIN ile kendi telefon numarasıyla da veli portalına (📱 Mobil Uygulama) giriş yapıp öğrenciyi görüntüleyebilir.</p>

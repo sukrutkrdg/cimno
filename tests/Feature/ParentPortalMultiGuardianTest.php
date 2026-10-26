@@ -18,9 +18,9 @@ class ParentPortalMultiGuardianTest extends TestCase
             'full_name' => 'Çift Velili Öğrenci',
             'branch_id' => $branch->id,
             'parent_name' => 'Anne Veli',
-            'parent_phone' => '05331112233',
+            'parent_phone' => '5331112233',
             'secondary_parent_name' => 'Baba Veli',
-            'secondary_parent_phone' => '05449998877',
+            'secondary_parent_phone' => '5449998877',
             'portal_pin' => '7777',
             'status' => 'active',
         ]);

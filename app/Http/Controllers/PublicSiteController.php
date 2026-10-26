@@ -20,6 +20,8 @@ use App\Models\SiteSetting;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WhatsappMessage;
+use App\Rules\ValidPhoneNumber;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 
 class PublicSiteController extends Controller
@@ -55,7 +57,7 @@ class PublicSiteController extends Controller
     {
         $validated = $request->validate([
             'parent_name' => 'required|string|max:120',
-            'parent_phone' => 'required|string|max:30',
+            'parent_phone' => ['required', 'string', new ValidPhoneNumber],
             'student_name' => 'required|string|max:120',
             'student_age' => 'required|integer|min:2|max:60',
             'branch_id' => 'nullable|exists:branches,id',
@@ -65,7 +67,7 @@ class PublicSiteController extends Controller
 
         $lead = Lead::create([
             'parent_name' => $validated['parent_name'],
-            'parent_phone' => $validated['parent_phone'],
+            'parent_phone' => Phone::normalize($validated['parent_phone']),
             'student_name' => $validated['student_name'],
             'student_age' => $validated['student_age'],
             'branch_id' => $validated['branch_id'] ?? null,
@@ -118,17 +120,17 @@ class PublicSiteController extends Controller
         $loginError = null;
 
         if ($inputPhone !== null) {
-            $cleanInput = preg_replace('/\D+/', '', $inputPhone);
+            $cleanInput = Phone::normalize($inputPhone);
             $cleanPin = preg_replace('/\D+/', '', (string) $request->input('pin'));
 
-            if (strlen($cleanInput) < 9) {
+            if ($cleanInput === null) {
                 $loginError = 'Lütfen geçerli bir cep telefonu numarası girin (Ör: 0533 222 33 44).';
             } elseif (strlen($cleanPin) !== 4) {
                 $loginError = 'Lütfen kayıt sırasında size verilen 4 haneli PIN kodunu girin.';
             } else {
                 $matched = Student::where(function ($q) use ($cleanInput) {
-                    $q->where('parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
-                      ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanInput, -9) . '%');
+                    $q->where('parent_phone', $cleanInput)
+                      ->orWhere('secondary_parent_phone', $cleanInput);
                 })->where('portal_pin', $cleanPin)->exists();
 
                 if ($matched) {
@@ -144,7 +146,7 @@ class PublicSiteController extends Controller
         $students = collect();
 
         if ($activePhone && $activePin) {
-            $cleanPhone = preg_replace('/\D+/', '', $activePhone);
+            $cleanPhone = Phone::normalize($activePhone);
             $students = Student::with([
                 'branch',
                 'group.schedules',
@@ -155,8 +157,8 @@ class PublicSiteController extends Controller
                 'invoices.payments',
                 'developmentRecords.coach',
             ])->where(function ($q) use ($cleanPhone) {
-                $q->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-                  ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%');
+                $q->where('parent_phone', $cleanPhone)
+                  ->orWhere('secondary_parent_phone', $cleanPhone);
             })->where('portal_pin', $activePin)->get();
         }
 
@@ -187,13 +189,13 @@ class PublicSiteController extends Controller
         $queryPin = $request->query('pin');
 
         if ($queryPhone !== null && $queryPin !== null) {
-            $cleanInput = preg_replace('/\D+/', '', $queryPhone);
+            $cleanInput = Phone::normalize($queryPhone);
             $cleanPin = preg_replace('/\D+/', '', (string) $queryPin);
 
-            if (strlen($cleanInput) >= 9 && strlen($cleanPin) === 4) {
+            if ($cleanInput !== null && strlen($cleanPin) === 4) {
                 $matched = Student::where(function ($q) use ($cleanInput) {
-                    $q->where('parent_phone', 'like', '%' . substr($cleanInput, -9) . '%')
-                      ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanInput, -9) . '%');
+                    $q->where('parent_phone', $cleanInput)
+                      ->orWhere('secondary_parent_phone', $cleanInput);
                 })->where('portal_pin', $cleanPin)->exists();
 
                 if ($matched) {
@@ -208,14 +210,14 @@ class PublicSiteController extends Controller
 
         $phone = session('logged_parent_phone', '');
         $pin = session('logged_parent_pin', '');
-        $cleanPhone = preg_replace('/\D+/', '', (string) $phone);
+        $cleanPhone = Phone::normalize($phone);
 
         $students = collect();
-        if (strlen($cleanPhone) >= 9 && strlen((string) $pin) === 4) {
+        if ($cleanPhone !== null && strlen((string) $pin) === 4) {
             $students = Student::with(['branch', 'group.coach', 'group.schedules', 'attendances' => fn($q) => $q->whereDate('attendance_date', today())])
                 ->where(function ($q) use ($cleanPhone) {
-                    $q->where('parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%')
-                      ->orWhere('secondary_parent_phone', 'like', '%' . substr($cleanPhone, -9) . '%');
+                    $q->where('parent_phone', $cleanPhone)
+                      ->orWhere('secondary_parent_phone', $cleanPhone);
                 })->where('portal_pin', $pin)->get();
         }
 
@@ -240,17 +242,17 @@ class PublicSiteController extends Controller
 
         // Yoklama yalnızca doğrulanmış (telefon+PIN oturumu açık) bir veli tarafından
         // yapılabilir ve sadece KENDİ çocuğu için — rastgele bir student_id denenemez.
-        $phone = preg_replace('/\D+/', '', (string) session('logged_parent_phone', ''));
+        $phone = Phone::normalize(session('logged_parent_phone', ''));
         $pin = session('logged_parent_pin', '');
-        if (strlen($phone) < 9 || strlen((string) $pin) !== 4) {
+        if ($phone === null || strlen((string) $pin) !== 4) {
             return redirect()->route('public.qr.checkin')->with('checkin_error', 'Yoklama yapabilmek için önce telefon numaranız ve PIN kodunuzla giriş yapmalısınız.');
         }
 
         $student = Student::with('group')
             ->where('id', $validated['student_id'])
             ->where(function ($q) use ($phone) {
-                $q->where('parent_phone', 'like', '%' . substr($phone, -9) . '%')
-                  ->orWhere('secondary_parent_phone', 'like', '%' . substr($phone, -9) . '%');
+                $q->where('parent_phone', $phone)
+                  ->orWhere('secondary_parent_phone', $phone);
             })
             ->where('portal_pin', $pin)
             ->first();
@@ -324,7 +326,7 @@ class PublicSiteController extends Controller
         PushSubscription::updateOrCreate(
             ['endpoint' => $validated['endpoint']],
             [
-                'parent_phone' => preg_replace('/\D+/', '', $phone),
+                'parent_phone' => Phone::normalize($phone),
                 'public_key' => $validated['keys']['p256dh'],
                 'auth_token' => $validated['keys']['auth'],
             ]

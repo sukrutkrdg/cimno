@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappTemplate;
+use App\Support\Phone;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -296,9 +297,9 @@ Artisan::command('enerjik:ders-bildirimi-gonder', function () {
 
         $phones = collect();
         foreach ($students as $st) {
-            $phones->push(preg_replace('/\D+/', '', (string) $st->parent_phone));
+            $phones->push(Phone::normalize($st->parent_phone));
             if (!empty($st->secondary_parent_phone)) {
-                $phones->push(preg_replace('/\D+/', '', (string) $st->secondary_parent_phone));
+                $phones->push(Phone::normalize($st->secondary_parent_phone));
             }
         }
         $phones = $phones->filter()->unique()->values();

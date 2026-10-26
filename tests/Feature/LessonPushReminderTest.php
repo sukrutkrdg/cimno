@@ -51,8 +51,8 @@ class LessonPushReminderTest extends TestCase
         $group = Group::create(['branch_id' => $branch->id, 'coach_id' => $coach->id, 'name' => 'Push Grubu', 'capacity' => 10, 'is_active' => true]);
         // Pencerenin çok dışında (3 saat sonra) başlayan bir ders — bildirim tetiklenmemeli.
         Schedule::create(['group_id' => $group->id, 'day_of_week' => $todayName, 'start_time' => now()->addHours(3)->format('H:i:s'), 'end_time' => now()->addHours(4)->format('H:i:s'), 'area' => 'Ana Minder']);
-        $student = Student::create(['full_name' => 'Push Öğrenci', 'branch_id' => $branch->id, 'group_id' => $group->id, 'parent_name' => 'Veli', 'parent_phone' => '05330001122', 'status' => 'active']);
-        PushSubscription::create(['parent_phone' => '05330001122', 'endpoint' => 'https://fcm.googleapis.com/fcm/send/out-of-window', 'public_key' => 'k', 'auth_token' => 'a']);
+        $student = Student::create(['full_name' => 'Push Öğrenci', 'branch_id' => $branch->id, 'group_id' => $group->id, 'parent_name' => 'Veli', 'parent_phone' => '5330001122', 'status' => 'active']);
+        PushSubscription::create(['parent_phone' => '5330001122', 'endpoint' => 'https://fcm.googleapis.com/fcm/send/out-of-window', 'public_key' => 'k', 'auth_token' => 'a']);
 
         Artisan::call('enerjik:ders-bildirimi-gonder');
 

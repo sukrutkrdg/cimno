@@ -9,6 +9,8 @@ use App\Models\Lead;
 use App\Models\Package;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
+use App\Rules\ValidPhoneNumber;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +23,7 @@ trait ManagesLeads
             'student_name' => 'nullable|string|max:120',
             'student_age' => 'nullable|integer|min:1|max:80',
             'parent_name' => 'nullable|string|max:120',
-            'parent_phone' => 'nullable|string|max:30',
+            'parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
             'branch_id' => 'nullable|exists:branches,id',
             'trial_group_id' => 'nullable|exists:groups,id',
             'source' => 'nullable|string|max:60',
@@ -33,7 +35,7 @@ trait ManagesLeads
             'student_name' => $validated['student_name'] ?? 'Yeni Aday',
             'student_age' => (int) ($validated['student_age'] ?? 6),
             'parent_name' => $validated['parent_name'] ?? '',
-            'parent_phone' => $validated['parent_phone'] ?? '',
+            'parent_phone' => Phone::normalize($validated['parent_phone'] ?? null) ?? '',
             'branch_id' => $validated['branch_id'] ?? null,
             'trial_group_id' => $validated['trial_group_id'] ?? null,
             'source' => $validated['source'] ?? 'website',
@@ -56,7 +58,7 @@ trait ManagesLeads
             'student_name' => 'nullable|string|max:120',
             'student_age' => 'nullable|integer|min:1|max:80',
             'parent_name' => 'nullable|string|max:120',
-            'parent_phone' => 'nullable|string|max:30',
+            'parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
             'branch_id' => 'nullable|exists:branches,id',
             'trial_group_id' => 'nullable|exists:groups,id',
             'trial_date' => 'nullable|date',
@@ -69,7 +71,7 @@ trait ManagesLeads
             'student_name' => $validated['student_name'] ?? $lead->student_name,
             'student_age' => isset($validated['student_age']) ? (int) $validated['student_age'] : $lead->student_age,
             'parent_name' => $validated['parent_name'] ?? $lead->parent_name,
-            'parent_phone' => $validated['parent_phone'] ?? $lead->parent_phone,
+            'parent_phone' => Phone::normalize($validated['parent_phone'] ?? null) ?? $lead->parent_phone,
             'branch_id' => $validated['branch_id'] ?? $lead->branch_id,
             'trial_group_id' => $validated['trial_group_id'] ?? $lead->trial_group_id,
             'trial_date' => $validated['trial_date'] ?? $lead->trial_date?->toDateString(),

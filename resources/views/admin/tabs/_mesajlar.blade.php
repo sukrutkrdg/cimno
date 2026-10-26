@@ -20,7 +20,7 @@
                             @csrf
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="text" name="recipient_name" required placeholder="Alıcı Veli Adı *" class="border rounded-xl px-3 py-2">
-                                <input type="text" name="recipient_phone" required placeholder="Telefon (0532...) *" class="border rounded-xl px-3 py-2 font-mono">
+                                <input type="text" name="recipient_phone" required placeholder="Telefon (532XXXXXXX, başında 0 olmadan) *" maxlength="15" class="border rounded-xl px-3 py-2 font-mono">
                             </div>
                             <textarea name="message_text" rows="2" required placeholder="Gönderilecek WhatsApp mesaj metni..." class="w-full border rounded-xl p-2.5"></textarea>
                             <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">➕ Mesajı Kuyruğa Ekle</button>

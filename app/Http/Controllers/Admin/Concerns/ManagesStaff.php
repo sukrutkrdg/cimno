@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin\Concerns;
 use App\Models\AuditLog;
 use App\Models\Group;
 use App\Models\User;
+use App\Rules\ValidPhoneNumber;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -17,7 +19,7 @@ trait ManagesStaff
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:30',
+            'phone' => ['required', 'string', new ValidPhoneNumber],
             'role' => 'required|in:super_admin,secretary,coach',
             'specialty' => 'nullable|string|max:120',
             'compensation_type' => 'required|in:fixed,per_lesson,both,none',
@@ -33,7 +35,7 @@ trait ManagesStaff
         $user = User::create([
             'name' => $validated['name'],
             'email' => strtolower(trim($validated['email'])),
-            'phone' => $validated['phone'],
+            'phone' => Phone::normalize($validated['phone']),
             'role' => $validated['role'],
             'specialty' => $validated['specialty'] ?? null,
             'compensation_type' => $validated['compensation_type'],

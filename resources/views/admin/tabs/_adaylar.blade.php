@@ -24,7 +24,7 @@
                         </div>
                         <div>
                             <label class="font-bold block mb-1">Veli Telefon *</label>
-                            <input type="text" name="parent_phone" required placeholder="0532XXXXXXX" class="w-full border rounded-xl px-3 py-2 font-mono">
+                            <input type="text" name="parent_phone" required placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2 font-mono">
                         </div>
                         <div>
                             <label class="font-bold block mb-1">Branş & Kaynak</label>

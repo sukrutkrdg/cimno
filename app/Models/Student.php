@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\URL;
@@ -87,11 +88,11 @@ class Student extends Model
      */
     public static function portalPinFor(?string $parentPhone): string
     {
-        $clean = preg_replace('/\D+/', '', (string) $parentPhone);
-        if (strlen($clean) >= 9) {
-            $existing = static::where('parent_phone', 'like', '%' . substr($clean, -9) . '%')
-                ->whereNotNull('portal_pin')
-                ->value('portal_pin');
+        $clean = Phone::normalize($parentPhone);
+        if ($clean !== null) {
+            $existing = static::where(function ($q) use ($clean) {
+                $q->where('parent_phone', $clean)->orWhere('secondary_parent_phone', $clean);
+            })->whereNotNull('portal_pin')->value('portal_pin');
             if ($existing) {
                 return $existing;
             }

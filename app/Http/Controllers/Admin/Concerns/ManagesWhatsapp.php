@@ -6,6 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappTemplate;
+use App\Rules\ValidPhoneNumber;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 
 trait ManagesWhatsapp
@@ -69,12 +71,12 @@ trait ManagesWhatsapp
     {
         $validated = $request->validate([
             'recipient_name' => 'nullable|string|max:120',
-            'recipient_phone' => 'required|string|max:30',
+            'recipient_phone' => ['required', 'string', new ValidPhoneNumber],
             'message_text' => 'required|string',
         ]);
         $message = WhatsappMessage::create([
             'recipient_name' => $validated['recipient_name'] ?? 'Veli',
-            'recipient_phone' => $validated['recipient_phone'],
+            'recipient_phone' => Phone::normalize($validated['recipient_phone']),
             'message_text' => $validated['message_text'],
             'status' => 'queued',
         ]);

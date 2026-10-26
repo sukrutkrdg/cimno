@@ -20,9 +20,11 @@ class PushSubscriptionTest extends TestCase
             ->assertOk()
             ->assertJson(['status' => 'subscribed']);
 
+        // Oturumdaki ham değer (0'lı) ne olursa olsun, depolanan parent_phone
+        // kanonik 10 haneli (0'sız) biçime normalize edilmiş olmalı.
         $this->assertDatabaseHas('push_subscriptions', [
             'endpoint' => 'https://fcm.googleapis.com/fcm/send/test-endpoint-1',
-            'parent_phone' => '05331112233',
+            'parent_phone' => '5331112233',
         ]);
 
         $this->withSession(['logged_parent_phone' => '05331112233'])

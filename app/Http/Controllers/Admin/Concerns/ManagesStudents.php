@@ -10,6 +10,8 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\WhatsappMessage;
+use App\Rules\ValidPhoneNumber;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,11 +29,11 @@ trait ManagesStudents
             'package_id' => 'required|exists:packages,id',
             'discount_rule_id' => 'nullable|exists:discount_rules,id',
             'parent_name' => 'required|string|max:120',
-            'parent_phone' => 'required|string|max:30',
+            'parent_phone' => ['required', 'string', new ValidPhoneNumber],
             'secondary_parent_name' => 'nullable|string|max:120',
-            'secondary_parent_phone' => 'nullable|string|max:30',
+            'secondary_parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
             'emergency_contact_name' => 'nullable|string|max:120',
-            'emergency_contact_phone' => 'nullable|string|max:30',
+            'emergency_contact_phone' => ['nullable', 'string', new ValidPhoneNumber],
             'health_notes' => 'nullable|string',
             'medical_report_expires_at' => 'nullable|date',
             'license_no' => 'nullable|string|max:60',
@@ -39,6 +41,10 @@ trait ManagesStudents
             'initial_payment_amount' => 'nullable|numeric|min:0',
             'cash_account_id' => 'nullable|exists:cash_accounts,id',
         ]);
+
+        $validated['parent_phone'] = Phone::normalize($validated['parent_phone']);
+        $validated['secondary_parent_phone'] = Phone::normalize($validated['secondary_parent_phone'] ?? null);
+        $validated['emergency_contact_phone'] = Phone::normalize($validated['emergency_contact_phone'] ?? null);
 
         // Bu işlem sırasıyla Student + 1-2 WhatsappMessage + Invoice + Payment + kasa
         // bakiyesi artışı yazar. Transaction olmadan, ör. Payment ekleme bir DB kısıtı
@@ -164,6 +170,8 @@ trait ManagesStudents
             'makeup_credits' => 'nullable|integer|min:0',
             'medical_report_expires_at' => 'nullable|date',
             'status' => 'nullable|in:active,frozen,left,waiting_list',
+            'parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
+            'secondary_parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
         ]);
         if ($request->filled('group_id')) {
             $this->assertCoachOwnsGroup((int) $request->input('group_id'));
@@ -182,9 +190,9 @@ trait ManagesStudents
             'package_id' => $request->input('package_id') ?: null,
             'discount_rule_id' => $request->input('discount_rule_id') ?: null,
             'parent_name' => $request->input('parent_name', $student->parent_name),
-            'parent_phone' => $request->input('parent_phone', $student->parent_phone),
+            'parent_phone' => Phone::normalize($request->input('parent_phone')) ?? $student->parent_phone,
             'secondary_parent_name' => $request->input('secondary_parent_name', $student->secondary_parent_name),
-            'secondary_parent_phone' => $request->input('secondary_parent_phone', $student->secondary_parent_phone),
+            'secondary_parent_phone' => $request->has('secondary_parent_phone') ? Phone::normalize($request->input('secondary_parent_phone')) : $student->secondary_parent_phone,
             'uniform_size' => $request->input('uniform_size', $student->uniform_size),
             'license_no' => $request->input('license_no', $student->license_no),
             'makeup_credits' => (int) $request->input('makeup_credits', $student->makeup_credits),
