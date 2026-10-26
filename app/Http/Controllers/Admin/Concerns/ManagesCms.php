@@ -313,8 +313,17 @@ trait ManagesCms
     // Dinamik Seçenek Havuzu (Salon Alanları, Yaş Grupları, Seviyeler, Gelir/Gider Kategorileri)
     public function updateDynamicOptions(Request $request)
     {
-        $settingKey = $request->input('setting_key');
-        $allowedKeys = ['custom_hall_areas', 'custom_age_groups', 'custom_group_levels', 'custom_finance_categories', 'custom_lead_sources'];
+        // NOT: alan adları ("option_key", "operation") tüm formlarda (bkz. _gruplar.blade.php,
+        // _kasa.blade.php) kullanılan isimlerle birebir eşleşmeli — daha önce burada
+        // "setting_key"/"action" bekleniyordu, formlar hiçbiri bunu göndermediğinden
+        // TÜM dinamik liste (salon alanı, yaş grubu, seviye, gelir/gider kategorisi,
+        // aday kaynağı) ekle/sil butonları sessizce "Geçersiz dinamik seçenek anahtarı"
+        // hatasıyla başarısız oluyordu.
+        $settingKey = $request->input('option_key');
+        $allowedKeys = [
+            'custom_hall_areas', 'custom_age_groups', 'custom_group_levels',
+            'custom_income_categories', 'custom_expense_categories', 'custom_lead_sources',
+        ];
         if (!in_array($settingKey, $allowedKeys, true)) {
             return back()->with('error', 'Geçersiz dinamik seçenek anahtarı.');
         }
@@ -323,14 +332,15 @@ trait ManagesCms
             'custom_hall_areas' => 'Ana Minder|Trampolin Alanı|Ana Minder & Bar Alanı|Bale & Ritmik Salonu',
             'custom_age_groups' => '3-4 Yaş (Oyun)|4-6 Yaş (Minikler)|5-8 Yaş|7-10 Yaş (Yıldızlar)|9-14 Yaş (Gençler)|16+ Yaş (Yetişkin)',
             'custom_group_levels' => 'Başlangıç|Orta Seviye|İleri Seviye|Performans / Yarışmacı|Hobi Grubu',
-            'custom_finance_categories' => 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Ürün Satışı (Mayo / Forma)|Lisans ve Yarışma Harcı',
+            'custom_income_categories' => 'Aidat / Ders Ücreti|Kayıt Ücreti|Ürün Satışı (Mayo / Forma)|Deneme Dersi Ücreti|Etkinlik / Gösteri Geliri|Sponsorluk|Bağış|Diğer Gelir',
+            'custom_expense_categories' => 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Lisans ve Yarışma Harcı|Sigorta|Muhasebe / Mali Müşavir|Vergi / Resmi Harç|Diğer Gider',
             'custom_lead_sources' => 'website|instagram|whatsapp|telefon|tavsiye',
         ];
 
         $currentRaw = SiteSetting::where('key', $settingKey)->value('value') ?? $defaults[$settingKey];
         $items = array_values(array_filter(array_map('trim', explode('|', $currentRaw))));
 
-        $action = $request->input('action', 'save_all');
+        $action = $request->input('operation', 'save_all');
         if ($action === 'add' && $request->filled('new_option')) {
             $newOpt = trim($request->input('new_option'));
             if (!in_array($newOpt, $items, true)) {

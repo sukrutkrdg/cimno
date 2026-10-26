@@ -299,7 +299,10 @@ class AdminPanelController extends Controller
         $hallAreas = array_values(array_filter(array_map('trim', explode('|', $settings['custom_hall_areas'] ?? 'Ana Minder|Trampolin Alanı|Ana Minder & Bar Alanı|Bale & Ritmik Salonu'))));
         $ageGroups = array_values(array_filter(array_map('trim', explode('|', $settings['custom_age_groups'] ?? '3-4 Yaş (Oyun)|4-6 Yaş (Minikler)|5-8 Yaş|7-10 Yaş (Yıldızlar)|9-14 Yaş (Gençler)|16+ Yaş (Yetişkin)'))));
         $groupLevels = array_values(array_filter(array_map('trim', explode('|', $settings['custom_group_levels'] ?? 'Başlangıç|Orta Seviye|İleri Seviye|Performans / Yarışmacı|Hobi Grubu'))));
-        $financeCategories = array_values(array_filter(array_map('trim', explode('|', $settings['custom_finance_categories'] ?? 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Ürün Satışı (Mayo / Forma)|Lisans ve Yarışma Harcı'))));
+        // Gelir ve gider kategorileri ayrı yönetilir (bkz. ManagesCms::updateDynamicOptions);
+        // eskiden ikisi tek bir "custom_finance_categories" listesinde karışık tutuluyordu.
+        $incomeCategories = array_values(array_filter(array_map('trim', explode('|', $settings['custom_income_categories'] ?? 'Aidat / Ders Ücreti|Kayıt Ücreti|Ürün Satışı (Mayo / Forma)|Deneme Dersi Ücreti|Etkinlik / Gösteri Geliri|Sponsorluk|Bağış|Diğer Gelir'))));
+        $expenseCategories = array_values(array_filter(array_map('trim', explode('|', $settings['custom_expense_categories'] ?? 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Lisans ve Yarışma Harcı|Sigorta|Muhasebe / Mali Müşavir|Vergi / Resmi Harç|Diğer Gider'))));
         $leadSources = array_values(array_filter(array_map('trim', explode('|', $settings['custom_lead_sources'] ?? 'website|instagram|whatsapp|telefon|tavsiye'))));
 
         // Özel Uyarı Listeleri (Periyodik İşler) — aynı şekilde antrenör kendi grubuyla sınırlı
@@ -508,7 +511,8 @@ class AdminPanelController extends Controller
             'hallAreas',
             'ageGroups',
             'groupLevels',
-            'financeCategories',
+            'incomeCategories',
+            'expenseCategories',
             'leadSources'
         ));
     }

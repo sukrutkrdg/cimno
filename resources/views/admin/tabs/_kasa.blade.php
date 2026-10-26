@@ -4,7 +4,7 @@
                         <span>🎛️ Kasa / Banka / POS Hesapları ve Gelir-Gider Kategorilerini Yönet (Yeni Hesap Ekle · Güncelle · Sil)</span>
                         <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-extrabold">⚡ Kasa & Kategori Ayarları</span>
                     </summary>
-                    <div class="grid md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
                         <!-- Yeni Kasa / Banka / POS Hesabı Ekle -->
                         <div class="bg-white rounded-xl p-4 space-y-2.5">
                             <div class="font-extrabold text-indigo-900 border-b pb-1.5">🏦 Yeni Kasa / Banka / POS Hesabı Ekle</div>
@@ -36,24 +36,52 @@
                             </form>
                         </div>
 
-                        <!-- Gelir-Gider Kategorileri Ekle/Sil -->
+                        <!-- Gelir Kategorileri Ekle/Sil -->
                         <div class="bg-white rounded-xl p-4 space-y-2.5">
-                            <div class="font-extrabold text-indigo-900 border-b pb-1.5">📂 Gelir & Gider Kategorileri</div>
+                            <div class="font-extrabold text-emerald-700 border-b pb-1.5">🟢 Gelir Kategorileri</div>
                             <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5">
                                 @csrf
-                                <input type="hidden" name="option_key" value="custom_finance_categories">
+                                <input type="hidden" name="option_key" value="custom_income_categories">
                                 <input type="hidden" name="operation" value="add">
                                 <input type="hidden" name="return_tab" value="kasa">
-                                <input type="text" name="new_option" required placeholder="Yeni Kategori (Ör: Muhasebe / Vergi)" class="w-full border rounded-lg px-2.5 py-1.5">
-                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shrink-0">➕ Ekle</button>
+                                <input type="text" name="new_option" required placeholder="Yeni Gelir Kategorisi (Ör: Sponsorluk)" class="w-full border rounded-lg px-2.5 py-1.5">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold shrink-0">➕ Ekle</button>
                             </form>
                             <div class="grid sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
-                                @foreach($financeCategories as $catItem)
+                                @foreach($incomeCategories as $catItem)
                                     <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
                                         <span class="font-semibold truncate">{{ $catItem }}</span>
                                         <form action="{{ route('admin.options.update') }}" method="POST">
                                             @csrf
-                                            <input type="hidden" name="option_key" value="custom_finance_categories">
+                                            <input type="hidden" name="option_key" value="custom_income_categories">
+                                            <input type="hidden" name="operation" value="remove">
+                                            <input type="hidden" name="remove_option" value="{{ $catItem }}">
+                                            <input type="hidden" name="return_tab" value="kasa">
+                                            <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Gider Kategorileri Ekle/Sil -->
+                        <div class="bg-white rounded-xl p-4 space-y-2.5">
+                            <div class="font-extrabold text-rose-700 border-b pb-1.5">🔴 Gider Kategorileri</div>
+                            <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5">
+                                @csrf
+                                <input type="hidden" name="option_key" value="custom_expense_categories">
+                                <input type="hidden" name="operation" value="add">
+                                <input type="hidden" name="return_tab" value="kasa">
+                                <input type="text" name="new_option" required placeholder="Yeni Gider Kategorisi (Ör: Muhasebe / Vergi)" class="w-full border rounded-lg px-2.5 py-1.5">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold shrink-0">➕ Ekle</button>
+                            </form>
+                            <div class="grid sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                                @foreach($expenseCategories as $catItem)
+                                    <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
+                                        <span class="font-semibold truncate">{{ $catItem }}</span>
+                                        <form action="{{ route('admin.options.update') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="option_key" value="custom_expense_categories">
                                             <input type="hidden" name="operation" value="remove">
                                             <input type="hidden" name="remove_option" value="{{ $catItem }}">
                                             <input type="hidden" name="return_tab" value="kasa">
@@ -106,26 +134,42 @@
 
                 <div class="grid lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
-                        <h3 class="text-base font-extrabold mb-3">➕ Yeni Gider veya Ürün Satışı (Mayo/Forma) Ekle</h3>
+                        <h3 class="text-base font-extrabold mb-3">➕ Yeni Gelir veya Gider Hareketi Ekle</h3>
                         <form action="{{ route('admin.transactions.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="font-bold block mb-1">İşlem Türü</label>
-                                    <select name="direction" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
+                                    <select name="direction" id="tx-direction" onchange="enerjikToggleTxCategory(this.value)" class="w-full border rounded-xl px-3 py-2 bg-white font-bold">
                                         <option value="expense">🔴 Gider Çıkışı</option>
-                                        <option value="income">🟢 Ürün Satışı / Ek Gelir</option>
+                                        <option value="income">🟢 Gelir Girişi</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">Kategori</label>
-                                    <select name="category" class="w-full border rounded-xl px-3 py-2 bg-white">
-                                        @foreach($financeCategories as $fc)
+                                    <select name="category" id="tx-category-expense" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($expenseCategories as $fc)
+                                            <option value="{{ $fc }}">{{ $fc }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="category" id="tx-category-income" disabled class="hidden w-full border rounded-xl px-3 py-2 bg-white">
+                                        @foreach($incomeCategories as $fc)
                                             <option value="{{ $fc }}">{{ $fc }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
+                            <script>
+                                function enerjikToggleTxCategory(direction) {
+                                    var expenseSel = document.getElementById('tx-category-expense');
+                                    var incomeSel = document.getElementById('tx-category-income');
+                                    var showIncome = direction === 'income';
+                                    expenseSel.classList.toggle('hidden', showIncome);
+                                    expenseSel.disabled = showIncome;
+                                    incomeSel.classList.toggle('hidden', !showIncome);
+                                    incomeSel.disabled = !showIncome;
+                                }
+                            </script>
                             <div>
                                 <label class="font-bold block mb-1">Açıklama *</label>
                                 <input type="text" name="title" required placeholder="Ör: Ekim Ayı Temizlik Malzemesi Alımı" class="w-full border rounded-xl px-3 py-2">
