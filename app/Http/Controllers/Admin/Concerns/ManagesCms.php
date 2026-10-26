@@ -144,6 +144,7 @@ trait ManagesCms
             'label' => 'required|string|max:60',
             'link_type' => 'required|in:anchor,url',
             'target' => 'required|string|max:255',
+            'placement' => 'required|in:header,footer',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -151,6 +152,7 @@ trait ManagesCms
             'label' => $validated['label'],
             'link_type' => $validated['link_type'],
             'target' => $validated['link_type'] === 'anchor' ? ltrim($validated['target'], '#') : $validated['target'],
+            'placement' => $validated['placement'],
             'open_in_new_tab' => $request->boolean('open_in_new_tab'),
             'sort_order' => $validated['sort_order'] ?? 1,
             'is_active' => true,
@@ -166,6 +168,7 @@ trait ManagesCms
             'label' => 'required|string|max:60',
             'link_type' => 'required|in:anchor,url',
             'target' => 'required|string|max:255',
+            'placement' => 'required|in:header,footer',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -173,6 +176,7 @@ trait ManagesCms
             'label' => $validated['label'],
             'link_type' => $validated['link_type'],
             'target' => $validated['link_type'] === 'anchor' ? ltrim($validated['target'], '#') : $validated['target'],
+            'placement' => $validated['placement'],
             'open_in_new_tab' => $request->boolean('open_in_new_tab'),
             'sort_order' => $validated['sort_order'] ?? $navMenuItem->sort_order,
             // boolean() ikinci argümansız: checkbox işaretsizse alan formda hiç

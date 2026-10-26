@@ -42,6 +42,7 @@ class NavMenuManagementTest extends TestCase
                 'label' => 'İletişim',
                 'link_type' => 'url',
                 'target' => '/veli-portali',
+                'placement' => 'header',
                 'sort_order' => 99,
             ])
             ->assertRedirect(route('admin.index', ['tab' => 'site_icerigi']));
@@ -69,12 +70,43 @@ class NavMenuManagementTest extends TestCase
                 'label' => $item->label,
                 'link_type' => 'anchor',
                 'target' => 'test-bolum',
+                'placement' => 'header',
                 'sort_order' => 50,
             ])
             ->assertRedirect(route('admin.index', ['tab' => 'site_icerigi']));
 
         $this->assertFalse($item->refresh()->is_active);
         $this->get('/')->assertDontSee('Kaldırılacak Menü');
+    }
+
+    public function test_footer_placement_renders_in_the_footer_not_the_header_nav(): void
+    {
+        NavMenuItem::create([
+            'label' => 'Footer Linki',
+            'link_type' => 'url',
+            'target' => '/veli-portali',
+            'placement' => 'footer',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        NavMenuItem::create([
+            'label' => 'Header Linki',
+            'link_type' => 'anchor',
+            'target' => 'branslar',
+            'placement' => 'header',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $response = $this->get('/');
+        $response->assertOk()->assertSee('Footer Linki')->assertSee('Header Linki');
+
+        $html = $response->getContent();
+        $footerStart = strpos($html, '<footer');
+        $this->assertNotFalse($footerStart);
+        // "Footer Linki" sadece <footer> içinde, "Header Linki" ondan önce geçmeli.
+        $this->assertGreaterThan($footerStart, strpos($html, 'Footer Linki'));
+        $this->assertLessThan($footerStart, strpos($html, 'Header Linki'));
     }
 
     public function test_admin_can_delete_a_menu_item(): void

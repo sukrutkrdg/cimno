@@ -107,7 +107,7 @@
                     <span>📸</span><span class="hidden sm:inline">{{ $settings['instagram_handle'] ?? '@enerjik.cimnastik' }}</span>
                 </a>
                 <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode($settings['whatsapp_welcome_msg'] ?? 'Merhaba, ücretsiz deneme dersi hakkında bilgi almak istiyorum.') }}" target="_blank" class="hidden sm:flex text-emerald-400 hover:underline items-center gap-1">
-                    <span>💬</span><span>WhatsApp İletişim</span>
+                    <span>💬</span><span>{{ $settings['topbar_whatsapp_label'] ?? 'WhatsApp İletişim' }}</span>
                 </a>
             </div>
         </div>
@@ -264,7 +264,7 @@
                         </div>
                         <label class="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 pt-1 cursor-pointer">
                             <input type="checkbox" name="kvkk_approved" value="1" checked required class="mt-0.5 rounded text-indigo-600">
-                            <span><a href="#kvkk" class="text-indigo-600 dark:text-indigo-400 underline font-semibold">KVKK Aydınlatma Metni</a>'ni okudum, deneme dersi planlaması için tarafımla iletişime geçilmesini onaylıyorum.</span>
+                            <span><a href="#kvkk" class="text-indigo-600 dark:text-indigo-400 underline font-semibold">KVKK Aydınlatma Metni</a>'ni okudum, {{ $settings['trial_form_kvkk_consent'] ?? 'deneme dersi planlaması için tarafımla iletişime geçilmesini onaylıyorum.' }}</span>
                         </label>
                         <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition">
                             {{ $settings['trial_form_submit'] ?? '🚀 Ücretsiz Deneme Dersi Talebi Gönder' }}
@@ -301,7 +301,7 @@
                         @endif
                     </div>
                     <a href="#on-kayit" class="mt-5 inline-flex items-center justify-center w-full py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold transition">
-                        Deneme Dersine Başvur →
+                        {{ $settings['cta_branch_card'] ?? 'Deneme Dersine Başvur →' }}
                     </a>
                 </div>
             @endforeach
@@ -319,7 +319,7 @@
                     <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_schedule_title'] ?? 'Haftalık Ders Programı & Kontenjanlar' }}</h2>
                 </div>
                 <span class="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg font-semibold">
-                    🟢 Kontenjan bilgisi yönetim panelinden anlık güncellenir
+                    {{ $settings['schedule_live_badge'] ?? '🟢 Kontenjan bilgisi yönetim panelinden anlık güncellenir' }}
                 </span>
             </div>
 
@@ -382,7 +382,7 @@
                         <p class="text-sm text-slate-600 dark:text-slate-400 mt-3">{{ $pkg->description }}</p>
                     </div>
                     <a href="#on-kayit" class="mt-6 block text-center py-3 rounded-xl font-bold text-xs {{ $loop->iteration === 2 ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700' }}">
-                        Bu Paket İçin Ön Kayıt Oluştur
+                        {{ $settings['cta_package_card'] ?? 'Bu Paket İçin Ön Kayıt Oluştur' }}
                     </a>
                 </div>
             @endforeach
@@ -477,15 +477,15 @@
             </div>
             <div class="md:col-span-2 space-y-3">
                 <div>
-                    <h4 class="text-white font-bold mb-1.5">🔒 KVKK Aydınlatma Metni ve Çocuk Verisi Güvenliği</h4>
+                    <h4 class="text-white font-bold mb-1.5">{{ $settings['kvkk_heading'] ?? '🔒 KVKK Aydınlatma Metni ve Çocuk Verisi Güvenliği' }}</h4>
                     <p class="leading-relaxed text-slate-400">{{ $settings['kvkk_text'] ?? '' }}</p>
                 </div>
                 <div class="pt-3 border-t border-slate-800/80 flex flex-wrap justify-between items-center gap-3 text-[11px] text-slate-500">
                     <span>{{ $settings['footer_copyright'] ?? ('© ' . date('Y') . ' Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.') }}</span>
                     <div class="flex items-center gap-4">
-                        <a href="{{ route('public.mobile.pwa') }}" class="hover:text-slate-300">👨‍👩‍👧 Veli Girişi</a>
-                        <a href="{{ route('public.qr.checkin') }}" class="hover:text-slate-300">📷 Salon QR Yoklama</a>
-                        <a href="{{ route('public.qr.poster') }}" class="hover:text-slate-300">🏁 QR Afiş</a>
+                        @foreach($footerMenuItems as $item)
+                            <a href="{{ $item->url() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener" @endif class="hover:text-slate-300">{{ $item->label }}</a>
+                        @endforeach
                     </div>
                 </div>
             </div>

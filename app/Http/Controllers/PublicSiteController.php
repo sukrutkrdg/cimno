@@ -37,7 +37,8 @@ class PublicSiteController extends Controller
         $announcements = Announcement::whereIn('target_audience', ['all', 'public_site'])->orderByDesc('is_pinned')->latest()->take(4)->get();
         $faqs = Faq::where('is_active', true)->orderBy('sort_order')->get();
         $gallery = GalleryItem::where('photo_consent_verified', true)->latest()->take(6)->get();
-        $navMenuItems = NavMenuItem::where('is_active', true)->orderBy('sort_order')->get();
+        $navMenuItems = NavMenuItem::where('is_active', true)->where('placement', 'header')->orderBy('sort_order')->get();
+        $footerMenuItems = NavMenuItem::where('is_active', true)->where('placement', 'footer')->orderBy('sort_order')->get();
 
         return view('public.home', compact(
             'settings',
@@ -48,7 +49,8 @@ class PublicSiteController extends Controller
             'announcements',
             'faqs',
             'gallery',
-            'navMenuItems'
+            'navMenuItems',
+            'footerMenuItems'
         ));
     }
 

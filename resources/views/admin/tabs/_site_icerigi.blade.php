@@ -218,6 +218,7 @@
                             <div class="grid sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                                 <div><label class="font-bold block mb-1">"Veli Girişi" Butonu</label><input type="text" name="header_parent_btn" value="{{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">"Deneme Dersi" Butonu</label><input type="text" name="header_trial_btn" value="{{ $settings['header_trial_btn'] ?? 'Ücretsiz Deneme Dersi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Üst Bar "WhatsApp" Etiketi</label><input type="text" name="topbar_whatsapp_label" value="{{ $settings['topbar_whatsapp_label'] ?? 'WhatsApp İletişim' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                             </div>
                         </div>
 
@@ -234,6 +235,7 @@
                                 <div><label class="font-bold block mb-1">Antrenörler Başlığı</label><input type="text" name="section_coaches_title" value="{{ $settings['section_coaches_title'] ?? 'Federasyon Belgeli Antrenörlerimiz' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">Galeri Başlığı</label><input type="text" name="section_gallery_title" value="{{ $settings['section_gallery_title'] ?? 'Salonumuzdan Kareler' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">SSS Başlığı</label><input type="text" name="section_faq_title" value="{{ $settings['section_faq_title'] ?? 'Güncel Duyurular & SSS' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Ders Programı "Canlı Kontenjan" Rozeti</label><input type="text" name="schedule_live_badge" value="{{ $settings['schedule_live_badge'] ?? '🟢 Kontenjan bilgisi yönetim panelinden anlık güncellenir' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                             </div>
                         </div>
 
@@ -243,12 +245,24 @@
                                 <div><label class="font-bold block mb-1">Form Rozeti</label><input type="text" name="trial_form_badge" value="{{ $settings['trial_form_badge'] ?? 'Online Ön Kayıt' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">Form Başlığı</label><input type="text" name="trial_form_title" value="{{ $settings['trial_form_title'] ?? 'Ücretsiz Deneme Dersi Formu' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">Gönder Butonu</label><input type="text" name="trial_form_submit" value="{{ $settings['trial_form_submit'] ?? '🚀 Ücretsiz Deneme Dersi Talebi Gönder' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div class="sm:col-span-3"><label class="font-bold block mb-1">KVKK Onay Kutusu Metni ("...Metni'ni okudum," sonrası)</label><input type="text" name="trial_form_kvkk_consent" value="{{ $settings['trial_form_kvkk_consent'] ?? 'deneme dersi planlaması için tarafımla iletişime geçilmesini onaylıyorum.' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="font-extrabold block text-slate-700 mb-2">🏷️ Kart Üzerindeki Düğme (CTA) Metinleri</span>
+                            <div class="grid sm:grid-cols-2 gap-2.5">
+                                <div><label class="font-bold block mb-1">Branş Kartı Düğmesi</label><input type="text" name="cta_branch_card" value="{{ $settings['cta_branch_card'] ?? 'Deneme Dersine Başvur →' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">Paket Kartı Düğmesi</label><input type="text" name="cta_package_card" value="{{ $settings['cta_package_card'] ?? 'Bu Paket İçin Ön Kayıt Oluştur' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                             </div>
                         </div>
 
                         <div>
                             <span class="font-extrabold block text-slate-700 mb-2">⬇️ Alt Bilgi (Footer)</span>
-                            <input type="text" name="footer_copyright" value="{{ $settings['footer_copyright'] ?? '© ' . date('Y') . ' Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.' }}" class="w-full border rounded-lg px-2.5 py-1.5">
+                            <div class="grid sm:grid-cols-2 gap-2.5">
+                                <div><label class="font-bold block mb-1">Telif Hakkı Metni</label><input type="text" name="footer_copyright" value="{{ $settings['footer_copyright'] ?? '© ' . date('Y') . ' Tekirdağ Enerjik Cimnastik Spor Kulübü. Tüm hakları saklıdır.' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                                <div><label class="font-bold block mb-1">KVKK Bölümü Başlığı</label><input type="text" name="kvkk_heading" value="{{ $settings['kvkk_heading'] ?? '🔒 KVKK Aydınlatma Metni ve Çocuk Verisi Güvenliği' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
+                            </div>
                         </div>
 
                         <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-lg shadow-indigo-600/20">
@@ -442,11 +456,11 @@
                     </div>
                 </div>
 
-                <!-- 7. ÜST MENÜ (NAVİGASYON) YÖNETİMİ -->
+                <!-- 7. MENÜLER (ÜST MENÜ & ALT BİLGİ/FOOTER) YÖNETİMİ -->
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                    <h3 class="text-base font-extrabold border-b pb-2">🧭 7. Üst Menü (Navigasyon) Yönetimi</h3>
-                    <p class="text-xs text-slate-500">Ana sayfanın üst menüsündeki bağlantıları buradan ekleyebilir, silebilir, etiketini/hedefini değiştirebilir ve sıralayabilirsiniz (küçük sayı önce gösterilir). "Sayfa İçi Bölüm" tipi, sayfadaki bir bölüme kaydırır (örn. <code>branslar</code>); "Bağlantı" tipi herhangi bir iç adrese (örn. <code>/veli-portali</code>) veya harici bir adrese (örn. <code>https://...</code>) gider.</p>
-                    <form action="{{ route('admin.nav_menu.store') }}" method="POST" class="grid sm:grid-cols-5 gap-2.5 text-xs p-3.5 rounded-2xl bg-sky-50/60 border border-sky-200 items-end">
+                    <h3 class="text-base font-extrabold border-b pb-2">🧭 7. Menüler (Üst Menü & Alt Bilgi/Footer) Yönetimi</h3>
+                    <p class="text-xs text-slate-500">Ana sayfanın üst menüsündeki VE alt bilgi (footer) bölümündeki bağlantıları buradan ekleyebilir, silebilir, etiketini/hedefini/yerleşimini değiştirebilir ve sıralayabilirsiniz (küçük sayı önce gösterilir). "Sayfa İçi Bölüm" tipi, sayfadaki bir bölüme kaydırır (örn. <code>branslar</code>); "Bağlantı" tipi herhangi bir iç adrese (örn. <code>/veli-portali</code>) veya harici bir adrese (örn. <code>https://...</code>) gider.</p>
+                    <form action="{{ route('admin.nav_menu.store') }}" method="POST" class="grid sm:grid-cols-6 gap-2.5 text-xs p-3.5 rounded-2xl bg-sky-50/60 border border-sky-200 items-end">
                         @csrf
                         <input type="text" name="label" required placeholder="Menü Etiketi (Ör: İletişim)" class="border rounded-xl px-3 py-2 bg-white font-bold sm:col-span-2">
                         <select name="link_type" class="border rounded-xl px-2.5 py-2 bg-white font-bold">
@@ -454,14 +468,19 @@
                             <option value="url">Bağlantı (URL)</option>
                         </select>
                         <input type="text" name="target" required placeholder="branslar  veya  /veli-portali" class="border rounded-xl px-3 py-2 bg-white sm:col-span-1">
+                        <select name="placement" class="border rounded-xl px-2.5 py-2 bg-white font-bold">
+                            <option value="header">Üst Menü</option>
+                            <option value="footer">Alt Bilgi (Footer)</option>
+                        </select>
                         <input type="number" name="sort_order" value="{{ ($navMenuItems->max('sort_order') ?? 0) + 1 }}" placeholder="Sıra" class="border rounded-xl px-3 py-2 bg-white">
-                        <label class="flex items-center gap-1.5 font-bold sm:col-span-4"><input type="checkbox" name="open_in_new_tab" value="1"> Yeni sekmede açılsın (harici bağlantılar için)</label>
+                        <label class="flex items-center gap-1.5 font-bold sm:col-span-5"><input type="checkbox" name="open_in_new_tab" value="1"> Yeni sekmede açılsın (harici bağlantılar için)</label>
                         <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 text-white font-extrabold">➕ Menüye Ekle</button>
                     </form>
 
                     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         @foreach($navMenuItems as $item)
                             <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $item->placement === 'footer' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700' }}">{{ $item->placement === 'footer' ? 'ALT BİLGİ' : 'ÜST MENÜ' }}</span>
                                 <form action="{{ route('admin.nav_menu.update', $item->id) }}" method="POST" class="space-y-2">
                                     @csrf
                                     <input type="text" name="label" value="{{ $item->label }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
@@ -473,6 +492,10 @@
                                         <input type="number" name="sort_order" value="{{ $item->sort_order }}" class="w-16 border rounded-lg px-2 py-1.5 bg-white" title="Sıra">
                                     </div>
                                     <input type="text" name="target" value="{{ $item->target }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                    <select name="placement" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                        <option value="header" {{ $item->placement === 'header' ? 'selected' : '' }}>Üst Menü</option>
+                                        <option value="footer" {{ $item->placement === 'footer' ? 'selected' : '' }}>Alt Bilgi (Footer)</option>
+                                    </select>
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center gap-1 font-semibold"><input type="checkbox" name="open_in_new_tab" value="1" {{ $item->open_in_new_tab ? 'checked' : '' }}> Yeni sekme</label>
                                         <label class="flex items-center gap-1 font-semibold"><input type="checkbox" name="is_active" value="1" {{ $item->is_active ? 'checked' : '' }}> Görünür</label>
