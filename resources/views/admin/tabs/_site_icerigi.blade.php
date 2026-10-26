@@ -214,13 +214,8 @@
                         @csrf
                         <div>
                             <span class="font-extrabold block text-slate-700 mb-2">☰ Üst Menü & Buton Etiketleri</span>
+                            <p class="text-[11px] text-slate-500 mb-2">Üst menüdeki bağlantılar artık aşağıdaki "7. Üst Menü (Navigasyon) Yönetimi" bölümünden eklenir/düzenlenir/silinir. Burada sadece sabit giriş/deneme butonlarının etiketleri kalır.</p>
                             <div class="grid sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                                <div><label class="font-bold block mb-1">"Branşlarımız" Menü</label><input type="text" name="nav_branches" value="{{ $settings['nav_branches'] ?? 'Branşlarımız' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
-                                <div><label class="font-bold block mb-1">"Ders Programı" Menü</label><input type="text" name="nav_schedule" value="{{ $settings['nav_schedule'] ?? 'Ders Programı' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
-                                <div><label class="font-bold block mb-1">"Paket & Ücretler" Menü</label><input type="text" name="nav_packages" value="{{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
-                                <div><label class="font-bold block mb-1">"Antrenörler" Menü</label><input type="text" name="nav_coaches" value="{{ $settings['nav_coaches'] ?? 'Antrenörler' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
-                                <div><label class="font-bold block mb-1">"Galeri" Menü</label><input type="text" name="nav_gallery" value="{{ $settings['nav_gallery'] ?? 'Galeri' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
-                                <div><label class="font-bold block mb-1">"SSS" Menü</label><input type="text" name="nav_faq" value="{{ $settings['nav_faq'] ?? 'SSS' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">"Veli Girişi" Butonu</label><input type="text" name="header_parent_btn" value="{{ $settings['header_parent_btn'] ?? 'Veli Girişi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                                 <div><label class="font-bold block mb-1">"Deneme Dersi" Butonu</label><input type="text" name="header_trial_btn" value="{{ $settings['header_trial_btn'] ?? 'Ücretsiz Deneme Dersi' }}" class="w-full border rounded-lg px-2.5 py-1.5"></div>
                             </div>
@@ -447,11 +442,60 @@
                     </div>
                 </div>
 
-                <!-- 7. SALON FOTOĞRAF GALERİSİ & 8. ANTRENÖR VİTRİN KARTLARI -->
+                <!-- 7. ÜST MENÜ (NAVİGASYON) YÖNETİMİ -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <h3 class="text-base font-extrabold border-b pb-2">🧭 7. Üst Menü (Navigasyon) Yönetimi</h3>
+                    <p class="text-xs text-slate-500">Ana sayfanın üst menüsündeki bağlantıları buradan ekleyebilir, silebilir, etiketini/hedefini değiştirebilir ve sıralayabilirsiniz (küçük sayı önce gösterilir). "Sayfa İçi Bölüm" tipi, sayfadaki bir bölüme kaydırır (örn. <code>branslar</code>); "Bağlantı" tipi herhangi bir iç adrese (örn. <code>/veli-portali</code>) veya harici bir adrese (örn. <code>https://...</code>) gider.</p>
+                    <form action="{{ route('admin.nav_menu.store') }}" method="POST" class="grid sm:grid-cols-5 gap-2.5 text-xs p-3.5 rounded-2xl bg-sky-50/60 border border-sky-200 items-end">
+                        @csrf
+                        <input type="text" name="label" required placeholder="Menü Etiketi (Ör: İletişim)" class="border rounded-xl px-3 py-2 bg-white font-bold sm:col-span-2">
+                        <select name="link_type" class="border rounded-xl px-2.5 py-2 bg-white font-bold">
+                            <option value="anchor">Sayfa İçi Bölüm</option>
+                            <option value="url">Bağlantı (URL)</option>
+                        </select>
+                        <input type="text" name="target" required placeholder="branslar  veya  /veli-portali" class="border rounded-xl px-3 py-2 bg-white sm:col-span-1">
+                        <input type="number" name="sort_order" value="{{ ($navMenuItems->max('sort_order') ?? 0) + 1 }}" placeholder="Sıra" class="border rounded-xl px-3 py-2 bg-white">
+                        <label class="flex items-center gap-1.5 font-bold sm:col-span-4"><input type="checkbox" name="open_in_new_tab" value="1"> Yeni sekmede açılsın (harici bağlantılar için)</label>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 text-white font-extrabold">➕ Menüye Ekle</button>
+                    </form>
+
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        @foreach($navMenuItems as $item)
+                            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
+                                <form action="{{ route('admin.nav_menu.update', $item->id) }}" method="POST" class="space-y-2">
+                                    @csrf
+                                    <input type="text" name="label" value="{{ $item->label }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white font-bold">
+                                    <div class="flex gap-1.5">
+                                        <select name="link_type" class="flex-1 border rounded-lg px-1.5 py-1.5 bg-white">
+                                            <option value="anchor" {{ $item->link_type === 'anchor' ? 'selected' : '' }}>Sayfa İçi Bölüm</option>
+                                            <option value="url" {{ $item->link_type === 'url' ? 'selected' : '' }}>Bağlantı (URL)</option>
+                                        </select>
+                                        <input type="number" name="sort_order" value="{{ $item->sort_order }}" class="w-16 border rounded-lg px-2 py-1.5 bg-white" title="Sıra">
+                                    </div>
+                                    <input type="text" name="target" value="{{ $item->target }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center gap-1 font-semibold"><input type="checkbox" name="open_in_new_tab" value="1" {{ $item->open_in_new_tab ? 'checked' : '' }}> Yeni sekme</label>
+                                        <label class="flex items-center gap-1 font-semibold"><input type="checkbox" name="is_active" value="1" {{ $item->is_active ? 'checked' : '' }}> Görünür</label>
+                                    </div>
+                                    <button type="submit" class="w-full px-3 py-1 rounded-lg bg-slate-900 text-white font-bold">💾 Güncelle</button>
+                                </form>
+                                <form action="{{ route('admin.nav_menu.destroy', $item->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold">🗑️ Menüden Kaldır</button>
+                                </form>
+                            </div>
+                        @endforeach
+                        @if($navMenuItems->isEmpty())
+                            <p class="text-xs text-slate-400 italic">Henüz hiç menü öğesi yok — yukarıdan ekleyin.</p>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- 8. SALON FOTOĞRAF GALERİSİ & 9. ANTRENÖR VİTRİN KARTLARI -->
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Galeri Yönetimi -->
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                        <h3 class="text-base font-extrabold border-b pb-2">📸 7. Salon Fotoğraf Galerisi (Ekle / Düzenle / Sil - KVKK Kontrollü)</h3>
+                        <h3 class="text-base font-extrabold border-b pb-2">📸 8. Salon Fotoğraf Galerisi (Ekle / Düzenle / Sil - KVKK Kontrollü)</h3>
                         <form action="{{ route('admin.gallery.store') }}" method="POST" enctype="multipart/form-data" class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid sm:grid-cols-2 gap-2.5 text-xs">
                             @csrf
                             <input type="text" name="title" required placeholder="Fotoğraf Başlığı" class="border rounded-xl px-3 py-2 bg-white font-bold">
@@ -493,7 +537,7 @@
 
                     <!-- Antrenör Vitrin Bilgileri (Sitede Görünen Uzmanlık & Bio) -->
                     <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 h-fit">
-                        <h3 class="text-base font-extrabold border-b pb-2">🏅 8. Sitede Görünen Antrenör Tanıtım Kartları</h3>
+                        <h3 class="text-base font-extrabold border-b pb-2">🏅 9. Sitede Görünen Antrenör Tanıtım Kartları</h3>
                         <p class="text-[11px] text-slate-500">Ana sayfadaki "Federasyon Belgeli Antrenörlerimiz" bölümünde yer alan unvan ve özgeçmiş yazılarını düzenleyin, kartı sitede göster/gizle. Yeni bir antrenör eklemek için <strong>10. Personel</strong> sekmesinden personel kaydı açın — buraya otomatik düşer.</p>
                         <div class="space-y-3">
                             @forelse($staff->where('role', 'coach') as $coach)

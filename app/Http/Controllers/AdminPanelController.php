@@ -27,6 +27,7 @@ use App\Models\GalleryItem;
 use App\Models\Group;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\NavMenuItem;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\Schedule;
@@ -275,6 +276,7 @@ class AdminPanelController extends Controller
         $announcements = Announcement::latest()->get();
         $faqs = Faq::orderBy('sort_order')->get();
         $gallery = GalleryItem::with('student')->latest()->get();
+        $navMenuItems = NavMenuItem::orderBy('sort_order')->get();
         $settings = SiteSetting::pluck('value', 'key')->toArray();
         $auditLogs = AuditLog::with('user')->latest()->take(60)->get();
 
@@ -456,6 +458,7 @@ class AdminPanelController extends Controller
             'announcements',
             'faqs',
             'gallery',
+            'navMenuItems',
             'settings',
             'auditLogs',
             'absentWarnStudents',

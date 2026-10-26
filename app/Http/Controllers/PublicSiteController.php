@@ -12,6 +12,7 @@ use App\Models\GalleryItem;
 use App\Models\Group;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\NavMenuItem;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PushSubscription;
@@ -34,6 +35,7 @@ class PublicSiteController extends Controller
         $announcements = Announcement::whereIn('target_audience', ['all', 'public_site'])->orderByDesc('is_pinned')->latest()->take(4)->get();
         $faqs = Faq::where('is_active', true)->orderBy('sort_order')->get();
         $gallery = GalleryItem::where('photo_consent_verified', true)->latest()->take(6)->get();
+        $navMenuItems = NavMenuItem::where('is_active', true)->orderBy('sort_order')->get();
 
         return view('public.home', compact(
             'settings',
@@ -43,7 +45,8 @@ class PublicSiteController extends Controller
             'coaches',
             'announcements',
             'faqs',
-            'gallery'
+            'gallery',
+            'navMenuItems'
         ));
     }
 

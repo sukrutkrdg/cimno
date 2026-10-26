@@ -113,6 +113,9 @@ Route::prefix('panel')->group(function () {
             Route::post('/galeri/{galleryItem}/sil', [AdminPanelController::class, 'destroyGalleryItem'])->name('admin.gallery.destroy');
             Route::post('/cms/antrenor/{user}/vitrin', [AdminPanelController::class, 'updateCoachProfile'])->name('admin.coaches.profile');
             Route::post('/cms/antrenor/{user}/gorunurluk', [AdminPanelController::class, 'toggleCoachVisibility'])->name('admin.coaches.toggle_visibility');
+            Route::post('/menu', [AdminPanelController::class, 'storeNavMenuItem'])->name('admin.nav_menu.store');
+            Route::post('/menu/{navMenuItem}/guncelle', [AdminPanelController::class, 'updateNavMenuItem'])->name('admin.nav_menu.update');
+            Route::post('/menu/{navMenuItem}/sil', [AdminPanelController::class, 'destroyNavMenuItem'])->name('admin.nav_menu.destroy');
         });
 
         // --- Yalnızca Süper Yönetici (Salon Sahibi): finans yapılandırması, personel, raporlar, yedekleme, sistem ayarları ---

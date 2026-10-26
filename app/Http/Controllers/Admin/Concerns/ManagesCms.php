@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Faq;
 use App\Models\GalleryItem;
 use App\Models\Group;
+use App\Models\NavMenuItem;
 use App\Models\SiteSetting;
 use App\Models\Student;
 use App\Models\User;
@@ -132,6 +133,64 @@ trait ManagesCms
         $faq->delete();
         AuditLog::record('sss_silindi', 'SSS maddesi silindi.');
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'SSS maddesi silindi.');
+    }
+
+    // CMS: Üst Menü (Navigasyon) Ekle / Güncelle / Sil
+    // Ana sayfanın üst menüsü eskiden sabit kodlanmış 6 bağlantıydı; artık burada
+    // tamamen yönetici tarafından eklenebilir/kaldırılabilir/sıralanabilir.
+    public function storeNavMenuItem(Request $request)
+    {
+        $validated = $request->validate([
+            'label' => 'required|string|max:60',
+            'link_type' => 'required|in:anchor,url',
+            'target' => 'required|string|max:255',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $menuItem = NavMenuItem::create([
+            'label' => $validated['label'],
+            'link_type' => $validated['link_type'],
+            'target' => $validated['link_type'] === 'anchor' ? ltrim($validated['target'], '#') : $validated['target'],
+            'open_in_new_tab' => $request->boolean('open_in_new_tab'),
+            'sort_order' => $validated['sort_order'] ?? 1,
+            'is_active' => true,
+        ]);
+
+        AuditLog::record('menu_eklendi', "Üst menüye '{$menuItem->label}' eklendi.", 'NavMenuItem', $menuItem->id);
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$menuItem->label}' menüsü eklendi!");
+    }
+
+    public function updateNavMenuItem(Request $request, NavMenuItem $navMenuItem)
+    {
+        $validated = $request->validate([
+            'label' => 'required|string|max:60',
+            'link_type' => 'required|in:anchor,url',
+            'target' => 'required|string|max:255',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $navMenuItem->update([
+            'label' => $validated['label'],
+            'link_type' => $validated['link_type'],
+            'target' => $validated['link_type'] === 'anchor' ? ltrim($validated['target'], '#') : $validated['target'],
+            'open_in_new_tab' => $request->boolean('open_in_new_tab'),
+            'sort_order' => $validated['sort_order'] ?? $navMenuItem->sort_order,
+            // boolean() ikinci argümansız: checkbox işaretsizse alan formda hiç
+            // gönderilmez, bu da "gizle" seçeneğinin çalışmasını sağlar (varsayılan
+            // true verilseydi işaretsiz kutu da hep "aktif" kalırdı).
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        AuditLog::record('menu_guncellendi', "Üst menü güncellendi: '{$navMenuItem->label}'.", 'NavMenuItem', $navMenuItem->id);
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$navMenuItem->label}' menüsü güncellendi!");
+    }
+
+    public function destroyNavMenuItem(NavMenuItem $navMenuItem)
+    {
+        $label = $navMenuItem->label;
+        $navMenuItem->delete();
+        AuditLog::record('menu_silindi', "Üst menüden '{$label}' kaldırıldı.");
+        return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', "'{$label}' menüsü kaldırıldı.");
     }
 
     // CMS: Galeri Fotoğrafı Ekle / Güncelle / Sil

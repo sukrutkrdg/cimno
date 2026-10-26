@@ -127,22 +127,9 @@
 
             <!-- Orta: Masaüstü Menü Linkleri -->
             <nav class="hidden xl:flex items-center gap-7 text-sm font-bold text-slate-700 dark:text-slate-200">
-                <a href="#branslar" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
-                @if(($settings['show_schedule_section'] ?? '1') === '1')
-                    <a href="#program" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
-                @endif
-                @if(($settings['show_prices_section'] ?? '1') === '1')
-                    <a href="#ucretler" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
-                @endif
-                @if(($settings['show_coaches_section'] ?? '1') === '1')
-                    <a href="#antrenorler" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
-                @endif
-                @if(($settings['show_gallery_section'] ?? '1') === '1')
-                    <a href="#galeri" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_gallery'] ?? 'Galeri' }}</a>
-                @endif
-                @if(($settings['show_faq_section'] ?? '1') === '1')
-                    <a href="#sss" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $settings['nav_faq'] ?? 'SSS' }}</a>
-                @endif
+                @foreach($navMenuItems as $item)
+                    <a href="{{ $item->url() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener" @endif class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $item->label }}</a>
+                @endforeach
             </nav>
 
             <!-- Sağ: Tema Anahtarı, Veli Girişi & Deneme Dersi Butonları -->
@@ -172,22 +159,9 @@
         <!-- Mobil / Tablet Açılır Menü -->
         <div id="mobile-nav-drawer" class="hidden xl:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-4 space-y-3 shadow-lg">
             <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                <a href="#branslar" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">🤸 {{ $settings['nav_branches'] ?? 'Branşlarımız' }}</a>
-                @if(($settings['show_schedule_section'] ?? '1') === '1')
-                    <a href="#program" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">📅 {{ $settings['nav_schedule'] ?? 'Ders Programı' }}</a>
-                @endif
-                @if(($settings['show_prices_section'] ?? '1') === '1')
-                    <a href="#ucretler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">🏷️ {{ $settings['nav_packages'] ?? 'Paket & Ücretler' }}</a>
-                @endif
-                @if(($settings['show_coaches_section'] ?? '1') === '1')
-                    <a href="#antrenorler" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">🏅 {{ $settings['nav_coaches'] ?? 'Antrenörler' }}</a>
-                @endif
-                @if(($settings['show_gallery_section'] ?? '1') === '1')
-                    <a href="#galeri" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">📸 {{ $settings['nav_gallery'] ?? 'Salon Galerisi' }}</a>
-                @endif
-                @if(($settings['show_faq_section'] ?? '1') === '1')
-                    <a href="#sss" onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">❓ {{ $settings['nav_faq'] ?? 'Sık Sorulanlar' }}</a>
-                @endif
+                @foreach($navMenuItems as $item)
+                    <a href="{{ $item->url() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener" @else onclick="document.getElementById('mobile-nav-drawer').classList.add('hidden')" @endif class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700">{{ $item->label }}</a>
+                @endforeach
             </div>
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <a href="{{ route('public.mobile.pwa') }}" class="text-center py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">
