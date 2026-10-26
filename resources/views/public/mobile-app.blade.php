@@ -288,6 +288,22 @@
                 </div>
             @endforeach
 
+            @if($sekme === 'cocuklarim' || $sekme === 'duyurular')
+                <!-- Duyurular -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <h3 class="text-xs font-extrabold uppercase text-slate-500">📢 Güncel Duyurular</h3>
+                    @forelse($announcements as $ann)
+                        <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900">
+                            <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">{{ $ann->created_at->format('d.m.Y') }}{{ $ann->is_pinned ? ' · 📌 Sabitlenmiş' : '' }}</span>
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white mt-0.5">{{ $ann->title }}</h4>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">{{ $ann->content }}</p>
+                        </div>
+                    @empty
+                        <p class="text-xs text-slate-400">Şu anda güncel bir duyuru bulunmuyor.</p>
+                    @endforelse
+                </div>
+            @endif
+
             <!-- Hızlı WhatsApp -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
                 <a href="https://wa.me/{{ $settings['whatsapp_number'] ?? '905388993159' }}?text={{ urlencode('Merhaba, veli ekranından yazıyorum.') }}" target="_blank" class="block text-center w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">
@@ -301,7 +317,7 @@
     <!-- Alt Mobil Uygulama Navigasyon Barı (Yalnız Veli Menüsü) -->
     @if($activePhone && $students->isNotEmpty())
         <nav class="fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 shadow-lg">
-            <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2">
+            <div class="max-w-lg mx-auto grid grid-cols-5 text-center py-2">
                 <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'cocuklarim']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'cocuklarim' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
                     <span class="text-lg">🤸</span>
                     <span class="text-[11px]">Öğrencim</span>
@@ -317,6 +333,10 @@
                 <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'karne']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'karne' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
                     <span class="text-lg">🏅</span>
                     <span class="text-[11px]">Gelişim Karnesi</span>
+                </a>
+                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'duyurular']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'duyurular' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
+                    <span class="text-lg">📢</span>
+                    <span class="text-[11px]">Duyurular</span>
                 </a>
             </div>
         </nav>
