@@ -268,8 +268,23 @@ class AdminPanelController extends Controller
         $cashAccounts = CashAccount::all();
         $transactions = FinancialTransaction::with(['cashAccount', 'relatedUser'])->latest('transaction_date')->take(200)->get();
         $staff = User::whereIn('role', ['super_admin', 'secretary', 'coach'])->withCount('groups')->get();
-        $attendances = Attendance::with(['group', 'student', 'coach'])->latest('attendance_date')->take(50)->get();
-        $developmentRecords = DevelopmentRecord::with(['student.group', 'coach'])->latest()->get();
+
+        // "only_own_groups" antrenörleri yoklama ve gelişim karnesi listelerinde de
+        // kendi gruplarıyla sınırlanmalı — aksi hâlde salon genelindeki tüm öğrencilerin
+        // yoklama/gelişim/sağlık/devamsızlık bilgilerini görebilirlerdi (bkz. $groups/
+        // $students'taki aynı $restrictToCoachId deseni, 157. satır civarı).
+        $attendancesQuery = Attendance::with(['group', 'student', 'coach'])->latest('attendance_date');
+        if ($restrictToCoachId) {
+            $attendancesQuery->where('coach_id', $restrictToCoachId);
+        }
+        $attendances = $attendancesQuery->take(50)->get();
+
+        $developmentRecordsQuery = DevelopmentRecord::with(['student.group', 'coach'])->latest();
+        if ($restrictToCoachId) {
+            $developmentRecordsQuery->where('coach_id', $restrictToCoachId);
+        }
+        $developmentRecords = $developmentRecordsQuery->get();
+
         $events = Event::with('participants')->latest('event_date')->get();
         $whatsappTemplates = WhatsappTemplate::all();
         $whatsappQueue = WhatsappMessage::with(['template', 'student'])->latest()->take(150)->get();
@@ -287,12 +302,20 @@ class AdminPanelController extends Controller
         $financeCategories = array_values(array_filter(array_map('trim', explode('|', $settings['custom_finance_categories'] ?? 'Kira|Elektrik / Su / Doğalgaz|Maaş ve SGK|Antrenör Hakedişi|Ekipman ve Bakım|Temizlik|Reklam (Instagram/Google)|Ürün Satışı (Mayo / Forma)|Lisans ve Yarışma Harcı'))));
         $leadSources = array_values(array_filter(array_map('trim', explode('|', $settings['custom_lead_sources'] ?? 'website|instagram|whatsapp|telefon|tavsiye'))));
 
-        // Özel Uyarı Listeleri (Periyodik İşler)
-        $absentWarnStudents = Student::with('group')->where('consecutive_absences', '>=', 2)->where('status', 'active')->get();
-        $expiringMedicalStudents = Student::with('group')->whereNotNull('medical_report_expires_at')
+        // Özel Uyarı Listeleri (Periyodik İşler) — aynı şekilde antrenör kendi grubuyla sınırlı
+        $absentWarnStudentsQuery = Student::with('group')->where('consecutive_absences', '>=', 2)->where('status', 'active');
+        if ($restrictToCoachId) {
+            $absentWarnStudentsQuery->whereHas('group', fn($q) => $q->where('coach_id', $restrictToCoachId));
+        }
+        $absentWarnStudents = $absentWarnStudentsQuery->get();
+
+        $expiringMedicalStudentsQuery = Student::with('group')->whereNotNull('medical_report_expires_at')
             ->whereDate('medical_report_expires_at', '<=', now()->addDays(15))
-            ->where('status', 'active')
-            ->get();
+            ->where('status', 'active');
+        if ($restrictToCoachId) {
+            $expiringMedicalStudentsQuery->whereHas('group', fn($q) => $q->where('coach_id', $restrictToCoachId));
+        }
+        $expiringMedicalStudents = $expiringMedicalStudentsQuery->get();
 
         // Antrenör Hakediş Hesabı (Bu Ay Yoklamadan Otomatik)
         // Not: whereMonth() yıl kontrolü yapmadığından önceki yıllarda aynı ayda

@@ -89,7 +89,7 @@ trait ManagesEventsAndDevelopment
                 'Takla & Çember' => 'Başarılı',
                 'Amut & Denge' => 'Gelişiyor',
             ],
-            'coach_comment' => $validated['coach_comment'],
+            'coach_comment' => $validated['coach_comment'] ?? null,
         ]);
 
         AuditLog::record('karne_eklendi', "{$student?->full_name} için yeni gelişim karnesi oluşturuldu.", 'DevelopmentRecord', $record->id);

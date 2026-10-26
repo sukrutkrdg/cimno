@@ -43,10 +43,11 @@ trait ManagesStaff
             'per_lesson_rate' => $validated['per_lesson_rate'] ?? 0,
             'password' => Hash::make($plainPassword),
             'is_active' => true,
+            // collect_payment/view_expenses/view_reports buraya kasıtlı olarak eklenmiyor:
+            // User::hasPermission() bunları süper yönetici dışında herkes için hep false
+            // döndürür (mali işlemler yalnızca salon sahibine ait, bkz. o metod), bu yüzden
+            // burada true/false kaydetmek yalnızca yanıltıcı ve etkisiz veri üretirdi.
             'permissions' => [
-                'collect_payment' => $validated['role'] !== 'coach',
-                'view_expenses' => $validated['role'] === 'super_admin',
-                'view_reports' => $validated['role'] === 'super_admin',
                 'send_whatsapp' => $validated['role'] !== 'coach',
                 'edit_content' => $validated['role'] !== 'coach',
                 'only_own_groups' => $validated['role'] === 'coach',
@@ -94,10 +95,10 @@ trait ManagesStaff
             $role = $user->role;
         }
 
+        // collect_payment/view_expenses/view_reports kasıtlı olarak yok: User::hasPermission()
+        // bunları süper yönetici dışında herkes için hep false döndürür, bu formda da zaten
+        // karşılık gelen bir kutu yok (bkz. storeStaff'taki aynı not).
         $permissions = [
-            'collect_payment' => $request->boolean('perm_collect_payment'),
-            'view_expenses' => $request->boolean('perm_view_expenses'),
-            'view_reports' => $request->boolean('perm_view_reports'),
             'send_whatsapp' => $request->boolean('perm_send_whatsapp'),
             'edit_content' => $request->boolean('perm_edit_content'),
             'delete_student' => $request->boolean('perm_delete_student'),
