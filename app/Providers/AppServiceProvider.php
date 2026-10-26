@@ -33,8 +33,26 @@ class AppServiceProvider extends ServiceProvider
         // telefon numarasının PIN'i saatler içinde taranabilirdi. Bu limit asıl olarak
         // GÖNDERİLEN TELEFON NUMARASINA göre sınırlar (rotasyonlu IP'ler bunu aşamaz),
         // ayrıca tek bir IP'nin çok sayıda farklı telefon denemesine karşı ayrı bir tavan koyar.
+        //
+        // ÖNEMLİ: /mobil ve /qr-yoklama rotaları GET ile hem PIN girişini HEM DE giriş
+        // yapılmış velinin sekme gezinmesini (çocuklarım/aidat/karne/duyurular) aynı
+        // controller üzerinden yönetiyor. Sekme gezinirken phone/pin tekrar gönderilmez
+        // (oturumda tutulur), bu da isteği paylaşılan 'no-phone' kovasına düşürüyordu —
+        // bu kova TÜM ziyaretçiler arasında ortak ve 10 dakikada sadece 8 istekle
+        // sınırlıydı, yani birkaç kişinin normal sekme gezinmesi bile tüm siteyi
+        // kilitleyip herkese 429 "Too Many Requests" veriyordu. Bunu önlemek için
+        // limiter'ı sadece GERÇEK bir PIN deneme isteğinde (telefon VE pin birlikte
+        // gönderildiğinde) uyguluyoruz; sade sayfa görüntüleme/sekme gezinmesi
+        // sınırsız kalır.
         RateLimiter::for('pin-login', function (Request $request) {
-            $phone = preg_replace('/\D+/', '', (string) $request->input('phone'));
+            $inputPhone = $request->input('phone');
+            $inputPin = $request->input('pin');
+
+            if ($inputPhone === null || $inputPin === null) {
+                return Limit::none();
+            }
+
+            $phone = preg_replace('/\D+/', '', (string) $inputPhone);
             $phoneKey = $phone !== '' ? $phone : 'no-phone';
 
             return [

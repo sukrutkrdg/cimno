@@ -72,7 +72,7 @@ trait ManagesEventsAndDevelopment
         $student = Student::with('group')->find($validated['student_id']);
         $this->assertCoachOwnsGroup($student?->group_id);
 
-        DevelopmentRecord::create([
+        $record = DevelopmentRecord::create([
             'student_id' => $validated['student_id'],
             // Hangi antrenörün kaydettiği değil, öğrencinin GRUBUNUN atanmış
             // antrenörü — ilk bulunan rastgele antrenör değil.
@@ -92,6 +92,7 @@ trait ManagesEventsAndDevelopment
             'coach_comment' => $validated['coach_comment'],
         ]);
 
+        AuditLog::record('karne_eklendi', "{$student?->full_name} için yeni gelişim karnesi oluşturuldu.", 'DevelopmentRecord', $record->id);
         return redirect()->route('admin.index', ['tab' => 'gelisim'])->with('success', 'Öğrenci gelişim karnesi oluşturuldu ve veli ekranında yayınlandı!');
     }
 

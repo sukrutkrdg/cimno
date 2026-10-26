@@ -188,7 +188,7 @@ trait ManagesCms
             return back()->with('error', 'Lütfen bir fotoğraf dosyası yükleyin veya bir görsel linki girin.');
         }
 
-        GalleryItem::create([
+        $galleryItem = GalleryItem::create([
             'title' => $request->input('title'),
             'category' => $request->input('category', 'Antrenman'),
             'image_url' => $imageUrl,
@@ -196,6 +196,7 @@ trait ManagesCms
             'photo_consent_verified' => true,
         ]);
 
+        AuditLog::record('galeri_eklendi', "Galeriye yeni fotoğraf eklendi: '{$galleryItem->title}'.", 'GalleryItem', $galleryItem->id);
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Fotoğraf KVKK izin kontrolünden geçerek galeriye eklendi!');
     }
 
@@ -212,12 +213,15 @@ trait ManagesCms
             'category' => $request->input('category', $galleryItem->category),
             'image_url' => $uploadedUrl ?? $request->input('image_url', $galleryItem->image_url),
         ]);
+        AuditLog::record('galeri_guncellendi', "Galeri fotoğrafı güncellendi: '{$galleryItem->title}'.", 'GalleryItem', $galleryItem->id);
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Galeri fotoğrafı güncellendi!');
     }
 
     public function destroyGalleryItem(GalleryItem $galleryItem)
     {
+        $title = $galleryItem->title;
         $galleryItem->delete();
+        AuditLog::record('galeri_silindi', "Galeri fotoğrafı kaldırıldı: '{$title}'.");
         return redirect()->route('admin.index', ['tab' => 'site_icerigi'])->with('success', 'Fotoğraf galeriden kaldırıldı.');
     }
 

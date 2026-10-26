@@ -72,12 +72,13 @@ trait ManagesWhatsapp
             'recipient_phone' => 'required|string|max:30',
             'message_text' => 'required|string',
         ]);
-        WhatsappMessage::create([
+        $message = WhatsappMessage::create([
             'recipient_name' => $validated['recipient_name'] ?? 'Veli',
             'recipient_phone' => $validated['recipient_phone'],
             'message_text' => $validated['message_text'],
             'status' => 'queued',
         ]);
+        AuditLog::record('whatsapp_mesaj_eklendi', "{$message->recipient_name} için manuel WhatsApp mesajı kuyruğa eklendi.", 'WhatsappMessage', $message->id);
         return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', 'Yeni mesaj gönderim kuyruğuna eklendi!');
     }
 
@@ -134,7 +135,9 @@ trait ManagesWhatsapp
 
     public function destroyWhatsappMessage(WhatsappMessage $message)
     {
+        $recipientName = $message->recipient_name;
         $message->delete();
+        AuditLog::record('whatsapp_mesaj_silindi', "{$recipientName} için kuyruktaki WhatsApp mesajı silindi.");
         return redirect()->route('admin.index', ['tab' => 'mesajlar'])->with('success', 'WhatsApp kuyruk mesajı silindi.');
     }
 }
