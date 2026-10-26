@@ -282,6 +282,12 @@
                 mediaStream.getTracks().forEach(function (t) { t.stop(); });
                 mediaStream = null;
             }
+            // track.stop() yalnızca donanım erişimini (kamera göstergesini) serbest bırakır;
+            // <video> elementi temizlenmezse son kareyi donmuş halde göstermeyi sürdürür ve
+            // veliye kameranın hâlâ açık olduğu hissini verir. srcObject'i kaldırıp video'yu
+            // duraklatmak, canlı görüntünün görsel olarak da anında kaybolmasını sağlar.
+            video.pause();
+            video.srcObject = null;
             overlay.classList.add('hidden');
             overlay.classList.remove('flex');
         }
@@ -321,6 +327,13 @@
                 mediaStream.getTracks().forEach(function (t) { t.stop(); });
                 mediaStream = null;
             }
+            // Kamera donanımı track.stop() ile hemen kapanır, ama <video> elementi
+            // temizlenmezse okuma anındaki son kareyi donmuş halde göstermeyi sürdürür —
+            // veliye "kamera hâlâ açık" gibi görünür. Canlı görüntüyü hemen gizleyip
+            // yerine (zaten ✅ durum mesajını üstünde taşıyan) katmanın siyah zeminini
+            // göstermek için video'yu duraklat ve kaynağını kaldır.
+            video.pause();
+            video.srcObject = null;
             submitPendingCheckins();
         }
 
