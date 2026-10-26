@@ -44,7 +44,17 @@
         };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* İki QR kodu aynı sayfada yan yana basılırsa, telefon kamerası salon
+           girişinde yoklama QR'ını okutmaya çalışırken yakındaki mobil uygulama
+           QR'ını da görüp önce onu geçersiz sayıp reddedebiliyor. Yazdırırken bu
+           iki kartı ayrı sayfalara düşürüp farklı yerlere (ör. kapı girişi ve
+           danışma bankosu) asılmasını sağlıyoruz — aynı anda kamerada görünmezler. */
+        @media print {
+            .qr-print-page-break { break-after: page; page-break-after: always; }
+        }
+    </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 p-6 print:bg-white transition-colors">
     <div class="max-w-4xl mx-auto print:hidden flex justify-end mb-3">
@@ -61,18 +71,21 @@
             Salon Giriş QR Yoklama & Mobil Uygulama Kısayolu
         </h1>
         <p class="text-sm text-slate-600 dark:text-slate-400 print:text-slate-600 max-w-2xl mx-auto">
-            Bu afişi salon girişine veya danışma bankosuna asabilirsiniz. Veliler telefon kamerasıyla QR kodu okutarak hem <strong>günlük ders yoklamasını</strong> yapabilir hem de <strong>mobil kısayolu</strong> telefon ekranlarına ekleyebilirler.
+            Veliler telefon kamerasıyla QR kodu okutarak hem <strong>günlük ders yoklamasını</strong> yapabilir hem de <strong>mobil kısayolu</strong> telefon ekranlarına ekleyebilirler.
         </p>
+        <div class="max-w-xl mx-auto p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 print:bg-amber-50 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300 print:text-amber-900 text-left print:hidden">
+            ⚠️ <strong>Yazdırırken iki kart ayrı sayfaya düşer</strong> — bu bilerek böyle: aynı yerde yan yana asılırsa telefon kamerası yoklama QR'ını okurken yanındaki mobil uygulama QR'ını da görüp önce onu "geçersiz" diye reddedebiliyor. Sayfaları kesip <strong>farklı yerlere asın</strong> (ör. yoklama QR'ı kapı girişine göz hizasında, mobil uygulama QR'ı danışma bankosuna).
+        </div>
 
-        <!-- İki Yönlü QR Kod Kartları -->
-        <div class="grid md:grid-cols-2 gap-6 pt-2">
-            <!-- 1. Salon Giriş QR Yoklama -->
-            <div class="p-6 rounded-3xl border-2 border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 print:bg-emerald-50/40 space-y-3">
-                <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-extrabold uppercase">Her Ders Girişinde Okutun</span>
-                <h2 class="text-xl font-extrabold text-emerald-950 dark:text-emerald-300 print:text-emerald-950">📷 1. Salon Giriş QR Yoklama</h2>
+        <!-- İki Yönlü QR Kod Kartları: her biri kendi yazdırma sayfasında, birbirinden ayrı asılmak üzere -->
+        <div class="space-y-6 pt-2">
+            <!-- 1. Salon Giriş QR Yoklama (günlük kullanım — büyük ve baskın) -->
+            <div class="qr-print-page-break p-8 rounded-3xl border-2 border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 print:bg-emerald-50/40 space-y-3">
+                <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-extrabold uppercase">Her Ders Girişinde Okutun — Kapı Girişine Asın</span>
+                <h2 class="text-2xl font-extrabold text-emerald-950 dark:text-emerald-300 print:text-emerald-950">📷 Salon Giriş QR Yoklama</h2>
                 <p class="text-xs text-slate-600 dark:text-slate-400 print:text-slate-600">Salona geldiğinizde kameranızla okutun ve tek dokunuşla <strong>"✅ Salona Geldi"</strong> yoklamasını onaylayın.</p>
-                <div class="inline-block p-4 bg-white print:bg-white rounded-2xl border border-emerald-200 shadow-sm">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode(url('/qr-yoklama?kaynak=afis')) }}" alt="QR Yoklama" class="w-48 h-48 mx-auto">
+                <div class="inline-block p-5 bg-white print:bg-white rounded-2xl border border-emerald-200 shadow-sm">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={{ urlencode(url('/qr-yoklama?kaynak=afis')) }}" alt="QR Yoklama" class="w-64 h-64 mx-auto">
                     <span class="block text-[11px] font-mono font-bold text-emerald-700 mt-2">{{ url('/qr-yoklama') }}</span>
                 </div>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400 print:text-slate-500">📱 Veli ekranındaki <strong>"Kamerayı Aç ve Salon QR Afişini Okut"</strong> butonuyla bu afişi doğrudan uygulama içinden okutabilirsiniz.</p>
@@ -83,10 +96,10 @@
                 </div>
             </div>
 
-            <!-- 2. Mobil Uygulama Ana Ekran Kısayolu -->
+            <!-- 2. Mobil Uygulama Ana Ekran Kısayolu (tek seferlik kurulum — başka bir yere asılır) -->
             <div class="p-6 rounded-3xl border-2 border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/30 print:bg-indigo-50/40 space-y-3">
-                <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-extrabold uppercase">Telefonunuza 1 Kez Ekleyin</span>
-                <h2 class="text-xl font-extrabold text-indigo-950 dark:text-indigo-300 print:text-indigo-950">📲 2. Mobil Uygulama Kısayolu</h2>
+                <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-extrabold uppercase">Telefonunuza 1 Kez Ekleyin — Danışma Bankosuna Asın</span>
+                <h2 class="text-xl font-extrabold text-indigo-950 dark:text-indigo-300 print:text-indigo-950">📲 Mobil Uygulama Kısayolu</h2>
                 <p class="text-xs text-slate-600 dark:text-slate-400 print:text-slate-600">Ders programı, aidat makbuzları ve gelişim karnesi için okutup <strong>"Ana Ekrana Ekle"</strong> deyin.</p>
                 <div class="inline-block p-4 bg-white print:bg-white rounded-2xl border border-indigo-200 shadow-sm">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode(url('/mobil')) }}" alt="Mobil Uygulama QR" class="w-48 h-48 mx-auto">
