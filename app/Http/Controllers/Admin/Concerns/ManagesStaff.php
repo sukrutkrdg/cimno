@@ -109,7 +109,10 @@ trait ManagesStaff
 
         $updateData = [
             'role' => $role,
-            'is_active' => $request->boolean('is_active', true),
+            // boolean() ikinci argümansız: checkbox işaretsizse formda hiç gönderilmez,
+            // varsayılan true verilirse "pasife al" kutusunun işareti kaldırılıp
+            // kaydedilince hesap hep aktif kalırdı (bkz. NavMenuItem'daki aynı düzeltme).
+            'is_active' => $request->boolean('is_active'),
             'permissions' => $permissions,
         ];
 

@@ -51,7 +51,10 @@ trait ManagesWhatsapp
             'send_time' => $request->input('send_time', $template->send_time),
             'days_offset' => (int) $request->input('days_offset', $template->days_offset),
             'message_template' => $request->input('message_template', $template->message_template),
-            'is_active' => $request->boolean('is_active', true),
+            // boolean() ikinci argümansız: "Kural Aktif" kutusu işaretsiz gönderilince
+            // formda hiç yer almaz; varsayılan true verilirse pasife alma hiç çalışmazdı
+            // (bkz. NavMenuItem/staff is_active'taki aynı düzeltme).
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         AuditLog::record('whatsapp_sablon_guncellendi', "WhatsApp hazır cevap şablonu güncellendi: {$template->title} ({$template->shortcut})", 'WhatsappTemplate', $template->id);
