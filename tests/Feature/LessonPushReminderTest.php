@@ -74,9 +74,10 @@ class LessonPushReminderTest extends TestCase
             'role' => 'coach', 'compensation_type' => 'none', 'password' => Hash::make('x'), 'is_active' => true,
         ]);
         $group = Group::create(['branch_id' => $branch->id, 'coach_id' => $coach->id, 'name' => 'Push Grubu 2', 'capacity' => 10, 'is_active' => true]);
-        // Varsayılan hatırlatma parametresi artık 60 dk (1 saat kala), pencere
-        // genişliği 15 dk — bu yüzden ders +52 dk'ya ayarlanır (45-60 dk aralığının
-        // ortası), eski sabit 20-35 dk penceresindeki +28 dk yerine.
+        // Varsayılan hatırlatma parametresi 60 dk (1 saat kala), pencere
+        // genişliği 30 dk (iki tetikleme aralığı, cron atlamalarına karşı
+        // toleranslı) — bu yüzden ders +52 dk'ya ayarlanır (30-60 dk aralığının
+        // içinde), eski sabit 20-35 dk penceresindeki +28 dk yerine.
         $schedule = Schedule::create(['group_id' => $group->id, 'day_of_week' => $todayName, 'start_time' => now()->addMinutes(52)->format('H:i:s'), 'end_time' => now()->addMinutes(82)->format('H:i:s'), 'area' => 'Ana Minder']);
 
         $dedupKey = 'push-ders-' . $schedule->id . '-' . today()->toDateString();
@@ -105,8 +106,8 @@ class LessonPushReminderTest extends TestCase
             'role' => 'coach', 'compensation_type' => 'none', 'password' => Hash::make('x'), 'is_active' => true,
         ]);
         $group = Group::create(['branch_id' => $branch->id, 'coach_id' => $coach->id, 'name' => 'Push Grubu 3', 'capacity' => 10, 'is_active' => true]);
-        // 30 dk ayarıyla pencere 15-30 dk arası olur; +22 dk bu aralıkta, eski
-        // varsayılan (45-60 dk) ile YAKALANMAZDI — ayarın gerçekten okunduğunu kanıtlar.
+        // 30 dk ayarıyla pencere 0-30 dk arası olur; +22 dk bu aralıkta, eski
+        // varsayılan (30-60 dk) ile YAKALANMAZDI — ayarın gerçekten okunduğunu kanıtlar.
         Schedule::create(['group_id' => $group->id, 'day_of_week' => $todayName, 'start_time' => now()->addMinutes(22)->format('H:i:s'), 'end_time' => now()->addMinutes(52)->format('H:i:s'), 'area' => 'Ana Minder']);
         $student = Student::create(['full_name' => 'Push Öğrenci 3', 'branch_id' => $branch->id, 'group_id' => $group->id, 'parent_name' => 'Veli', 'parent_phone' => '5330001133', 'status' => 'active']);
         PushSubscription::create(['parent_phone' => '5330001133', 'endpoint' => 'https://fcm.googleapis.com/fcm/send/configurable-window', 'public_key' => 'k', 'auth_token' => 'a']);

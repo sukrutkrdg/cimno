@@ -260,12 +260,17 @@ Artisan::command('enerjik:ders-bildirimi-gonder', function () {
     // Hatırlatmanın dersten kaç dakika önce atılacağı artık kod içinde sabit
     // değil — yönetim panelinden (Ayarlar) ayarlanabilir bir parametre
     // ("lesson_reminder_minutes_before", varsayılan 60 = 1 saat). Bu komut
-    // her 15 dakikada bir çalıştığından pencere de 15 dakika genişliğinde
-    // tutulur: "N dakika kala" ile "N-15 dakika kala" arasında başlayan
-    // dersler bu çalıştırmada yakalanır, bir sonraki 15 dakikalık
-    // tetiklemeye kadar hiçbir ders aralıkta gözden kaçmaz.
+    // her 15 dakikada bir çalışacak şekilde zamanlanmış olsa da, paylaşımlı
+    // hosting'te cron'un tam o 15 dakikalık işaretlerde (saat :00/:15/:30/:45)
+    // çalıştığının garantisi yok — canlıda bir kontrolün tamamen atlandığı
+    // (hiç tetiklenmediği) gözlemlendi. Pencere sadece 15 dakika genişlikte
+    // olursa, atlanan bir kontrole denk gelen ders kalıcı olarak kaçırılır.
+    // Pencereyi 30 dakikaya çıkarmak (iki tetikleme aralığı), aynı dersin en
+    // az iki ayrı kontrolde yakalanmasını garanti eder; tek bir kontrol
+    // atlansa bile diğeri yakalar. Dedup önbelleği zaten aynı dersin iki kez
+    // gönderilmesini engelliyor.
     $reminderMinutes = max(5, (int) (SiteSetting::where('key', 'lesson_reminder_minutes_before')->value('value') ?? 60));
-    $windowStart = now()->addMinutes(max(0, $reminderMinutes - 15));
+    $windowStart = now()->addMinutes(max(0, $reminderMinutes - 30));
     $windowEnd = now()->addMinutes($reminderMinutes);
     $todayDate = today()->toDateString();
 
@@ -278,7 +283,7 @@ Artisan::command('enerjik:ders-bildirimi-gonder', function () {
         });
 
     if ($upcoming->isEmpty()) {
-        $this->info('20-35 dakika içinde başlayacak ders bulunamadı.');
+        $this->info('Pencere içinde başlayacak ders bulunamadı.');
         return self::SUCCESS;
     }
 
