@@ -249,8 +249,11 @@
                         @if($sekme === 'cocuklarim' || $sekme === 'karne')
                             <!-- Gelişim Karnesi -->
                             @foreach($st->developmentRecords as $dev)
-                                <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs">
-                                    <div class="font-extrabold text-amber-950 dark:text-amber-300">🏅 {{ $dev->term_label }} ({{ $dev->current_level }})</div>
+                                <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 border-l-4 border-l-amber-400 text-xs">
+                                    <div class="flex justify-between items-start gap-2">
+                                        <div class="font-extrabold text-amber-950 dark:text-amber-300">🏅 {{ $dev->term_label }} ({{ $dev->current_level }})</div>
+                                        <span class="shrink-0 text-[10px] font-semibold text-amber-700/70 dark:text-amber-400/70">{{ $dev->created_at->format('d.m.Y') }}</span>
+                                    </div>
                                     <div class="grid grid-cols-4 gap-1 text-center my-2 text-[11px]">
                                         <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Esn: <strong>{{ $dev->flexibility_score }}</strong></div>
                                         <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Kuv: <strong>{{ $dev->strength_score }}</strong></div>

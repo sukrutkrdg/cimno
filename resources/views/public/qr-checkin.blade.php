@@ -152,7 +152,7 @@
                         <div>
                             <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">{{ $st->branch?->name }} · {{ $st->group?->name }}</span>
                             <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">🤸 {{ $st->full_name }}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Antrenör: {{ $st->group?->coach?->name ?? '-' }} · Telafi Hakkı: <strong>{{ $st->makeup_credits }} Ders</strong></p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Antrenör: {{ $st->group?->coach?->name ?? '-' }}@if($st->makeup_credits > 0) · Telafi Hakkı: <strong>{{ $st->makeup_credits }} Ders</strong>@endif</p>
                         </div>
                         @if($todayAtt)
                             <span class="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs font-extrabold">
@@ -193,7 +193,7 @@
 
         <!-- Bugün QR ile Salona Giriş Yapan Son Sporcular -->
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
-            <h3 class="text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 mb-2.5">🟢 Bugün Yoklaması Alınan Sporcular</h3>
+            <h3 class="text-[11px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 mb-2.5">🟢 Bugün Yoklaması Alınan Sporcular</h3>
             <div class="space-y-1.5">
                 @forelse($todayCheckins as $chk)
                     <div class="flex justify-between items-center text-xs py-1.5 px-2.5 rounded-lg bg-slate-50 dark:bg-slate-800">
