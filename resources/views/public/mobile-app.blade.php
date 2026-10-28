@@ -171,7 +171,7 @@
                     <h2 class="text-sm font-extrabold mt-1">📷 Salona Geldiniz mi? QR Yoklama</h2>
                     <p class="text-[11px] text-emerald-100">Salona girişte tek dokunuşla bugünkü ders yoklamasını onaylayın.</p>
                 </div>
-                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone, 'kamera' => 1]) }}" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow">
+                <a href="{{ route('public.qr.checkin', ['kamera' => 1]) }}" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-white text-emerald-900 font-extrabold text-xs shadow">
                     📷 Kamerayı Aç
                 </a>
             </div>
@@ -316,30 +316,7 @@
 
     <!-- Alt Mobil Uygulama Navigasyon Barı (Yalnız Veli Menüsü) -->
     @if($activePhone && $students->isNotEmpty())
-        <nav class="fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 shadow-lg">
-            <div class="max-w-lg mx-auto grid grid-cols-5 text-center py-2">
-                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'cocuklarim']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'cocuklarim' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                    <span class="text-lg">🤸</span>
-                    <span class="text-[11px]">Öğrencim</span>
-                </a>
-                <a href="{{ route('public.qr.checkin', ['phone' => $activePhone, 'kamera' => 1]) }}" class="flex flex-col items-center gap-0.5 text-emerald-600 font-extrabold">
-                    <span class="text-lg">📷</span>
-                    <span class="text-[11px]">QR Yoklama</span>
-                </a>
-                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'aidat']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'aidat' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                    <span class="text-lg">💳</span>
-                    <span class="text-[11px]">Aidat & Makbuz</span>
-                </a>
-                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'karne']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'karne' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                    <span class="text-lg">🏅</span>
-                    <span class="text-[11px]">Gelişim Karnesi</span>
-                </a>
-                <a href="{{ route('public.mobile.pwa', ['phone' => $activePhone, 'sekme' => 'duyurular']) }}" class="flex flex-col items-center gap-0.5 {{ $sekme === 'duyurular' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-                    <span class="text-lg">📢</span>
-                    <span class="text-[11px]">Duyurular</span>
-                </a>
-            </div>
-        </nav>
+        @include('public.partials._bottom_nav', ['activeTab' => $sekme])
     @endif
 
     <script>

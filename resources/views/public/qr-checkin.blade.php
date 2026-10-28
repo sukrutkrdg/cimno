@@ -224,23 +224,10 @@
     </div>
     <canvas id="qrScanCanvas" class="hidden"></canvas>
 
-    <!-- Alt Mobil Bar -->
-    <nav class="fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 shadow-lg">
-        <div class="max-w-lg mx-auto grid grid-cols-3 text-center py-2">
-            <a href="{{ route('public.mobile.pwa', ['rol' => 'veli', 'phone' => $phone]) }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
-                <span class="text-lg">👨‍👩‍👧</span>
-                <span class="text-[11px]">Veli Ekranı</span>
-            </a>
-            <a href="{{ route('public.qr.checkin', ['phone' => $phone]) }}" class="flex flex-col items-center gap-0.5 text-emerald-600 font-extrabold">
-                <span class="text-lg">📷</span>
-                <span class="text-[11px]">QR Yoklama</span>
-            </a>
-            <a href="{{ route('public.mobile.pwa', ['rol' => 'antrenor']) }}" class="flex flex-col items-center gap-0.5 text-slate-500 font-semibold">
-                <span class="text-lg">🎽</span>
-                <span class="text-[11px]">Antrenör</span>
-            </a>
-        </div>
-    </nav>
+    <!-- Alt Mobil Bar: mobile-app.blade.php ile birebir aynı, paylaşılan partial (bkz. partials/_bottom_nav.blade.php). -->
+    @if($students->isNotEmpty())
+        @include('public.partials._bottom_nav', ['activeTab' => 'qr'])
+    @endif
 
     <script>
         // Veli telefon numarasını tarayıcı hafızasında tut, her gelişte tekrar yazmasın!

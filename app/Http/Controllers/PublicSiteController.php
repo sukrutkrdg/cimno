@@ -117,11 +117,15 @@ class PublicSiteController extends Controller
             return redirect()->route('public.mobile.pwa');
         }
 
-        // Telefon + PIN formdan geldiyse doğrula ve oturuma yaz
+        // Telefon + PIN formdan geldiyse doğrula ve oturuma yaz. İkisi de birlikte
+        // gelmediyse bu bir giriş denemesi SAYILMAZ — aksi hâlde (örn. paylaşılan alt
+        // navigasyon barından "phone" query param'ı tek başına geldiğinde) zaten oturumu
+        // açık olan veliye "PIN girin" hatası yanlışlıkla gösterilirdi (bkz.
+        // qrCheckinPage()'deki aynı $queryPhone/$queryPin birlikte kontrolü).
         $inputPhone = $request->input('phone');
         $loginError = null;
 
-        if ($inputPhone !== null) {
+        if ($inputPhone !== null && $request->has('pin')) {
             $cleanInput = Phone::normalize($inputPhone);
             $cleanPin = preg_replace('/\D+/', '', (string) $request->input('pin'));
 
