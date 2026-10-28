@@ -372,7 +372,14 @@
             }
 
             statusEl.textContent = '🎉 Yoklamanız alındı! Sayfa yenileniyor...';
-            setTimeout(function () { window.location.reload(); }, 1200);
+            // Sayfaya "?kamera=1" ile gelinmiş olabilir (alt menüdeki QR kısayolu bunu
+            // ekliyor). Düz window.location.reload() bu parametreyi URL'de bırakır, bu
+            // da yenilenen sayfada alttaki otomatik-aç script'inin kamerayı bir daha
+            // (gereksiz yere) açmasına yol açıyordu. Yenilemeden önce parametreyi
+            // temizleyerek bu kısır döngüyü engelliyoruz.
+            const reloadUrl = new URL(window.location.href);
+            reloadUrl.searchParams.delete('kamera');
+            setTimeout(function () { window.location.href = reloadUrl.toString(); }, 1200);
         }
 
         if (openBtn) openBtn.addEventListener('click', openScanner);
