@@ -11,15 +11,18 @@
     yeni bir sekme eklenecekse SADECE burası güncellenir.
 
     Beklenen değişken:
-    - $activeTab: 'cocuklarim' | 'aidat' | 'karne' | 'duyurular' | 'qr'
+    - $activeTab: 'cocuklarim' | 'karne' | 'duyurular' | 'qr'
       ('qr' değeri yalnızca qr-checkin.blade.php'den gelir ve o an zaten
       /qr-yoklama sayfasında olunduğunu belirtir.)
+
+    Not: "Aidat & Makbuz" sekmesi salon sahibinin isteğiyle kaldırıldı — veli
+    ekranında artık borç/ödeme durumu ve makbuz hiç gösterilmiyor.
 --}}
 @php
     $isOnQrPage = $activeTab === 'qr';
 @endphp
 <nav class="fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 shadow-lg">
-    <div class="max-w-lg mx-auto grid grid-cols-5 text-center py-2">
+    <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2">
         <a href="{{ route('public.mobile.pwa', ['sekme' => 'cocuklarim']) }}" class="flex flex-col items-center gap-0.5 {{ $activeTab === 'cocuklarim' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
             <span class="text-lg">🤸</span>
             <span class="text-[11px]">Öğrencim</span>
@@ -38,10 +41,6 @@
             </a>
         @endif
 
-        <a href="{{ route('public.mobile.pwa', ['sekme' => 'aidat']) }}" class="flex flex-col items-center gap-0.5 {{ $activeTab === 'aidat' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
-            <span class="text-lg">💳</span>
-            <span class="text-[11px]">Aidat & Makbuz</span>
-        </a>
         <a href="{{ route('public.mobile.pwa', ['sekme' => 'karne']) }}" class="flex flex-col items-center gap-0.5 {{ $activeTab === 'karne' ? 'text-indigo-600 font-extrabold' : 'text-slate-500 font-semibold' }}">
             <span class="text-lg">🏅</span>
             <span class="text-[11px]">Gelişim Karnesi</span>

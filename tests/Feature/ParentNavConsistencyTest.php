@@ -43,13 +43,13 @@ class ParentNavConsistencyTest extends TestCase
         $mobil = $this->withSession($session)->get('/mobil')->assertOk();
         $qr = $this->withSession($session)->get('/qr-yoklama')->assertOk();
 
-        foreach (['Öğrencim', 'QR Yoklama', 'Aidat & Makbuz', 'Gelişim Karnesi', 'Duyurular'] as $label) {
+        foreach (['Öğrencim', 'QR Yoklama', 'Gelişim Karnesi', 'Duyurular'] as $label) {
             $mobil->assertSee($label, false);
             $qr->assertSee($label, false);
         }
 
         // Önceden /qr-yoklama'da hiç bulunmayan, /mobil'e özel sekmeler artık her ikisinde de var.
-        $qr->assertSee('Gelişim Karnesi')->assertSee('Duyurular')->assertSee('Aidat & Makbuz', false);
+        $qr->assertSee('Gelişim Karnesi')->assertSee('Duyurular');
 
         // Önceki /qr-yoklama menüsüne özel, /mobil'de karşılığı olmayan nav sekmesi artık
         // hiçbir yerde yok ("Antrenör" metni antrenör adı etiketi olarak başka yerde geçerli
@@ -60,8 +60,8 @@ class ParentNavConsistencyTest extends TestCase
 
     public function test_bottom_nav_is_hidden_on_both_pages_when_the_parent_is_not_logged_in(): void
     {
-        $this->get('/mobil')->assertOk()->assertDontSee('Gelişim Karnesi')->assertDontSee('Aidat & Makbuz', false);
-        $this->get('/qr-yoklama')->assertOk()->assertDontSee('Gelişim Karnesi')->assertDontSee('Aidat & Makbuz', false);
+        $this->get('/mobil')->assertOk()->assertDontSee('Gelişim Karnesi')->assertDontSee('Duyurular');
+        $this->get('/qr-yoklama')->assertOk()->assertDontSee('Gelişim Karnesi')->assertDontSee('Duyurular');
     }
 
     public function test_active_tab_highlighting_reflects_which_page_the_parent_is_actually_on(): void

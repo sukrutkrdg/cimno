@@ -160,7 +160,6 @@ class PublicSiteController extends Controller
                 'package',
                 'discountRule',
                 'attendances' => fn($q) => $q->latest('attendance_date')->take(10),
-                'invoices.payments',
                 'developmentRecords.coach',
             ])->where(function ($q) use ($cleanPhone) {
                 $q->where('parent_phone', $cleanPhone)
@@ -168,7 +167,9 @@ class PublicSiteController extends Controller
             })->where('portal_pin', $activePin)->get();
         }
 
-        $sekme = $request->query('sekme', 'cocuklarim'); // cocuklarim, aidat, karne, duyurular
+        // Salon sahibinin isteğiyle "aidat" sekmesi kaldırıldı — veli ekranında
+        // artık borç/ödeme durumu hiç gösterilmiyor (bkz. mobile-app.blade.php).
+        $sekme = $request->query('sekme', 'cocuklarim'); // cocuklarim, karne, duyurular
         $announcements = Announcement::whereIn('target_audience', ['all', 'parents'])->latest()->take(6)->get();
 
         $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];

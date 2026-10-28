@@ -11,6 +11,19 @@
                 </div>
 
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <h3 class="text-base font-extrabold mb-3">🔔 Ders Saati Yaklaşıyor Bildirimi</h3>
+                    <p class="text-xs text-slate-500 mb-3">Veli ekranındaki "Bildirimler" aboneliği olan veliye, dersten kaç dakika önce Web Push hatırlatması gönderileceğini belirler. Sunucu her 15 dakikada bir kontrol ettiğinden, çok küçük değerler (5 dk gibi) bazen bir sonraki kontrole kadar atlanabilir.</p>
+                    <form action="{{ route('admin.settings.update') }}" method="POST" class="flex flex-wrap items-end gap-2.5 text-xs">
+                        @csrf
+                        <div>
+                            <label class="font-bold block mb-1">Dersten Kaç Dakika Önce</label>
+                            <input type="number" name="lesson_reminder_minutes_before" value="{{ $settings['lesson_reminder_minutes_before'] ?? 60 }}" min="15" step="5" class="w-32 border rounded-xl px-3 py-2 font-bold">
+                        </div>
+                        <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold">💾 Kaydet</button>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                     <h3 class="text-base font-extrabold mb-3">🛡️ İşlem Günlüğü (Audit Logs - Kritik İşlem Kayıtları)</h3>
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-50 border-b text-slate-600 uppercase">

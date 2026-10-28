@@ -4,6 +4,7 @@ use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\PushSubscription;
 use App\Models\Schedule as LessonSchedule;
+use App\Models\SiteSetting;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WhatsappMessage;
@@ -256,8 +257,16 @@ Artisan::command('enerjik:ders-bildirimi-gonder', function () {
         return self::SUCCESS;
     }
 
-    $windowStart = now()->addMinutes(20);
-    $windowEnd = now()->addMinutes(35);
+    // Hatırlatmanın dersten kaç dakika önce atılacağı artık kod içinde sabit
+    // değil — yönetim panelinden (Ayarlar) ayarlanabilir bir parametre
+    // ("lesson_reminder_minutes_before", varsayılan 60 = 1 saat). Bu komut
+    // her 15 dakikada bir çalıştığından pencere de 15 dakika genişliğinde
+    // tutulur: "N dakika kala" ile "N-15 dakika kala" arasında başlayan
+    // dersler bu çalıştırmada yakalanır, bir sonraki 15 dakikalık
+    // tetiklemeye kadar hiçbir ders aralıkta gözden kaçmaz.
+    $reminderMinutes = max(5, (int) (SiteSetting::where('key', 'lesson_reminder_minutes_before')->value('value') ?? 60));
+    $windowStart = now()->addMinutes(max(0, $reminderMinutes - 15));
+    $windowEnd = now()->addMinutes($reminderMinutes);
     $todayDate = today()->toDateString();
 
     $upcoming = LessonSchedule::with('group')
@@ -342,6 +351,6 @@ Artisan::command('enerjik:ders-bildirimi-gonder', function () {
 
     $this->info("{$queued} push bildirimi gönderildi.");
     return self::SUCCESS;
-})->purpose('20-35 dakika içinde başlayacak derslerin velilerine Web Push "ders saati yaklaşıyor" bildirimi gönderir');
+})->purpose('Ayarlardaki "dersten kaç dakika önce" parametresine göre yaklaşan derslerin velilerine Web Push bildirimi gönderir');
 
 Schedule::command('enerjik:ders-bildirimi-gonder')->everyFifteenMinutes();

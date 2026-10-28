@@ -114,7 +114,7 @@
                     </span>
                     <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">👨‍👩‍👧 Veli Girişi</h2>
                     <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız ve 4 haneli PIN kodunuz</strong> WhatsApp ile tarafınıza gönderilir. Bu ikisini birlikte girerek öğrencinizin ders programını, yoklamasını, aidat durumunu ve gelişim karnesini görüntüleyebilirsiniz.
+                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız ve 4 haneli PIN kodunuz</strong> WhatsApp ile tarafınıza gönderilir. Bu ikisini birlikte girerek öğrencinizin ders programını, yoklamasını ve gelişim karnesini görüntüleyebilirsiniz.
                     </p>
                 </div>
 
@@ -240,31 +240,6 @@
                                     @empty
                                         <p class="text-xs text-slate-400 col-span-2">Henüz yoklama kaydı bulunmuyor.</p>
                                     @endforelse
-                                </div>
-                            </div>
-                        @endif
-
-                        @if($sekme === 'cocuklarim' || $sekme === 'aidat')
-                            <!-- Ödeme ve Dijital Makbuzlar -->
-                            <div>
-                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">💳 Aidat Durumu & Dijital Makbuzlar</h3>
-                                <div class="space-y-2">
-                                    @foreach($st->invoices as $inv)
-                                        <div class="p-3 rounded-xl border {{ $inv->remaining_amount > 0 ? 'bg-rose-50/60 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900' : 'bg-emerald-50/50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900' }}">
-                                            <div class="flex justify-between items-center">
-                                                <span class="font-bold text-xs">{{ $inv->period_label }}</span>
-                                                <span class="text-xs font-extrabold {{ $inv->remaining_amount > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400' }}">
-                                                    {{ $inv->remaining_amount > 0 ? 'Kalan: ' . number_format($inv->remaining_amount, 0, ',', '.') . ' ₺' : '✅ Ödendi' }}
-                                                </span>
-                                            </div>
-                                            @foreach($inv->payments as $pay)
-                                                <div class="mt-2 pt-2 border-t border-slate-200/70 dark:border-slate-700 flex justify-between items-center text-[11px]">
-                                                    <span>🧾 {{ $pay->receipt_no }} ({{ number_format($pay->amount, 0, ',', '.') }} ₺)</span>
-                                                    <a href="{{ $pay->receiptUrl() }}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold">Makbuz PDF</a>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endforeach
                                 </div>
                             </div>
                         @endif
