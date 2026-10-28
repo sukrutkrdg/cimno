@@ -133,6 +133,12 @@ trait ManagesFinance
             }
             $net = max(0, $gross - $disc);
 
+            // Her öğrencinin kendi "ödeme günü" (billing_day, 1-28) kaydında ayarlanabilir;
+            // gelecek ayın o günü vade tarihi olur. Eskiden herkes için sabit "gelecek ayın
+            // 1'i" kullanılıyordu, billing_day hiç okunmuyordu.
+            $billingDay = max(1, min(28, (int) ($st->billing_day ?: 1)));
+            $dueDate = now()->startOfMonth()->addMonth()->addDays($billingDay - 1)->toDateString();
+
             Invoice::create([
                 'student_id' => $st->id,
                 'package_id' => $st->package_id,
@@ -142,7 +148,7 @@ trait ManagesFinance
                 'net_amount' => $net,
                 'paid_amount' => 0,
                 'remaining_amount' => $net,
-                'due_date' => now()->startOfMonth()->addMonth()->toDateString(),
+                'due_date' => $dueDate,
                 'status' => 'unpaid',
             ]);
             $createdCount++;

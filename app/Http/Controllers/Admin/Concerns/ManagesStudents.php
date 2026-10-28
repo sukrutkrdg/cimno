@@ -38,6 +38,8 @@ trait ManagesStudents
             'medical_report_expires_at' => 'nullable|date',
             'license_no' => 'nullable|string|max:60',
             'uniform_size' => 'nullable|string|max:40',
+            'registration_date' => 'nullable|date',
+            'billing_day' => 'nullable|integer|min:1|max:28',
             'initial_payment_amount' => 'nullable|numeric|min:0',
             'cash_account_id' => 'nullable|exists:cash_accounts,id',
         ]);
@@ -75,6 +77,8 @@ trait ManagesStudents
                 'medical_report_expires_at' => $validated['medical_report_expires_at'] ?? now()->addYear()->toDateString(),
                 'license_no' => $validated['license_no'] ?? null,
                 'uniform_size' => $validated['uniform_size'] ?? null,
+                'registration_date' => $validated['registration_date'] ?? now()->toDateString(),
+                'billing_day' => $validated['billing_day'] ?? 1,
                 'status' => 'active',
                 // HTML checkbox'lar işaretlenmediğinde hiç gönderilmez; varsayılanı true
                 // yapmak, personelin kutuyu işaretlemeyi unutmasını "rıza verildi" olarak
@@ -172,6 +176,8 @@ trait ManagesStudents
             'status' => 'nullable|in:active,frozen,left,waiting_list',
             'parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
             'secondary_parent_phone' => ['nullable', 'string', new ValidPhoneNumber],
+            'registration_date' => 'nullable|date',
+            'billing_day' => 'nullable|integer|min:1|max:28',
         ]);
         if ($request->filled('group_id')) {
             $this->assertCoachOwnsGroup((int) $request->input('group_id'));
@@ -198,6 +204,8 @@ trait ManagesStudents
             'makeup_credits' => (int) $request->input('makeup_credits', $student->makeup_credits),
             'medical_report_expires_at' => $request->input('medical_report_expires_at') ?: $student->medical_report_expires_at,
             'health_notes' => $request->input('health_notes', $student->health_notes),
+            'registration_date' => $request->input('registration_date') ?: $student->registration_date,
+            'billing_day' => $request->input('billing_day') ?: $student->billing_day,
             'kvkk_consent' => $request->boolean('kvkk_consent', $student->kvkk_consent),
             'health_data_consent' => $request->boolean('health_data_consent', $student->health_data_consent),
             'photo_consent' => $request->boolean('photo_consent', $student->photo_consent),

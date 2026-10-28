@@ -74,6 +74,34 @@ trait ManagesAttendance
         return redirect()->route('admin.index', ['tab' => 'yoklama'])->with('success', 'Grup yoklaması kaydedildi, telafi hakları güncellendi ve devamsızlık uyarıları WhatsApp kuyruğuna eklendi.');
     }
 
+    // Yoklama anında gözden kaçan ya da sonradan veliden gelen rapor/izin bilgisiyle
+    // düzeltilmesi gereken bir kayıt için (ör. "Gelmedi" → "Raporlu" yapıp telafi hakkı
+    // kazandırmak) tek kaydı güncelleme; eskiden bunun tek yolu grubun o güne ait TÜM
+    // yoklamasını yeniden göndermekti — tek öğrenciyi düzeltirken yanlışlıkla aynı
+    // günün diğer öğrencilerini de ezme riski taşıyordu.
+    public function updateAttendance(Request $request, Attendance $attendance)
+    {
+        $this->assertCoachOwnsGroup($attendance->group_id);
+        $validated = $request->validate([
+            'status' => 'required|in:present,absent,excused,makeup',
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        $attendance->update([
+            'status' => $validated['status'],
+            'note' => $validated['note'] ?? $attendance->note,
+        ]);
+
+        $student = Student::find($attendance->student_id);
+        if ($student) {
+            $this->recalculateAttendanceCounters($student);
+        }
+
+        AuditLog::record('yoklama_guncellendi', "{$attendance->student?->full_name} için yoklama kaydı güncellendi: {$validated['status']}.", 'Attendance', $attendance->id);
+
+        return redirect()->route('admin.index', ['tab' => 'yoklama'])->with('success', 'Yoklama kaydı güncellendi.');
+    }
+
     public function destroyAttendance(Attendance $attendance)
     {
         $this->assertCoachOwnsGroup($attendance->group_id);

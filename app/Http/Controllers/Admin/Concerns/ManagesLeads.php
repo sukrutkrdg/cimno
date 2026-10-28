@@ -103,6 +103,7 @@ trait ManagesLeads
                 'parent_phone' => $lead->parent_phone,
                 'portal_pin' => Student::portalPinFor($lead->parent_phone),
                 'medical_report_expires_at' => now()->addYear()->toDateString(),
+                'registration_date' => now()->toDateString(),
                 'billing_day' => 1,
                 'status' => 'active',
                 // Genel iletişim/KVKK onayı, adayın deneme dersi formunda zaten

@@ -316,18 +316,12 @@
             <div class="flex flex-wrap justify-between items-end gap-4 mb-10">
                 <div>
                     <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{{ $settings['section_schedule_badge'] ?? 'Canlı Salon Takvimi' }}</span>
-                    <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_schedule_title'] ?? 'Haftalık Ders Programı & Kontenjanlar' }}</h2>
+                    <h2 class="text-3xl font-extrabold mt-1">{{ $settings['section_schedule_title'] ?? 'Haftalık Ders Programı' }}</h2>
                 </div>
-                <span class="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg font-semibold">
-                    {{ $settings['schedule_live_badge'] ?? '🟢 Kontenjan bilgisi yönetim panelinden anlık güncellenir' }}
-                </span>
             </div>
 
             <div class="grid md:grid-cols-2 gap-6">
                 @foreach($groups as $grp)
-                    @php
-                        $remainingQuota = max(0, $grp->capacity - $grp->active_students_count);
-                    @endphp
                     <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col justify-between">
                         <div>
                             <div class="flex flex-wrap justify-between items-start gap-2">
@@ -335,13 +329,6 @@
                                     <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ $grp->branch?->name }}</span>
                                     <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">{{ $grp->name }}</h3>
                                 </div>
-                                @if($remainingQuota === 0)
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200">Kontenjan Dolu (Yedek Liste)</span>
-                                @elseif($remainingQuota <= 4)
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">🔥 Son {{ $remainingQuota }} Yer!</span>
-                                @else
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">✅ Kayıt Açık ({{ $grp->active_students_count }}/{{ $grp->capacity }})</span>
-                                @endif
                             </div>
                             <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">👨‍🏫 Antrenör: <strong>{{ $grp->coach?->name ?? 'Kulüp Antrenörü' }}</strong> · 📍 Alan: <strong>{{ $grp->area }}</strong></p>
                             <div class="mt-4 flex flex-wrap gap-2">

@@ -23,6 +23,7 @@ class Student extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'registration_date' => 'date',
         'medical_report_expires_at' => 'date',
         'license_visa_date' => 'date',
         'kvkk_consent' => 'boolean',

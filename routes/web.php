@@ -63,6 +63,7 @@ Route::prefix('panel')->group(function () {
         // --- Yoklama: "take_attendance" iznine sahip personel (sekreter / yetkili antrenör) ---
         Route::middleware('admin.permission:take_attendance')->group(function () {
             Route::post('/yoklama', [AdminPanelController::class, 'storeAttendance'])->name('admin.attendance.store');
+            Route::post('/yoklama/{attendance}/guncelle', [AdminPanelController::class, 'updateAttendance'])->name('admin.attendance.update');
             Route::post('/yoklama/{attendance}/sil', [AdminPanelController::class, 'destroyAttendance'])->name('admin.attendance.destroy');
         });
 

@@ -149,17 +149,20 @@
 
                 <div class="grid lg:grid-cols-12 gap-6">
                     <!-- Yeni Öğrenci Kaydı Formu -->
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
+                    <div id="yeni-ogrenci-formu" class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-fit">
                         <span class="text-[11px] font-bold uppercase text-indigo-600">Öğrenci Kayıt Merkezi</span>
                         <h3 class="text-lg font-extrabold mb-3">
                             {{ $currentRole === 'super_admin' ? '➕ Yeni Öğrenci Kaydı Aç & İlk Tahsilatı Gir' : '➕ Yeni Öğrenci Kaydı Aç' }}
                         </h3>
+                        <p id="kardes-bilgi-notu" class="hidden text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 mb-2.5 font-semibold">
+                            👨‍👩‍👧 Veli bilgileri bir kardeşten dolduruldu — sadece bu sporcunun kendi bilgilerini girip kaydedin. Kardeş indirimini unutmayın.
+                        </p>
                         <form action="{{ route('admin.students.store') }}" method="POST" class="space-y-3 text-xs">
                             @csrf
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
                                     <label class="font-bold block mb-1">Öğrenci Adı Soyadı *</label>
-                                    <input type="text" name="full_name" required placeholder="Ör: Bora Demir" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="full_name" id="form-full-name" required placeholder="Ör: Bora Demir" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">Doğum Tarihi</label>
@@ -226,7 +229,7 @@
                                             <a href="{{ route('admin.index', ['tab' => 'paketler', 'role_view' => $currentRole]) }}" class="text-[10px] text-indigo-600 font-bold underline">+ İndirim Yönet</a>
                                         @endif
                                     </div>
-                                    <select name="discount_rule_id" class="w-full border rounded-xl px-3 py-2 bg-white">
+                                    <select name="discount_rule_id" id="form-discount-rule" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         <option value="">Standart Kayıt</option>
                                         @foreach($discountRules as $d)
                                             <option value="{{ $d->id }}">{{ $d->name }} (%{{ $d->percentage }})</option>
@@ -240,22 +243,32 @@
                             </div>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
+                                    <label class="font-bold block mb-1">Kayıt Tarihi</label>
+                                    <input type="date" name="registration_date" value="{{ now()->toDateString() }}" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Ödeme Günü (Ayın Kaçı)</label>
+                                    <input type="number" name="billing_day" value="1" min="1" max="28" class="w-full border rounded-xl px-3 py-2">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
                                     <label class="font-bold block mb-1">Veli Adı Soyadı *</label>
-                                    <input type="text" name="parent_name" required placeholder="Ör: Kemal Demir" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="parent_name" id="form-parent-name" required placeholder="Ör: Kemal Demir" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">Veli Telefon (WhatsApp) *</label>
-                                    <input type="text" name="parent_phone" required placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="parent_phone" id="form-parent-phone" required placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
                                     <label class="font-bold block mb-1">İkinci Veli Adı Soyadı (Opsiyonel)</label>
-                                    <input type="text" name="secondary_parent_name" placeholder="Ör: Ayşe Demir" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="secondary_parent_name" id="form-secondary-parent-name" placeholder="Ör: Ayşe Demir" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                                 <div>
                                     <label class="font-bold block mb-1">İkinci Veli Telefon (Opsiyonel)</label>
-                                    <input type="text" name="secondary_parent_phone" placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2">
+                                    <input type="text" name="secondary_parent_phone" id="form-secondary-parent-phone" placeholder="532XXXXXXX (başında 0 olmadan 10 hane)" maxlength="15" class="w-full border rounded-xl px-3 py-2">
                                 </div>
                             </div>
                             <p class="text-[11px] text-slate-400 -mt-1.5">İkinci veli girilirse, aynı PIN ile kendi telefon numarasıyla da veli portalına (📱 Mobil Uygulama) giriş yapıp öğrenciyi görüntüleyebilir.</p>
@@ -317,7 +330,7 @@
                                     <tr data-student-status="{{ $st->status }}">
                                         <td class="p-2.5">
                                             <div class="font-extrabold text-slate-900">{{ $st->full_name }}</div>
-                                            <div class="text-[11px] text-slate-500">Telafi: {{ $st->makeup_credits }} · Lisans: {{ $st->license_no ?? '-' }}</div>
+                                            <div class="text-[11px] text-slate-500">Telafi: {{ $st->makeup_credits }} · Lisans: {{ $st->license_no ?? '-' }} · Kayıt: {{ $st->registration_date?->format('d.m.Y') ?? '-' }}</div>
                                         </td>
                                         <td class="p-2.5">
                                             <div class="font-bold text-indigo-700">{{ $st->group?->name }}</div>
@@ -346,6 +359,9 @@
                                             <div class="flex flex-wrap items-center gap-1.5">
                                                 <button type="button" onclick="document.getElementById('edit-student-{{ $st->id }}').classList.toggle('hidden')" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold">
                                                     ✏️ Düzenle
+                                                </button>
+                                                <button type="button" onclick="enerjikKardesEkle('{{ addslashes($st->parent_name ?? '') }}', '{{ $st->parent_phone }}', '{{ addslashes($st->secondary_parent_name ?? '') }}', '{{ $st->secondary_parent_phone }}')" title="Bu velinin bilgileriyle yeni bir kardeş kaydı formu aç" class="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[11px] font-bold">
+                                                    👨‍👩‍👧 Kardeş Ekle
                                                 </button>
                                                 <form action="{{ route('admin.students.status', $st->id) }}" method="POST">
                                                     @csrf
@@ -446,6 +462,14 @@
                                                         <label class="font-bold block mb-0.5">Sağlık Notu</label>
                                                         <input type="text" name="health_notes" value="{{ $st->health_notes }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
                                                     </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Kayıt Tarihi</label>
+                                                        <input type="date" name="registration_date" value="{{ $st->registration_date?->format('Y-m-d') }}" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="font-bold block mb-0.5">Ödeme Günü (Ayın Kaçı)</label>
+                                                        <input type="number" name="billing_day" value="{{ $st->billing_day }}" min="1" max="28" class="w-full border rounded-lg px-2.5 py-1.5 bg-white">
+                                                    </div>
                                                 </div>
                                                 <div class="flex flex-wrap justify-between items-center gap-2 pt-1 border-t mt-1">
                                                     <div class="flex items-center gap-2 text-[11px]">
@@ -479,5 +503,23 @@
                             btn.classList.toggle('ring-2', btn.dataset.filterBtn === status);
                             btn.classList.toggle('ring-offset-1', btn.dataset.filterBtn === status);
                         });
+                    }
+
+                    // "Kardeş Ekle": bir öğrencinin veli bilgilerini "Yeni Öğrenci Kaydı"
+                    // formuna aktarıp oraya kaydırır — aynı veliye ikinci bir sporcu
+                    // eklerken veli adı/telefon bilgilerini yeniden yazmaya gerek kalmaz.
+                    // Kardeş indirimi varsa listede de hatırlatılır, ama kural seçimi
+                    // kasıtlı olarak otomatik yapılmaz (admin bilinçli seçsin diye).
+                    function enerjikKardesEkle(parentName, parentPhone, secondaryParentName, secondaryParentPhone) {
+                        document.getElementById('form-parent-name').value = parentName;
+                        document.getElementById('form-parent-phone').value = parentPhone;
+                        document.getElementById('form-secondary-parent-name').value = secondaryParentName;
+                        document.getElementById('form-secondary-parent-phone').value = secondaryParentPhone;
+                        var notice = document.getElementById('kardes-bilgi-notu');
+                        if (notice) notice.classList.remove('hidden');
+                        var form = document.getElementById('yeni-ogrenci-formu');
+                        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        var nameInput = document.getElementById('form-full-name');
+                        if (nameInput) nameInput.focus();
                     }
                 </script>

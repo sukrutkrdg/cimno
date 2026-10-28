@@ -38,7 +38,7 @@
 
                     <!-- Son Yoklama Kayıtları & Silme -->
                     <div class="mt-6 pt-6 border-t border-slate-200">
-                        <h3 class="text-base font-extrabold mb-3">📋 Son Alınan Yoklama Kayıtları (Deneme / Hatalı Kayıtları Sil)</h3>
+                        <h3 class="text-base font-extrabold mb-3">📋 Son Alınan Yoklama Kayıtları (Durumu Düzelt / Kaydı Sil)</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b text-slate-600 uppercase">
@@ -57,9 +57,18 @@
                                             <td class="p-2.5 font-bold">{{ $att->student?->full_name ?? '-' }}</td>
                                             <td class="p-2.5">{{ $att->group?->name ?? '-' }}</td>
                                             <td class="p-2.5">
-                                                <span class="font-bold">{{ $att->status }}</span>
+                                                <form action="{{ route('admin.attendance.update', $att->id) }}" method="POST" class="flex items-center gap-1.5">
+                                                    @csrf
+                                                    <select name="status" class="border rounded-lg px-1.5 py-1 bg-white text-[11px] font-bold">
+                                                        <option value="present" {{ $att->status === 'present' ? 'selected' : '' }}>✅ Geldi</option>
+                                                        <option value="absent" {{ $att->status === 'absent' ? 'selected' : '' }}>❌ Gelmedi</option>
+                                                        <option value="excused" {{ $att->status === 'excused' ? 'selected' : '' }}>🩺 Raporlu / İzinli (+1 Telafi)</option>
+                                                        <option value="makeup" {{ $att->status === 'makeup' ? 'selected' : '' }}>🔄 Telafi Kullandı</option>
+                                                    </select>
+                                                    <button type="submit" class="px-2 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-bold shrink-0">💾</button>
+                                                </form>
                                                 @if($att->note)
-                                                    <span class="text-slate-500">· {{ $att->note }}</span>
+                                                    <span class="text-slate-500 block mt-0.5">· {{ $att->note }}</span>
                                                 @endif
                                             </td>
                                             <td class="p-2.5 text-right">

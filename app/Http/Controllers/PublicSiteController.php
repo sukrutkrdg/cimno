@@ -84,7 +84,7 @@ class PublicSiteController extends Controller
         // Not: "trial_reminder" şablonu ({tarih}/{saat} içerir) deneme dersinden 1 gün
         // önce otomatik hatırlatma içindir (bkz. routes/console.php), bu an için değil —
         // bu yüzden burada o şablona bağlanmıyor, kendi sabit karşılama metnini kullanıyor.
-        $msgText = "Merhaba {$lead->parent_name} 👋 Enerjik Cimnastik Spor Kulübü'ne {$lead->student_name} için yaptığınız ücretsiz deneme dersi başvurusu alınmıştır! Uygun grup ve saat planlaması için sizinle iletişime geçiyoruz. 🤸";
+        $msgText = "Merhaba {$lead->parent_name} 👋 Enerjik Cimnastik Spor Salonu'na {$lead->student_name} için yaptığınız ücretsiz deneme dersi başvurusu alınmıştır! Uygun grup ve saat planlaması için sizinle iletişime geçiyoruz. 🤸";
 
         WhatsappMessage::create([
             'recipient_name' => $lead->parent_name . ' (Aday - ' . $lead->student_name . ')',

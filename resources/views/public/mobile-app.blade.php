@@ -114,7 +114,7 @@
                     </span>
                     <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">👨‍👩‍👧 Veli Girişi</h2>
                     <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız ve 4 haneli PIN kodunuz</strong> WhatsApp ile tarafınıza gönderilir. Bu ikisini birlikte girerek öğrencinizin ders programını, yoklamasını, aidat makbuzlarını ve gelişim karnesini görüntüleyebilirsiniz.
+                        Çocuğunuzun kulübümüze kesin kaydı yapıldığında <strong>cep telefonu numaranız ve 4 haneli PIN kodunuz</strong> WhatsApp ile tarafınıza gönderilir. Bu ikisini birlikte girerek öğrencinizin ders programını, yoklamasını, aidat durumunu ve gelişim karnesini görüntüleyebilirsiniz.
                     </p>
                 </div>
 
