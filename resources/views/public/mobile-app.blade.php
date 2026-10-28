@@ -75,7 +75,7 @@
                     <span class="text-[11px] text-purple-200 font-semibold">👨‍👩‍👧 Veli Mobil Takip Sistemi</span>
                 </div>
             </a>
-            <div class="flex items-center gap-1.5">
+            <div class="flex flex-wrap justify-end items-center gap-1.5">
                 <button onclick="enerjikToggleTheme()" class="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-[13px]" aria-label="Tema Değiştir">
                     <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
                 </button>
@@ -179,16 +179,18 @@
             <!-- Veliye Bağlı Öğrenciler (Kardeşse Alt Alta veya Sekmeli Görünür) -->
             @foreach($students as $st)
                 <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
-                        <div>
+                    <div class="bg-gradient-to-br from-indigo-900 to-indigo-950 text-white p-4 flex justify-between items-center gap-3">
+                        <div class="min-w-0">
                             <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">{{ $st->branch?->name }}</span>
-                            <h2 class="text-lg font-extrabold mt-1">🤸 {{ $st->full_name }}</h2>
-                            <p class="text-[11px] text-indigo-200">{{ $st->group?->name }} · Antrenör: {{ $st->group?->coach?->name ?? 'Kulüp Antrenörü' }}</p>
+                            <h2 class="text-lg font-extrabold mt-1.5 truncate">🤸 {{ $st->full_name }}</h2>
+                            <p class="text-[11px] text-indigo-200 mt-0.5">{{ $st->group?->name }} · Antrenör: {{ $st->group?->coach?->name ?? 'Kulüp Antrenörü' }}</p>
                         </div>
-                        <div class="text-right bg-white/10 px-3 py-1.5 rounded-xl">
-                            <span class="text-[10px] text-indigo-200 block">Telafi Hakkı</span>
-                            <span class="text-sm font-extrabold text-amber-300">{{ $st->makeup_credits }} Ders</span>
-                        </div>
+                        @if($st->makeup_credits > 0)
+                            <div class="text-right bg-white/10 px-3 py-1.5 rounded-xl shrink-0">
+                                <span class="text-[10px] text-indigo-200 block">Telafi Hakkı</span>
+                                <span class="text-sm font-extrabold text-amber-300">{{ $st->makeup_credits }} Ders</span>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="p-4 space-y-4">
@@ -211,7 +213,7 @@
                             <!-- Ders Saatleri -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <h3 class="text-xs font-extrabold uppercase text-slate-500">📅 Haftalık Antrenman Saatleri (Takvim)</h3>
+                                    <h3 class="text-[11px] font-bold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">📅 Haftalık Antrenman Saatleri</h3>
                                     @if(($st->group?->schedules ?? collect())->isNotEmpty())
                                         <a href="{{ $st->calendarUrl() }}" class="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 underline">📲 Takvime Ekle</a>
                                     @endif
@@ -228,7 +230,7 @@
 
                             <!-- Son Yoklamalar -->
                             <div>
-                                <h3 class="text-xs font-extrabold uppercase text-slate-500 mb-2">✅ Son Yoklama Kayıtları</h3>
+                                <h3 class="text-[11px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 mb-2">✅ Son Yoklama Kayıtları</h3>
                                 <div class="grid grid-cols-2 gap-1.5">
                                     @forelse($st->attendances->take(4) as $att)
                                         <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 text-[11px] flex justify-between items-center">
@@ -266,7 +268,7 @@
             @if($sekme === 'cocuklarim' || $sekme === 'duyurular')
                 <!-- Duyurular -->
                 <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-                    <h3 class="text-xs font-extrabold uppercase text-slate-500">📢 Güncel Duyurular</h3>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wide text-purple-600 dark:text-purple-400">📢 Güncel Duyurular</h3>
                     @forelse($announcements as $ann)
                         <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900">
                             <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">{{ $ann->created_at->format('d.m.Y') }}{{ $ann->is_pinned ? ' · 📌 Sabitlenmiş' : '' }}</span>
