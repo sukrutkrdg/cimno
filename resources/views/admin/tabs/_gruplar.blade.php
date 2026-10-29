@@ -5,7 +5,7 @@
                             <span>🎛️ Branşlar, Salon Alanları, Yaş Grupları ve Seviye Seçeneklerini Yönet (Ekle · Düzenle · Sil)</span>
                             <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-extrabold">⚡ Seçenekleri Özelleştir</span>
                         </summary>
-                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
+                        <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-indigo-800/80 text-xs text-slate-900">
                             <!-- Salon Alanları -->
                             <div class="bg-white rounded-xl p-3.5 space-y-2">
                                 <div class="font-extrabold text-indigo-900 border-b pb-1">📍 Salon Alanları</div>
@@ -113,6 +113,35 @@
                                             <span class="font-semibold truncate">{{ $b->icon }} {{ $b->name }}</span>
                                             <form action="{{ route('admin.branches.destroy', $b->id) }}" method="POST" onsubmit="return confirm('{{ $b->name }} branşını silmek istediğinize emin misiniz?')">
                                                 @csrf
+                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Hareket Kataloğu (Komple Takvim modülünde kullanılacak) -->
+                            <div class="bg-white rounded-xl p-3.5 space-y-2">
+                                <div class="font-extrabold text-indigo-900 border-b pb-1">🤸‍♀️ Hareket Kataloğu</div>
+                                <form action="{{ route('admin.movements.store') }}" method="POST" class="space-y-1.5">
+                                    @csrf
+                                    <input type="hidden" name="return_tab" value="gruplar">
+                                    <input type="text" name="name" required placeholder="Ör: Öne Takla" class="w-full border rounded-lg px-2.5 py-1.5">
+                                    <select name="branch_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                        <option value="">Tüm Branşlar</option>
+                                        @foreach($branches as $b)
+                                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">➕ Hareket Ekle</button>
+                                </form>
+                                <div class="space-y-1 max-h-32 overflow-y-auto">
+                                    @foreach($movements as $mv)
+                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
+                                            <span class="font-semibold truncate">{{ $mv->name }}@if($mv->branch) <span class="text-slate-400 font-normal">({{ $mv->branch->name }})</span>@endif</span>
+                                            <form action="{{ route('admin.movements.destroy', $mv->id) }}" method="POST" onsubmit="return confirm('{{ $mv->name }} hareketini silmek istediğinize emin misiniz?')">
+                                                @csrf
+                                                <input type="hidden" name="return_tab" value="gruplar">
                                                 <button type="submit" class="text-rose-600 font-extrabold">✕</button>
                                             </form>
                                         </div>

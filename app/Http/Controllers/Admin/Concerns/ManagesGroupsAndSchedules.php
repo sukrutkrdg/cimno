@@ -99,6 +99,34 @@ trait ManagesGroupsAndSchedules
         return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$group->name}' grup bilgileri güncellendi!");
     }
 
+    // MODÜL 3: Cimnastik Hareket Kataloğu (Komple Takvim modülünde kullanılacak)
+    public function storeMovement(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'branch_id' => 'nullable|exists:branches,id',
+        ]);
+
+        $movement = \App\Models\Movement::create([
+            'name' => $validated['name'],
+            'branch_id' => $validated['branch_id'] ?? null,
+            'is_active' => true,
+        ]);
+
+        AuditLog::record('hareket_eklendi', "Yeni hareket eklendi: {$movement->name}", 'Movement', $movement->id);
+
+        return redirect()->route('admin.index', ['tab' => $request->input('return_tab', 'gruplar')])->with('success', "'{$movement->name}' hareket kataloğuna eklendi.");
+    }
+
+    public function destroyMovement(Request $request, \App\Models\Movement $movement)
+    {
+        $name = $movement->name;
+        $movement->delete();
+        AuditLog::record('hareket_silindi', "Hareket silindi: {$name}");
+
+        return redirect()->route('admin.index', ['tab' => $request->input('return_tab', 'gruplar')])->with('success', "'{$name}' hareket kataloğundan silindi.");
+    }
+
     // MODÜL 10: Yardımcı Antrenör Ekleme/Çıkarma (parametrik, sayı sınırsız)
     public function addAssistantCoach(Request $request, Group $group)
     {

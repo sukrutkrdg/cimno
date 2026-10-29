@@ -237,6 +237,7 @@ class AdminPanelController extends Controller
 
         // Veriler
         $branches = Branch::withCount('students')->orderBy('sort_order')->get();
+        $movements = \App\Models\Movement::with('branch')->orderBy('name')->get();
         $groupsQuery = Group::with(['branch', 'coach', 'schedules', 'assistantCoaches'])->withCount('activeStudents');
         if ($restrictToCoachId) {
             $groupsQuery->where('coach_id', $restrictToCoachId);
@@ -469,6 +470,7 @@ class AdminPanelController extends Controller
             'waitingListCount',
             'newLeadsCount',
             'branches',
+            'movements',
             'groups',
             'trialEligibleGroups',
             'schedules',

@@ -47,6 +47,8 @@ Route::prefix('panel')->group(function () {
         Route::post('/gruplar', [AdminPanelController::class, 'storeGroupAndSchedule'])->name('admin.groups.store');
         Route::post('/gruplar/{group}/guncelle', [AdminPanelController::class, 'updateGroup'])->name('admin.groups.update');
         Route::post('/gruplar/{group}/sil', [AdminPanelController::class, 'destroyGroup'])->name('admin.groups.destroy');
+        Route::post('/hareketler', [AdminPanelController::class, 'storeMovement'])->name('admin.movements.store');
+        Route::post('/hareketler/{movement}/sil', [AdminPanelController::class, 'destroyMovement'])->name('admin.movements.destroy');
         Route::post('/gruplar/{group}/yardimci-antrenor-ekle', [AdminPanelController::class, 'addAssistantCoach'])->name('admin.groups.assistant.add');
         Route::post('/gruplar/{group}/yardimci-antrenor/{user}/sil', [AdminPanelController::class, 'removeAssistantCoach'])->name('admin.groups.assistant.remove');
         Route::post('/gruplar/{group}/program-ekle', [AdminPanelController::class, 'storeSchedule'])->name('admin.schedules.store');
