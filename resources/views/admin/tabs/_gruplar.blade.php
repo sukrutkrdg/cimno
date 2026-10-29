@@ -288,76 +288,8 @@
                         </div>
                     </div>
 
-                    <!-- Sağ Kolon: Komple Takvim (hangi gün/grup hangi hareketi yapacak) + Mevcut Gruplar -->
-                    <div class="lg:col-span-7 space-y-6">
-                        <!-- Komple Takvim: Hangi Gün, Hangi Grup, Hangi Hareketi Yapacak -->
-                        <div class="bg-white rounded-2xl border border-indigo-200 p-5 shadow-sm">
-                            <span class="text-[11px] font-bold uppercase text-indigo-600">Komple Takvim</span>
-                            <h3 class="text-lg font-extrabold mb-1">📅 Haftalık Hareket Takvimi</h3>
-                            <p class="text-xs text-slate-500 mb-4">
-                                @if($currentRole === 'coach')
-                                    Gruplarınızın bu hafta hangi derste hangi hareketi çalışacağı aşağıda listelenir.
-                                @else
-                                    Her ders saati için o derste çalışılacak hareket(ler)i seçin; antrenörler bu takvimi kendi panellerinde görebilir.
-                                @endif
-                            </p>
-                            <div class="space-y-4 max-h-[32rem] overflow-y-auto pr-1">
-                                @foreach(['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] as $gun)
-                                    @php $gunSchedules = $schedules->where('day_of_week', $gun); @endphp
-                                    @if($gunSchedules->isNotEmpty())
-                                        <div>
-                                            <div class="text-xs font-extrabold text-indigo-900 bg-indigo-50 rounded-lg px-2.5 py-1 mb-2">{{ $gun }}</div>
-                                            <div class="space-y-2.5">
-                                                @foreach($gunSchedules as $sch)
-                                                    @php
-                                                        $uygunHareketler = $movements->filter(fn($mv) => $mv->branch_id === null || $mv->branch_id === $sch->group?->branch_id);
-                                                    @endphp
-                                                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs">
-                                                        <div class="font-bold text-slate-900">{{ substr($sch->start_time, 0, 5) }}-{{ substr($sch->end_time, 0, 5) }} · {{ $sch->group?->name }}</div>
-                                                        <div class="text-[11px] text-slate-500 mb-2">{{ $sch->group?->branch?->name }} · Antrenör: {{ $sch->group?->coach?->name ?? '-' }}</div>
-
-                                                        @if($currentRole === 'coach')
-                                                            @if($sch->movements->isNotEmpty())
-                                                                <div class="flex flex-wrap gap-1">
-                                                                    @foreach($sch->movements as $mv)
-                                                                        <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold text-[11px]">{{ $mv->name }}</span>
-                                                                    @endforeach
-                                                                </div>
-                                                            @else
-                                                                <span class="text-slate-400 italic">Henüz hareket atanmadı.</span>
-                                                            @endif
-                                                        @else
-                                                            <form action="{{ route('admin.schedules.movements.update', $sch->id) }}" method="POST">
-                                                                @csrf
-                                                                <div class="flex flex-wrap gap-1.5 mb-2">
-                                                                    @forelse($uygunHareketler as $mv)
-                                                                        <label class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-slate-200 cursor-pointer">
-                                                                            <input type="checkbox" name="movement_ids[]" value="{{ $mv->id }}" {{ $sch->movements->contains('id', $mv->id) ? 'checked' : '' }}>
-                                                                            <span>{{ $mv->name }}</span>
-                                                                        </label>
-                                                                    @empty
-                                                                        <span class="text-slate-400 italic">Hareket kataloğu boş — yukarıdan hareket ekleyin.</span>
-                                                                    @endforelse
-                                                                </div>
-                                                                @if($uygunHareketler->isNotEmpty())
-                                                                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold text-[11px]">💾 Hareketleri Kaydet</button>
-                                                                @endif
-                                                            </form>
-                                                        @endif
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                @endforeach
-                                @if($schedules->isEmpty())
-                                    <p class="text-xs text-slate-400 italic">Henüz haftalık ders programı eklenmemiş.</p>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Mevcut Gruplar & Haftalık Eğitim Programı (Düzenle / Ekle / Sil) -->
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <!-- Sağ Kolon: Mevcut Gruplar & Haftalık Eğitim Programı (Düzenle / Ekle / Sil) -->
+                    <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                         <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
                             <div>
                                 <h3 class="text-lg font-extrabold">🗓️ Mevcut Gruplar ve Haftalık Eğitim Programı (Düzenle & Sil)</h3>
@@ -489,7 +421,6 @@
                                     </div>
                                 </div>
                             @endforeach
-                        </div>
                         </div>
                     </div>
                 </div>

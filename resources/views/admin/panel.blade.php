@@ -100,6 +100,7 @@
                     ['id' => 'adaylar', 'icon' => '🎯', 'label' => '2. Adaylar (Ön Kayıt)'],
                     ['id' => 'ogrenciler', 'icon' => '🤸', 'label' => '3. Öğrenciler & Kayıt'],
                     ['id' => 'gruplar', 'icon' => '🏅', 'label' => '4-5. Branş, Grup & Program'],
+                    ['id' => 'takvim', 'icon' => '📅', 'label' => 'Komple Takvim'],
                     ['id' => 'yoklama', 'icon' => '✅', 'label' => '6. Tek Dokunuş Yoklama'],
                     ['id' => 'paketler', 'icon' => '🏷️', 'label' => '7. Paket & Toplu Fiyat'],
                     ['id' => 'aidat', 'icon' => '💳', 'label' => '8. Aidat & Tahsilat'],
@@ -178,6 +179,13 @@
             <!-- ========================================== -->
             @if($activeTab === 'gruplar')
                 @include("admin.tabs._gruplar")
+            @endif
+
+            <!-- ========================================== -->
+            <!-- KOMPLE TAKVIM (HAFTALIK HAREKET TAKVIMI)   -->
+            <!-- ========================================== -->
+            @if($activeTab === 'takvim')
+                @include("admin.tabs._takvim")
             @endif
 
             <!-- ========================================== -->

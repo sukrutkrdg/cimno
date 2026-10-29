@@ -94,14 +94,14 @@ class User extends Authenticatable
     {
         if ($this->role === 'super_admin') {
             return [
-                'pano', 'adaylar', 'ogrenciler', 'gruplar', 'yoklama',
+                'pano', 'adaylar', 'ogrenciler', 'gruplar', 'takvim', 'yoklama',
                 'paketler', 'aidat', 'kasa', 'personel', 'mesajlar',
                 'etkinlikler', 'gelisim', 'raporlar', 'site_icerigi', 'ayarlar',
             ];
         }
 
         if ($this->role === 'secretary') {
-            $tabs = ['pano', 'adaylar', 'ogrenciler', 'gruplar', 'yoklama', 'etkinlikler', 'gelisim'];
+            $tabs = ['pano', 'adaylar', 'ogrenciler', 'gruplar', 'takvim', 'yoklama', 'etkinlikler', 'gelisim'];
             if ($this->hasPermission('send_whatsapp', true)) {
                 $tabs[] = 'mesajlar';
             }
@@ -112,7 +112,7 @@ class User extends Authenticatable
         }
 
         if ($this->role === 'coach') {
-            $tabs = ['pano', 'ogrenciler', 'gruplar'];
+            $tabs = ['pano', 'ogrenciler', 'gruplar', 'takvim'];
             if ($this->hasPermission('take_attendance', true)) {
                 $tabs[] = 'yoklama';
             }
