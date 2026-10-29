@@ -53,6 +53,7 @@ trait ManagesStaff
                 'only_own_groups' => $validated['role'] === 'coach',
                 'take_attendance' => true,
                 'add_development' => true,
+                'manage_schedule' => $validated['role'] === 'secretary',
             ],
         ]);
 
@@ -95,6 +96,17 @@ trait ManagesStaff
             $role = $user->role;
         }
 
+        // Profil bilgileri (ad/e-posta/telefon/ücret) hesap açıldıktan sonra da
+        // düzenlenebilsin diye bu aynı form üzerinden kaydediliyor.
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => ['required', 'string', new ValidPhoneNumber],
+            'compensation_type' => 'required|in:fixed,per_lesson,both,none',
+            'base_salary' => 'nullable|numeric|min:0',
+            'per_lesson_rate' => 'nullable|numeric|min:0',
+        ]);
+
         // collect_payment/view_expenses/view_reports kasıtlı olarak yok: User::hasPermission()
         // bunları süper yönetici dışında herkes için hep false döndürür, bu formda da zaten
         // karşılık gelen bir kutu yok (bkz. storeStaff'taki aynı not).
@@ -105,9 +117,16 @@ trait ManagesStaff
             'only_own_groups' => $request->boolean('perm_only_own_groups'),
             'take_attendance' => $request->boolean('perm_take_attendance'),
             'add_development' => $request->boolean('perm_add_development'),
+            'manage_schedule' => $request->boolean('perm_manage_schedule'),
         ];
 
         $updateData = [
+            'name' => $validated['name'],
+            'email' => strtolower(trim($validated['email'])),
+            'phone' => Phone::normalize($validated['phone']),
+            'compensation_type' => $validated['compensation_type'],
+            'base_salary' => $validated['base_salary'] ?? 0,
+            'per_lesson_rate' => $validated['per_lesson_rate'] ?? 0,
             'role' => $role,
             // boolean() ikinci argümansız: checkbox işaretsizse formda hiç gönderilmez,
             // varsayılan true verilirse "pasife al" kutusunun işareti kaldırılıp
@@ -122,8 +141,8 @@ trait ManagesStaff
 
         $user->update($updateData);
 
-        AuditLog::record('yetki_guncellendi', "{$user->name} personelinin rol ({$user->roleLabel()}) ve erişim yetkileri güncellendi.", 'User', $user->id);
+        AuditLog::record('yetki_guncellendi', "{$user->name} personelinin profili, rolü ({$user->roleLabel()}) ve erişim yetkileri güncellendi.", 'User', $user->id);
 
-        return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$user->name} için rol, erişim yetkileri ve giriş ayarları başarıyla güncellendi!");
+        return redirect()->route('admin.index', ['tab' => 'personel'])->with('success', "{$user->name} için profil bilgileri, rol, erişim yetkileri ve giriş ayarları başarıyla güncellendi!");
     }
 }

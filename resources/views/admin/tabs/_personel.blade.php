@@ -74,16 +74,10 @@
                                         <form action="{{ route('admin.staff.permissions', $u->id) }}" method="POST" class="space-y-3">
                                             @csrf
                                             <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-slate-200/80">
-                                                <div>
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="font-extrabold text-sm text-slate-900">{{ $u->name }}</span>
-                                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $u->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
-                                                            {{ $u->is_active ? '🟢 Aktif Hesap' : '🔴 Girişe Kapalı' }}
-                                                        </span>
-                                                    </div>
-                                                    <div class="text-[11px] text-slate-500 mt-0.5">
-                                                        📧 <span class="font-mono">{{ $u->email }}</span> · 📞 <span class="font-mono">{{ $u->phone }}</span>
-                                                    </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $u->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
+                                                        {{ $u->is_active ? '🟢 Aktif Hesap' : '🔴 Girişe Kapalı' }}
+                                                    </span>
                                                 </div>
 
                                                 <div class="flex flex-wrap items-center gap-2">
@@ -97,6 +91,39 @@
                                                         <input type="checkbox" name="is_active" value="1" {{ $u->is_active ? 'checked' : '' }}>
                                                         <span>Giriş Aktif</span>
                                                     </label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Profil Bilgileri: hesap açıldıktan sonra da düzenlenebilsin -->
+                                            <div class="grid sm:grid-cols-2 gap-2 pb-2">
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-500 block mb-0.5">Ad Soyad</label>
+                                                    <input type="text" name="name" value="{{ $u->name }}" required class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs font-semibold">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-500 block mb-0.5">E-posta</label>
+                                                    <input type="email" name="email" value="{{ $u->email }}" required class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs font-mono">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-500 block mb-0.5">Telefon</label>
+                                                    <input type="text" name="phone" value="{{ $u->phone }}" required maxlength="15" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs font-mono">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-500 block mb-0.5">Ücret / Hakediş Modeli</label>
+                                                    <select name="compensation_type" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs">
+                                                        <option value="fixed" {{ $u->compensation_type === 'fixed' ? 'selected' : '' }}>Sabit Maaş</option>
+                                                        <option value="per_lesson" {{ $u->compensation_type === 'per_lesson' ? 'selected' : '' }}>Ders Başı Ücret</option>
+                                                        <option value="both" {{ $u->compensation_type === 'both' ? 'selected' : '' }}>Sabit Maaş + Ders Başı</option>
+                                                        <option value="none" {{ $u->compensation_type === 'none' ? 'selected' : '' }}>Ücretsiz / Tanımsız</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-500 block mb-0.5">Sabit Maaş (₺)</label>
+                                                    <input type="number" name="base_salary" value="{{ $u->base_salary }}" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-500 block mb-0.5">Ders Başı Ücret (₺)</label>
+                                                    <input type="number" name="per_lesson_rate" value="{{ $u->per_lesson_rate }}" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 bg-white text-xs">
                                                 </div>
                                             </div>
 
@@ -132,6 +159,10 @@
                                                     <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
                                                         <input type="checkbox" name="perm_delete_student" value="1" {{ $u->hasPermission('delete_student', true) ? 'checked' : '' }}>
                                                         <span>🗑️ Kayıt Silebilsin / Arşivlesin</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                        <input type="checkbox" name="perm_manage_schedule" value="1" {{ $u->hasPermission('manage_schedule', $u->role === 'secretary') ? 'checked' : '' }}>
+                                                        <span>📅 Ders Programını Düzenleyebilsin</span>
                                                     </label>
                                                 </div>
                                             @endif

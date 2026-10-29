@@ -90,6 +90,9 @@ trait ManagesGroupsAndSchedules
             'level' => $request->input('level', $group->level),
             'area' => $request->input('area', $group->area),
             'capacity' => (int) $request->input('capacity', $group->capacity),
+            // Checkbox işaretsizse form hiç göndermez; varsayılan true verilirse
+            // kapatma işareti hiçbir zaman kaydedilemezdi (bkz. is_active'teki aynı düzeltme).
+            'show_in_trial_signup' => $request->boolean('show_in_trial_signup'),
         ]);
         AuditLog::record('grup_guncellendi', "Grup güncellendi: {$group->name}", 'Group', $group->id);
         $tab = $request->input('return_tab', 'gruplar');

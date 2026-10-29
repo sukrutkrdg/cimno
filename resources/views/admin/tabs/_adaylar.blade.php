@@ -126,7 +126,7 @@
                                                 <label class="font-bold block mb-1">Deneme Grubu</label>
                                                 <select name="trial_group_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
                                                     <option value="">Seçilmedi</option>
-                                                    @foreach($groups as $g)
+                                                    @foreach($trialEligibleGroups as $g)
                                                         <option value="{{ $g->id }}" {{ (int) $lead->trial_group_id === $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
                                                     @endforeach
                                                 </select>

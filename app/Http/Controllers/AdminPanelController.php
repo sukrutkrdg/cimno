@@ -242,6 +242,10 @@ class AdminPanelController extends Controller
             $groupsQuery->where('coach_id', $restrictToCoachId);
         }
         $groups = $groupsQuery->get();
+        // "Yarışma Grubu" gibi, herkese açık deneme dersi kaydı alanına uygun olmayan
+        // gruplar "Grubu Düzenle" formundaki kapatma seçeneğiyle bu listeden gizlenebilir;
+        // diğer tüm ekranlarda (grup yönetimi, öğrenci kaydı) $groups değişmeden kullanılır.
+        $trialEligibleGroups = $groups->where('show_in_trial_signup', true)->values();
 
         $schedulesQuery = Schedule::with(['group.branch', 'group.coach'])->orderBy('start_time');
         if ($restrictToCoachId) {
@@ -466,6 +470,7 @@ class AdminPanelController extends Controller
             'newLeadsCount',
             'branches',
             'groups',
+            'trialEligibleGroups',
             'schedules',
             'leads',
             'students',

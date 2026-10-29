@@ -69,6 +69,10 @@ class DeactivationCheckboxTest extends TestCase
         $this->withSession(['admin_user_id' => $admin->id])
             ->post(route('admin.staff.permissions', $secretary->id), [
                 'role' => 'secretary',
+                'name' => $secretary->name,
+                'email' => $secretary->email,
+                'phone' => $secretary->phone,
+                'compensation_type' => 'none',
             ])
             ->assertRedirect();
 

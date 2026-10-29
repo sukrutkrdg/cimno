@@ -330,7 +330,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="flex justify-end">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-bold cursor-pointer">
+                                                <input type="checkbox" name="show_in_trial_signup" value="1" {{ $g->show_in_trial_signup ? 'checked' : '' }}>
+                                                <span>👀 Deneme Dersi Kaydı Listesinde Görünsün</span>
+                                            </label>
                                             <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Grup Bilgilerini Kaydet</button>
                                         </div>
                                     </form>
