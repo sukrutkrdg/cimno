@@ -12,4 +12,10 @@ class Schedule extends Model
     {
         return $this->belongsTo(Group::class);
     }
+
+    // Komple Takvim: bu ders saatinde çalışılacak hareketler.
+    public function movements()
+    {
+        return $this->belongsToMany(Movement::class, 'schedule_movement');
+    }
 }

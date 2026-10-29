@@ -12,4 +12,9 @@ class Movement extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function schedules()
+    {
+        return $this->belongsToMany(Schedule::class, 'schedule_movement');
+    }
 }

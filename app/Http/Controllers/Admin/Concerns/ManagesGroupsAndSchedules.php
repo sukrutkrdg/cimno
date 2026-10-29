@@ -99,6 +99,24 @@ trait ManagesGroupsAndSchedules
         return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$group->name}' grup bilgileri güncellendi!");
     }
 
+    // MODÜL 1: Komple Takvim — bu ders saatinde hangi hareket(ler)in çalışılacağının
+    // atanması/güncellenmesi. Diğer program (storeSchedule/updateSchedule) metodlarıyla
+    // aynı sahiplik kontrolünü kullanır: sekreter/süper yönetici serbest, "sadece kendi
+    // gruplarını görsün" antrenörü yalnızca kendi grubunun ders saatini düzenleyebilir.
+    public function updateScheduleMovements(Request $request, Schedule $schedule)
+    {
+        $this->assertCoachOwnsGroup($schedule->group_id);
+        $validated = $request->validate([
+            'movement_ids' => 'nullable|array',
+            'movement_ids.*' => 'exists:movements,id',
+        ]);
+
+        $schedule->movements()->sync($validated['movement_ids'] ?? []);
+        AuditLog::record('takvim_hareket_guncellendi', "{$schedule->group?->name} grubunun {$schedule->day_of_week} dersi için hareket ataması güncellendi.", 'Schedule', $schedule->id);
+
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', 'Ders saatinin hareket ataması güncellendi.');
+    }
+
     // MODÜL 3: Cimnastik Hareket Kataloğu (Komple Takvim modülünde kullanılacak)
     public function storeMovement(Request $request)
     {

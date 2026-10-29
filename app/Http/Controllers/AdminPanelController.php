@@ -248,7 +248,7 @@ class AdminPanelController extends Controller
         // diğer tüm ekranlarda (grup yönetimi, öğrenci kaydı) $groups değişmeden kullanılır.
         $trialEligibleGroups = $groups->where('show_in_trial_signup', true)->values();
 
-        $schedulesQuery = Schedule::with(['group.branch', 'group.coach'])->orderBy('start_time');
+        $schedulesQuery = Schedule::with(['group.branch', 'group.coach', 'movements'])->orderBy('start_time');
         if ($restrictToCoachId) {
             $schedulesQuery->whereHas('group', fn($q) => $q->where('coach_id', $restrictToCoachId));
         }

@@ -53,6 +53,7 @@ Route::prefix('panel')->group(function () {
         Route::post('/gruplar/{group}/yardimci-antrenor/{user}/sil', [AdminPanelController::class, 'removeAssistantCoach'])->name('admin.groups.assistant.remove');
         Route::post('/gruplar/{group}/program-ekle', [AdminPanelController::class, 'storeSchedule'])->name('admin.schedules.store');
         Route::post('/program/{schedule}/guncelle', [AdminPanelController::class, 'updateSchedule'])->name('admin.schedules.update');
+        Route::post('/program/{schedule}/hareketler', [AdminPanelController::class, 'updateScheduleMovements'])->name('admin.schedules.movements.update');
         Route::post('/program/{schedule}/sil', [AdminPanelController::class, 'destroySchedule'])->name('admin.schedules.destroy');
 
         Route::post('/etkinlik', [AdminPanelController::class, 'storeEvent'])->name('admin.events.store');
