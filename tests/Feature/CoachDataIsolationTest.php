@@ -57,11 +57,9 @@ class CoachDataIsolationTest extends TestCase
             'student_id' => $studentB->id,
             'term_label' => 'Güz Dönemi',
             'current_level' => 'Başlangıç',
-            'flexibility_score' => 50,
-            'strength_score' => 50,
-            'balance_score' => 50,
-            'coordination_score' => 50,
-            'discipline_score' => 50,
+            'phys_flexibility' => 3, 'phys_balance_coordination' => 3, 'phys_strength_endurance' => 3, 'phys_focus' => 3,
+            'tech_forward_backward_roll' => 3, 'tech_handstand_wheel' => 3, 'tech_eagle_split' => 3, 'tech_flexibility_cooldown' => 3,
+            'social_class_participation' => 3, 'social_communication' => 3, 'social_command_following' => 3, 'social_goal_progress' => 3,
         ])->assertRedirect();
 
         // A antrenörü kendi panosunda B'nin öğrencisini HİÇBİR sekmede görmemeli.

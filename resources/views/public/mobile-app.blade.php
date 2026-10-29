@@ -254,12 +254,38 @@
                                         <div class="font-extrabold text-amber-950 dark:text-amber-300">🏅 {{ $dev->term_label }} ({{ $dev->current_level }})</div>
                                         <span class="shrink-0 text-[10px] font-semibold text-amber-700/70 dark:text-amber-400/70">{{ $dev->created_at->format('d.m.Y') }}</span>
                                     </div>
-                                    <div class="grid grid-cols-4 gap-1 text-center my-2 text-[11px]">
-                                        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Esn: <strong>{{ $dev->flexibility_score }}</strong></div>
-                                        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Kuv: <strong>{{ $dev->strength_score }}</strong></div>
-                                        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Den: <strong>{{ $dev->balance_score }}</strong></div>
-                                        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Dis: <strong>{{ $dev->discipline_score }}</strong></div>
-                                    </div>
+                                    @if($dev->isPdfFormat())
+                                        @php
+                                            $karneGroups = [
+                                                '💪 Fiziksel Performans' => ['Esneklik' => $dev->phys_flexibility, 'Denge/Koord.' => $dev->phys_balance_coordination, 'Kuvvet/Day.' => $dev->phys_strength_endurance, 'Odaklanma' => $dev->phys_focus],
+                                                '🤸 Teknik Beceri' => ['Öne/Geri Takla' => $dev->tech_forward_backward_roll, 'Amut/Çember' => $dev->tech_handstand_wheel, 'Kartal/Spagat' => $dev->tech_eagle_split, 'Esn./Soğuma' => $dev->tech_flexibility_cooldown],
+                                                '🧠 Sosyal Gelişim' => ['Derse Katılım' => $dev->social_class_participation, 'İletişim' => $dev->social_communication, 'Komut Takibi' => $dev->social_command_following, 'Hedefe İlerleme' => $dev->social_goal_progress],
+                                            ];
+                                        @endphp
+                                        <div class="space-y-2 my-2">
+                                            @foreach($karneGroups as $groupLabel => $criteria)
+                                                <div>
+                                                    <div class="text-[10px] font-bold text-amber-800 dark:text-amber-400 mb-1">{{ $groupLabel }}</div>
+                                                    <div class="grid grid-cols-2 gap-1 text-[11px]">
+                                                        @foreach($criteria as $critLabel => $val)
+                                                            <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border flex justify-between gap-1">
+                                                                <span>{{ $critLabel }}</span>
+                                                                <strong>{{ $val }}/4</strong>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Ölçek: 1-Öğreniyor · 2-Ortalama · 3-Mükemmel · 4-Tamamlandı</p>
+                                    @else
+                                        <div class="grid grid-cols-4 gap-1 text-center my-2 text-[11px]">
+                                            <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Esn: <strong>{{ $dev->flexibility_score }}</strong></div>
+                                            <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Kuv: <strong>{{ $dev->strength_score }}</strong></div>
+                                            <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Den: <strong>{{ $dev->balance_score }}</strong></div>
+                                            <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-1 rounded border">Dis: <strong>{{ $dev->discipline_score }}</strong></div>
+                                        </div>
+                                    @endif
                                     <p class="text-[11px] text-slate-700 dark:text-slate-300 italic">"{{ $dev->coach_comment }}"</p>
                                 </div>
                             @endforeach

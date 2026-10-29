@@ -22,15 +22,46 @@
                                         <input type="text" name="current_level" value="Artistik Seviye 2" class="w-full border rounded-xl px-3 py-2">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-5 gap-1.5">
-                                    <div><label class="font-bold block">Esneklik</label><input type="number" name="flexibility_score" value="90" class="w-full border rounded-lg p-1.5"></div>
-                                    <div><label class="font-bold block">Kuvvet</label><input type="number" name="strength_score" value="85" class="w-full border rounded-lg p-1.5"></div>
-                                    <div><label class="font-bold block">Denge</label><input type="number" name="balance_score" value="88" class="w-full border rounded-lg p-1.5"></div>
-                                    <div><label class="font-bold block">Koord.</label><input type="number" name="coordination_score" value="92" class="w-full border rounded-lg p-1.5"></div>
-                                    <div><label class="font-bold block">Disiplin</label><input type="number" name="discipline_score" value="95" class="w-full border rounded-lg p-1.5"></div>
+                                <p class="text-[11px] text-slate-500 bg-slate-50 rounded-lg p-2 -mt-1">Ölçek: 1-Öğreniyor · 2-Ortalama · 3-Mükemmel · 4-Tamamlandı</p>
+
+                                <div class="space-y-1.5">
+                                    <div class="font-extrabold text-slate-700">💪 Fiziksel Performans Analizi</div>
+                                    @foreach(['phys_flexibility' => 'Esneklik', 'phys_balance_coordination' => 'Denge ve Koordinasyon', 'phys_strength_endurance' => 'Kuvvet ve Dayanıklılık', 'phys_focus' => 'Odaklanma'] as $field => $label)
+                                        <div class="flex items-center justify-between gap-2">
+                                            <label class="flex-1">{{ $label }}</label>
+                                            <select name="{{ $field }}" class="border rounded-lg px-2 py-1 bg-white font-bold w-16">
+                                                @for($i = 1; $i <= 4; $i++)<option value="{{ $i }}" {{ $i === 3 ? 'selected' : '' }}>{{ $i }}</option>@endfor
+                                            </select>
+                                        </div>
+                                    @endforeach
                                 </div>
+
+                                <div class="space-y-1.5">
+                                    <div class="font-extrabold text-slate-700">🤸 Teknik Beceri (Hedef)</div>
+                                    @foreach(['tech_forward_backward_roll' => 'Öne/Geri Takla', 'tech_handstand_wheel' => 'Amut/Çember', 'tech_eagle_split' => 'Kartal/Spagat', 'tech_flexibility_cooldown' => 'Esneklik ve Soğuma'] as $field => $label)
+                                        <div class="flex items-center justify-between gap-2">
+                                            <label class="flex-1">{{ $label }}</label>
+                                            <select name="{{ $field }}" class="border rounded-lg px-2 py-1 bg-white font-bold w-16">
+                                                @for($i = 1; $i <= 4; $i++)<option value="{{ $i }}" {{ $i === 3 ? 'selected' : '' }}>{{ $i }}</option>@endfor
+                                            </select>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <div class="font-extrabold text-slate-700">🧠 Sosyal Gelişim ve Disiplin</div>
+                                    @foreach(['social_class_participation' => 'Derse Katılım', 'social_communication' => 'İletişim', 'social_command_following' => 'Komut Takibi', 'social_goal_progress' => 'Hedefe İlerleme'] as $field => $label)
+                                        <div class="flex items-center justify-between gap-2">
+                                            <label class="flex-1">{{ $label }}</label>
+                                            <select name="{{ $field }}" class="border rounded-lg px-2 py-1 bg-white font-bold w-16">
+                                                @for($i = 1; $i <= 4; $i++)<option value="{{ $i }}" {{ $i === 3 ? 'selected' : '' }}>{{ $i }}</option>@endfor
+                                            </select>
+                                        </div>
+                                    @endforeach
+                                </div>
+
                                 <div>
-                                    <label class="font-bold block mb-1">Antrenör Değerlendirme Notu</label>
+                                    <label class="font-bold block mb-1">Antrenörün Notu</label>
                                     <textarea name="coach_comment" rows="3" class="w-full border rounded-xl p-2.5">Sporcumuz dönem boyunca tüm temel cimnastik becerilerinde üstün gayret göstermiştir.</textarea>
                                 </div>
                                 <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold">🏅 Gelişim Karnesini Yayınla</button>
@@ -121,7 +152,11 @@
                                                 <span>{{ $dev->student?->full_name }} — {{ $dev->term_label }}</span>
                                                 <span class="text-indigo-600">({{ $dev->current_level }})</span>
                                             </div>
-                                            <p class="text-slate-600 mt-1">Esneklik: {{ $dev->flexibility_score }} · Kuvvet: {{ $dev->strength_score }} · Denge: {{ $dev->balance_score }} · "{{ $dev->coach_comment }}"</p>
+                                            @if($dev->isPdfFormat())
+                                                <p class="text-slate-600 mt-1">Fiz: {{ $dev->phys_flexibility }}/{{ $dev->phys_balance_coordination }}/{{ $dev->phys_strength_endurance }}/{{ $dev->phys_focus }} · Tek: {{ $dev->tech_forward_backward_roll }}/{{ $dev->tech_handstand_wheel }}/{{ $dev->tech_eagle_split }}/{{ $dev->tech_flexibility_cooldown }} · Sos: {{ $dev->social_class_participation }}/{{ $dev->social_communication }}/{{ $dev->social_command_following }}/{{ $dev->social_goal_progress }} · "{{ $dev->coach_comment }}"</p>
+                                            @else
+                                                <p class="text-slate-600 mt-1">(Eski format) Esneklik: {{ $dev->flexibility_score }} · Kuvvet: {{ $dev->strength_score }} · Denge: {{ $dev->balance_score }} · "{{ $dev->coach_comment }}"</p>
+                                            @endif
                                         </div>
                                         <div class="flex gap-1.5 shrink-0">
                                             <button type="button" onclick="document.getElementById('edit-dev-{{ $dev->id }}').classList.toggle('hidden')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">✏️ Düzenle</button>
@@ -137,13 +172,26 @@
                                             <input type="text" name="term_label" value="{{ $dev->term_label }}" required class="border rounded-lg px-2 py-1 bg-white">
                                             <input type="text" name="current_level" value="{{ $dev->current_level }}" required class="border rounded-lg px-2 py-1 bg-white">
                                         </div>
-                                        <div class="grid grid-cols-5 gap-1">
-                                            <input type="number" name="flexibility_score" value="{{ $dev->flexibility_score }}" class="border rounded-lg p-1">
-                                            <input type="number" name="strength_score" value="{{ $dev->strength_score }}" class="border rounded-lg p-1">
-                                            <input type="number" name="balance_score" value="{{ $dev->balance_score }}" class="border rounded-lg p-1">
-                                            <input type="number" name="coordination_score" value="{{ $dev->coordination_score }}" class="border rounded-lg p-1">
-                                            <input type="number" name="discipline_score" value="{{ $dev->discipline_score }}" class="border rounded-lg p-1">
-                                        </div>
+                                        @if($dev->isPdfFormat())
+                                            <div class="grid grid-cols-4 gap-1">
+                                                @foreach(['phys_flexibility' => 'Esn', 'phys_balance_coordination' => 'Den/Koord', 'phys_strength_endurance' => 'Kuv/Day', 'phys_focus' => 'Odak', 'tech_forward_backward_roll' => 'Takla', 'tech_handstand_wheel' => 'Amut/Çmb', 'tech_eagle_split' => 'Kartal/Spg', 'tech_flexibility_cooldown' => 'Esn/Soğ', 'social_class_participation' => 'Katılım', 'social_communication' => 'İletişim', 'social_command_following' => 'Komut', 'social_goal_progress' => 'Hedef'] as $field => $label)
+                                                    <div>
+                                                        <label class="block text-[10px] text-slate-500">{{ $label }}</label>
+                                                        <select name="{{ $field }}" class="w-full border rounded-lg p-1 bg-white">
+                                                            @for($i = 1; $i <= 4; $i++)<option value="{{ $i }}" {{ $dev->{$field} == $i ? 'selected' : '' }}>{{ $i }}</option>@endfor
+                                                        </select>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="grid grid-cols-5 gap-1">
+                                                <input type="number" name="flexibility_score" value="{{ $dev->flexibility_score }}" class="border rounded-lg p-1">
+                                                <input type="number" name="strength_score" value="{{ $dev->strength_score }}" class="border rounded-lg p-1">
+                                                <input type="number" name="balance_score" value="{{ $dev->balance_score }}" class="border rounded-lg p-1">
+                                                <input type="number" name="coordination_score" value="{{ $dev->coordination_score }}" class="border rounded-lg p-1">
+                                                <input type="number" name="discipline_score" value="{{ $dev->discipline_score }}" class="border rounded-lg p-1">
+                                            </div>
+                                        @endif
                                         <div class="flex gap-2">
                                             <input type="text" name="coach_comment" value="{{ $dev->coach_comment }}" class="w-full border rounded-lg px-2 py-1 bg-white">
                                             <button type="submit" class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold shrink-0">💾 Güncelle</button>

@@ -54,20 +54,21 @@ trait ManagesEventsAndDevelopment
         return redirect()->route('admin.index', ['tab' => 'etkinlikler'])->with('success', "'{$title}' etkinliği silindi.");
     }
 
-    // MODÜL 13: Gelişim Karnesi Kaydı
+    // MODÜL 13: Gelişim Karnesi Kaydı — salonun basılı "GELİŞİM TAKİP KARNESİ"
+    // formuna göre: 3 kategori × 4 kriter, her biri 1-4 ölçeğinde.
+    private const PDF_KARNE_CRITERIA = [
+        'phys_flexibility', 'phys_balance_coordination', 'phys_strength_endurance', 'phys_focus',
+        'tech_forward_backward_roll', 'tech_handstand_wheel', 'tech_eagle_split', 'tech_flexibility_cooldown',
+        'social_class_participation', 'social_communication', 'social_command_following', 'social_goal_progress',
+    ];
+
     public function storeDevelopmentRecord(Request $request)
     {
-        $validated = $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'term_label' => 'required|string|max:100',
-            'current_level' => 'required|string|max:100',
-            'flexibility_score' => 'required|integer|min:0|max:100',
-            'strength_score' => 'required|integer|min:0|max:100',
-            'balance_score' => 'required|integer|min:0|max:100',
-            'coordination_score' => 'required|integer|min:0|max:100',
-            'discipline_score' => 'required|integer|min:0|max:100',
-            'coach_comment' => 'nullable|string',
-        ]);
+        $rules = ['student_id' => 'required|exists:students,id', 'term_label' => 'required|string|max:100', 'current_level' => 'required|string|max:100', 'coach_comment' => 'nullable|string'];
+        foreach (self::PDF_KARNE_CRITERIA as $crit) {
+            $rules[$crit] = 'required|integer|min:1|max:4';
+        }
+        $validated = $request->validate($rules);
 
         $student = Student::with('group')->find($validated['student_id']);
         $this->assertCoachOwnsGroup($student?->group_id);
@@ -79,16 +80,7 @@ trait ManagesEventsAndDevelopment
             'coach_id' => $student?->group?->coach_id ?? $this->getAuthenticatedStaff()?->id,
             'term_label' => $validated['term_label'],
             'current_level' => $validated['current_level'],
-            'flexibility_score' => $validated['flexibility_score'],
-            'strength_score' => $validated['strength_score'],
-            'balance_score' => $validated['balance_score'],
-            'coordination_score' => $validated['coordination_score'],
-            'discipline_score' => $validated['discipline_score'],
-            'skills' => [
-                'Temel Duruş ve Esneklik' => 'Başarılı',
-                'Takla & Çember' => 'Başarılı',
-                'Amut & Denge' => 'Gelişiyor',
-            ],
+            ...array_intersect_key($validated, array_flip(self::PDF_KARNE_CRITERIA)),
             'coach_comment' => $validated['coach_comment'] ?? null,
         ]);
 
@@ -99,23 +91,40 @@ trait ManagesEventsAndDevelopment
     public function updateDevelopmentRecord(Request $request, DevelopmentRecord $record)
     {
         $this->assertCoachOwnsGroup($record->student?->group_id);
-        $request->validate([
-            'flexibility_score' => 'nullable|integer|min:0|max:100',
-            'strength_score' => 'nullable|integer|min:0|max:100',
-            'balance_score' => 'nullable|integer|min:0|max:100',
-            'coordination_score' => 'nullable|integer|min:0|max:100',
-            'discipline_score' => 'nullable|integer|min:0|max:100',
-        ]);
-        $record->update([
+
+        $updateData = [
             'term_label' => $request->input('term_label', $record->term_label),
             'current_level' => $request->input('current_level', $record->current_level),
-            'flexibility_score' => (int) $request->input('flexibility_score', $record->flexibility_score),
-            'strength_score' => (int) $request->input('strength_score', $record->strength_score),
-            'balance_score' => (int) $request->input('balance_score', $record->balance_score),
-            'coordination_score' => (int) $request->input('coordination_score', $record->coordination_score),
-            'discipline_score' => (int) $request->input('discipline_score', $record->discipline_score),
             'coach_comment' => $request->input('coach_comment', $record->coach_comment),
-        ]);
+        ];
+
+        if ($record->isPdfFormat()) {
+            // Yeni formattaki bir kayıt her zaman yeni (1-4 ölçekli) alanlarla düzenlenir.
+            $rules = [];
+            foreach (self::PDF_KARNE_CRITERIA as $crit) {
+                $rules[$crit] = 'nullable|integer|min:1|max:4';
+            }
+            $validated = $request->validate($rules);
+            foreach (self::PDF_KARNE_CRITERIA as $crit) {
+                $updateData[$crit] = $request->filled($crit) ? (int) $validated[$crit] : $record->{$crit};
+            }
+        } else {
+            // Eski (0-100 puanlı) formattaki bir kayıt, arşivdeki haliyle kendi
+            // alanlarından düzenlenmeye devam eder — yeni formata dönüştürülmez.
+            $validated = $request->validate([
+                'flexibility_score' => 'nullable|integer|min:0|max:100',
+                'strength_score' => 'nullable|integer|min:0|max:100',
+                'balance_score' => 'nullable|integer|min:0|max:100',
+                'coordination_score' => 'nullable|integer|min:0|max:100',
+                'discipline_score' => 'nullable|integer|min:0|max:100',
+            ]);
+            foreach (['flexibility_score', 'strength_score', 'balance_score', 'coordination_score', 'discipline_score'] as $legacy) {
+                $updateData[$legacy] = $request->filled($legacy) ? (int) $validated[$legacy] : $record->{$legacy};
+            }
+        }
+
+        $record->update($updateData);
+
         AuditLog::record('karne_guncellendi', 'Gelişim karnesi güncellendi.', 'DevelopmentRecord', $record->id);
         return redirect()->route('admin.index', ['tab' => 'gelisim'])->with('success', 'Gelişim karnesi güncellendi!');
     }

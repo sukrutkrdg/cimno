@@ -21,4 +21,11 @@ class DevelopmentRecord extends Model
     {
         return $this->belongsTo(User::class, 'coach_id');
     }
+
+    // Salonun basılı "GELİŞİM TAKİP KARNESİ" formuna göre girilmiş (3 kategori × 4
+    // kriter, 1-4 ölçeği) mi, yoksa eski 0-100 puanlı formatta mı kaydedildi?
+    public function isPdfFormat(): bool
+    {
+        return $this->phys_flexibility !== null;
+    }
 }
