@@ -99,6 +99,37 @@ trait ManagesGroupsAndSchedules
         return redirect()->route('admin.index', ['tab' => $tab])->with('success', "'{$group->name}' grup bilgileri güncellendi!");
     }
 
+    // MODÜL 10: Yardımcı Antrenör Ekleme/Çıkarma (parametrik, sayı sınırsız)
+    public function addAssistantCoach(Request $request, Group $group)
+    {
+        $this->assertCoachOwnsGroup($group->id);
+        $validated = $request->validate([
+            'coach_id' => 'required|exists:users,id',
+        ]);
+
+        $coach = \App\Models\User::find($validated['coach_id']);
+        if (!$coach || $coach->role !== 'coach') {
+            return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('error', 'Seçilen kullanıcı bir antrenör değil.');
+        }
+        if ($group->coach_id === $coach->id) {
+            return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('error', "{$coach->name} zaten bu grubun baş antrenörü.");
+        }
+
+        $group->assistantCoaches()->syncWithoutDetaching([$coach->id]);
+        AuditLog::record('yardimci_antrenor_eklendi', "{$coach->name}, {$group->name} grubuna yardımcı antrenör olarak eklendi.", 'Group', $group->id);
+
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', "{$coach->name}, {$group->name} grubuna yardımcı antrenör olarak eklendi.");
+    }
+
+    public function removeAssistantCoach(Group $group, \App\Models\User $user)
+    {
+        $this->assertCoachOwnsGroup($group->id);
+        $group->assistantCoaches()->detach($user->id);
+        AuditLog::record('yardimci_antrenor_cikarildi', "{$user->name}, {$group->name} grubundan yardımcı antrenörlükten çıkarıldı.", 'Group', $group->id);
+
+        return redirect()->route('admin.index', ['tab' => 'gruplar'])->with('success', "{$user->name} yardımcı antrenörlükten çıkarıldı.");
+    }
+
     public function destroyGroup(Group $group)
     {
         $this->assertCoachOwnsGroup($group->id);

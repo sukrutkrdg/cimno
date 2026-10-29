@@ -20,6 +20,14 @@ class Group extends Model
         return $this->belongsTo(User::class, 'coach_id');
     }
 
+    // Baş antrenörün (coach_id) dışında, gruba ek olarak atanmış yardımcı
+    // antrenörler. Sayıları parametriktir (yönetim panelinden "+ Antrenör Ekle"
+    // ile çoğaltılır), coach_id değiştirilmeden eklenir/çıkarılır.
+    public function assistantCoaches()
+    {
+        return $this->belongsToMany(User::class, 'group_coach', 'group_id', 'user_id');
+    }
+
     public function students()
     {
         return $this->hasMany(Student::class);

@@ -275,6 +275,30 @@
                                             <span class="text-[11px] font-bold text-indigo-600">{{ $g->branch?->name }} · {{ $g->area }}</span>
                                             <h4 class="font-extrabold text-sm text-slate-900">{{ $g->name }} ({{ $g->active_students_count }}/{{ $g->capacity }} Öğrenci)</h4>
                                             <p class="text-xs text-slate-500">Antrenör: {{ $g->coach?->name ?? '-' }} · {{ $g->age_group }} · {{ $g->level }}</p>
+                                        @if($g->assistantCoaches->isNotEmpty())
+                                            <p class="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-1">
+                                                👥 Yardımcı:
+                                                @foreach($g->assistantCoaches as $ac)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold">
+                                                        {{ $ac->name }}
+                                                        <form action="{{ route('admin.groups.assistant.remove', [$g->id, $ac->id]) }}" method="POST" onsubmit="return confirm('{{ $ac->name }} yardımcı antrenörlükten çıkarılsın mı?')" class="inline">
+                                                            @csrf
+                                                            <button type="submit" class="text-indigo-400 hover:text-rose-600" title="Çıkar">✕</button>
+                                                        </form>
+                                                    </span>
+                                                @endforeach
+                                            </p>
+                                        @endif
+                                        <form action="{{ route('admin.groups.assistant.add', $g->id) }}" method="POST" class="flex items-center gap-1.5 mt-1.5">
+                                            @csrf
+                                            <select name="coach_id" class="text-[11px] border rounded-lg px-2 py-1 bg-white" required>
+                                                <option value="">+ Yardımcı Antrenör Seç</option>
+                                                @foreach($staff->where('role', 'coach') as $c)
+                                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="text-[11px] px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold">➕ Ekle</button>
+                                        </form>
                                         </div>
                                         <div class="flex items-center gap-1.5">
                                             <button type="button" onclick="document.getElementById('edit-group-{{ $g->id }}').classList.toggle('hidden')" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold">
