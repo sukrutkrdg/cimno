@@ -19,8 +19,16 @@
                                 </form>
                                 <div class="space-y-1 max-h-32 overflow-y-auto">
                                     @foreach($hallAreas as $areaItem)
-                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
-                                            <span class="font-semibold">{{ $areaItem }}</span>
+                                        <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border">
+                                            <form action="{{ route('admin.options.update') }}" method="POST" class="flex-1 flex gap-1">
+                                                @csrf
+                                                <input type="hidden" name="option_key" value="custom_hall_areas">
+                                                <input type="hidden" name="operation" value="rename">
+                                                <input type="hidden" name="old_option" value="{{ $areaItem }}">
+                                                <input type="hidden" name="return_tab" value="gruplar">
+                                                <input type="text" name="new_option" value="{{ $areaItem }}" class="w-full border rounded px-1.5 py-0.5 font-semibold bg-white text-[11px]">
+                                                <button type="submit" class="text-indigo-600 font-extrabold shrink-0" title="Yeniden adlandır">💾</button>
+                                            </form>
                                             <form action="{{ route('admin.options.update') }}" method="POST">
                                                 @csrf
                                                 <input type="hidden" name="option_key" value="custom_hall_areas">
@@ -47,8 +55,16 @@
                                 </form>
                                 <div class="space-y-1 max-h-32 overflow-y-auto">
                                     @foreach($ageGroups as $ageItem)
-                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
-                                            <span class="font-semibold">{{ $ageItem }}</span>
+                                        <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border">
+                                            <form action="{{ route('admin.options.update') }}" method="POST" class="flex-1 flex gap-1">
+                                                @csrf
+                                                <input type="hidden" name="option_key" value="custom_age_groups">
+                                                <input type="hidden" name="operation" value="rename">
+                                                <input type="hidden" name="old_option" value="{{ $ageItem }}">
+                                                <input type="hidden" name="return_tab" value="gruplar">
+                                                <input type="text" name="new_option" value="{{ $ageItem }}" class="w-full border rounded px-1.5 py-0.5 font-semibold bg-white text-[11px]">
+                                                <button type="submit" class="text-indigo-600 font-extrabold shrink-0" title="Yeniden adlandır">💾</button>
+                                            </form>
                                             <form action="{{ route('admin.options.update') }}" method="POST">
                                                 @csrf
                                                 <input type="hidden" name="option_key" value="custom_age_groups">
@@ -75,8 +91,16 @@
                                 </form>
                                 <div class="space-y-1 max-h-32 overflow-y-auto">
                                     @foreach($groupLevels as $lvlItem)
-                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
-                                            <span class="font-semibold">{{ $lvlItem }}</span>
+                                        <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border">
+                                            <form action="{{ route('admin.options.update') }}" method="POST" class="flex-1 flex gap-1">
+                                                @csrf
+                                                <input type="hidden" name="option_key" value="custom_group_levels">
+                                                <input type="hidden" name="operation" value="rename">
+                                                <input type="hidden" name="old_option" value="{{ $lvlItem }}">
+                                                <input type="hidden" name="return_tab" value="gruplar">
+                                                <input type="text" name="new_option" value="{{ $lvlItem }}" class="w-full border rounded px-1.5 py-0.5 font-semibold bg-white text-[11px]">
+                                                <button type="submit" class="text-indigo-600 font-extrabold shrink-0" title="Yeniden adlandır">💾</button>
+                                            </form>
                                             <form action="{{ route('admin.options.update') }}" method="POST">
                                                 @csrf
                                                 <input type="hidden" name="option_key" value="custom_group_levels">

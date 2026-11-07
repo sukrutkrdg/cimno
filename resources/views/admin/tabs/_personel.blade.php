@@ -165,6 +165,32 @@
                                                         <span>📅 Ders Programını Düzenleyebilsin</span>
                                                     </label>
                                                 </div>
+
+                                                @php
+                                                    $tabLabels = [
+                                                        'pano' => '📊 Pano (Özet)', 'adaylar' => '🎯 Adaylar (Ön Kayıt)',
+                                                        'ogrenciler' => '🤸 Öğrenciler & Kayıt', 'gruplar' => '🏅 Branş, Grup & Program',
+                                                        'takvim' => '📅 Komple Takvim', 'yoklama' => '✅ Tek Dokunuş Yoklama',
+                                                        'paketler' => '🏷️ Paket & Toplu Fiyat', 'aidat' => '💳 Aidat & Tahsilat',
+                                                        'kasa' => '🏦 Gelir-Gider & Kasa', 'personel' => '👥 Personel, Yetki & Hakediş',
+                                                        'mesajlar' => '💬 WhatsApp Hazır Cevap', 'etkinlikler' => '🎪 Etkinlik & Yaz Okulu',
+                                                        'gelisim' => '📈 Gelişim Karnesi', 'raporlar' => '📑 Raporlar & Excel',
+                                                        'site_icerigi' => '🌐 Site İçeriği (CMS)', 'ayarlar' => '⚙️ Ayarlar, Yedek & KVKK',
+                                                    ];
+                                                    $uAllowedTabs = $u->allowedTabs();
+                                                @endphp
+                                                <div class="pt-2 border-t border-slate-200/70">
+                                                    <div class="text-[11px] font-bold text-slate-500 mb-1.5">🧭 Sol Menüde Görebileceği Modüller</div>
+                                                    <div class="grid sm:grid-cols-3 gap-1.5">
+                                                        @foreach($tabLabels as $tabId => $tabLabel)
+                                                            <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 cursor-pointer">
+                                                                <input type="checkbox" name="perm_view_{{ $tabId }}" value="1" {{ in_array($tabId, $uAllowedTabs, true) ? 'checked' : '' }}>
+                                                                <span>{{ $tabLabel }}</span>
+                                                            </label>
+                                                        @endforeach
+                                                    </div>
+                                                    <p class="text-[10px] text-slate-400 mt-1.5">Mali modüllerde (Aidat, Kasa, Personel, Raporlar, Ayarlar) kayıt ekleme/düzenleme/silme işlemleri bu rolde her durumda kapalıdır — kutu yalnızca görüntülemeyi açar.</p>
+                                                </div>
                                             @endif
 
                                             <div class="flex flex-wrap items-center justify-between gap-2 pt-2">

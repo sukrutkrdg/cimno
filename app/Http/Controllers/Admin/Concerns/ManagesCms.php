@@ -6,9 +6,12 @@ use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\Faq;
+use App\Models\FinancialTransaction;
 use App\Models\GalleryItem;
 use App\Models\Group;
+use App\Models\Lead;
 use App\Models\NavMenuItem;
+use App\Models\Schedule;
 use App\Models\SiteSetting;
 use App\Models\Student;
 use App\Models\User;
@@ -341,6 +344,8 @@ trait ManagesCms
         $items = array_values(array_filter(array_map('trim', explode('|', $currentRaw))));
 
         $action = $request->input('operation', 'save_all');
+        $renamedFrom = null;
+        $renamedTo = null;
         if ($action === 'add' && $request->filled('new_option')) {
             $newOpt = trim($request->input('new_option'));
             if (!in_array($newOpt, $items, true)) {
@@ -349,6 +354,15 @@ trait ManagesCms
         } elseif ($action === 'remove' && $request->filled('remove_option')) {
             $remOpt = trim($request->input('remove_option'));
             $items = array_values(array_filter($items, fn($i) => $i !== $remOpt));
+        } elseif ($action === 'rename' && $request->filled('old_option') && $request->filled('new_option')) {
+            $oldOpt = trim($request->input('old_option'));
+            $newOpt = trim($request->input('new_option'));
+            $idx = array_search($oldOpt, $items, true);
+            if ($idx !== false && $newOpt !== '' && !in_array($newOpt, $items, true)) {
+                $items[$idx] = $newOpt;
+                $renamedFrom = $oldOpt;
+                $renamedTo = $newOpt;
+            }
         } elseif ($action === 'save_all' && $request->has('options_text')) {
             $rawLines = preg_split('/[\r\n|]+/', (string) $request->input('options_text'));
             $items = array_values(array_filter(array_map('trim', $rawLines)));
@@ -356,6 +370,23 @@ trait ManagesCms
 
         SiteSetting::updateOrCreate(['key' => $settingKey], ['value' => implode('|', $items)]);
         AuditLog::record('dinamik_secenek_guncellendi', "Dinamik liste ({$settingKey}) güncellendi.");
+
+        // Bir seçenek yeniden adlandırıldığında, o ismi zaten kullanan mevcut
+        // kayıtlar eski isme bağlı kalıp "kayıp" görünmesin diye aynı değişiklik
+        // ilgili tablo(lar)a da yansıtılır.
+        if ($renamedFrom !== null) {
+            match ($settingKey) {
+                'custom_hall_areas' => [
+                    Group::where('area', $renamedFrom)->update(['area' => $renamedTo]),
+                    Schedule::where('area', $renamedFrom)->update(['area' => $renamedTo]),
+                ],
+                'custom_age_groups' => Group::where('age_group', $renamedFrom)->update(['age_group' => $renamedTo]),
+                'custom_group_levels' => Group::where('level', $renamedFrom)->update(['level' => $renamedTo]),
+                'custom_income_categories', 'custom_expense_categories' => FinancialTransaction::where('category', $renamedFrom)->update(['category' => $renamedTo]),
+                'custom_lead_sources' => Lead::where('source', $renamedFrom)->update(['source' => $renamedTo]),
+                default => null,
+            };
+        }
 
         $tab = $request->input('return_tab', 'gruplar');
         return redirect()->route('admin.index', ['tab' => $tab])->with('success', 'Seçenek listesi başarıyla güncellendi!');

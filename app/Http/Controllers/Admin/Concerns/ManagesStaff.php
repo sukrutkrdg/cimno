@@ -13,6 +13,15 @@ use Illuminate\Support\Str;
 
 trait ManagesStaff
 {
+    // Sol menüdeki 16 modülün kimlikleri — User::allowedTabs()'taki $defaults
+    // dizisiyle ve admin.panel.blade.php'deki $navItems ile birebir aynı sırada
+    // tutulmalı; personel yetki formundaki "view_X" kutularının kaynağı budur.
+    public const MANAGEABLE_TABS = [
+        'pano', 'adaylar', 'ogrenciler', 'gruplar', 'takvim', 'yoklama',
+        'paketler', 'aidat', 'kasa', 'personel', 'mesajlar',
+        'etkinlikler', 'gelisim', 'raporlar', 'site_icerigi', 'ayarlar',
+    ];
+
     // MODÜL 10: Personel / Sekreter / Antrenör Hesabı Açma, Kapatma ve Silme (Kabul Kriteri #5)
     public function storeStaff(Request $request)
     {
@@ -119,6 +128,16 @@ trait ManagesStaff
             'add_development' => $request->boolean('perm_add_development'),
             'manage_schedule' => $request->boolean('perm_manage_schedule'),
         ];
+
+        // Sol menüdeki 16 modülün her biri için ayrı bir "görebilsin" kutusu —
+        // bkz. User::allowedTabs(). Bir kutu işaretli gönderilmezse (formda yoksa
+        // ya da kullanıcı bilerek boş bıraktıysa) o modül için artık rol bazlı
+        // varsayılan değil, buradaki açık "false" geçerli olur — tıpkı diğer
+        // perm_* kutuları gibi, formu her kaydedişte TÜM 16 kutunun o anki
+        // işaretli/işaretsiz durumunu yansıtması beklenir (bkz. _personel.blade.php).
+        foreach (self::MANAGEABLE_TABS as $tab) {
+            $permissions["view_{$tab}"] = $request->boolean("perm_view_{$tab}");
+        }
 
         $updateData = [
             'name' => $validated['name'],

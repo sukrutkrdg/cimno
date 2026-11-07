@@ -90,40 +90,44 @@ class User extends Authenticatable
         return $this->role === 'super_admin';
     }
 
+    // Sol menüdeki her modül için, bu personelin stored `permissions` JSON'ında
+    // açık bir "view_<tab>" anahtarı varsa o karar geçerlidir (hasPermission()'ın
+    // array_key_exists kontrolü sayesinde); yoksa aşağıdaki $defaults, BU METODUN
+    // ÖNCEKİ (rol bazlı sabit kodlanmış) davranışını birebir korur — hiçbir mevcut
+    // hesabın erişimi, süper yönetici elle bir "view_X" kutusunu değiştirmeden
+    // sessizce değişmez.
     public function allowedTabs(): array
     {
-        if ($this->role === 'super_admin') {
-            return [
-                'pano', 'adaylar', 'ogrenciler', 'gruplar', 'takvim', 'yoklama',
-                'paketler', 'aidat', 'kasa', 'personel', 'mesajlar',
-                'etkinlikler', 'gelisim', 'raporlar', 'site_icerigi', 'ayarlar',
-            ];
+        if (!in_array($this->role, ['super_admin', 'secretary', 'coach'], true)) {
+            return ['pano'];
         }
 
-        if ($this->role === 'secretary') {
-            $tabs = ['pano', 'adaylar', 'ogrenciler', 'gruplar', 'takvim', 'yoklama', 'etkinlikler', 'gelisim'];
-            if ($this->hasPermission('send_whatsapp', true)) {
-                $tabs[] = 'mesajlar';
-            }
-            if ($this->hasPermission('edit_content', true)) {
-                $tabs[] = 'site_icerigi';
-            }
-            return $tabs;
-        }
+        $defaults = [
+            'pano' => true,
+            'adaylar' => $this->role === 'secretary',
+            'ogrenciler' => true,
+            'gruplar' => true,
+            'takvim' => true,
+            'yoklama' => $this->role === 'secretary' || $this->hasPermission('take_attendance', true),
+            'paketler' => false,
+            'aidat' => false,
+            'kasa' => false,
+            'personel' => false,
+            'mesajlar' => $this->role === 'secretary' && $this->hasPermission('send_whatsapp', true),
+            'etkinlikler' => true,
+            'gelisim' => $this->role === 'secretary' || $this->hasPermission('add_development', true),
+            'raporlar' => false,
+            'site_icerigi' => $this->role === 'secretary' && $this->hasPermission('edit_content', true),
+            'ayarlar' => false,
+        ];
 
-        if ($this->role === 'coach') {
-            $tabs = ['pano', 'ogrenciler', 'gruplar', 'takvim'];
-            if ($this->hasPermission('take_attendance', true)) {
-                $tabs[] = 'yoklama';
+        $allowed = [];
+        foreach ($defaults as $tab => $default) {
+            if ($this->hasPermission("view_{$tab}", $default)) {
+                $allowed[] = $tab;
             }
-            $tabs[] = 'etkinlikler';
-            if ($this->hasPermission('add_development', true)) {
-                $tabs[] = 'gelisim';
-            }
-            return $tabs;
         }
-
-        return ['pano'];
+        return $allowed;
     }
 }
 

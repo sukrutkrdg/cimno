@@ -99,8 +99,8 @@
                     ['id' => 'pano', 'icon' => '📊', 'label' => '1. Pano (Özet)'],
                     ['id' => 'adaylar', 'icon' => '🎯', 'label' => '2. Adaylar (Ön Kayıt)'],
                     ['id' => 'ogrenciler', 'icon' => '🤸', 'label' => '3. Öğrenciler & Kayıt'],
-                    ['id' => 'gruplar', 'icon' => '🏅', 'label' => '4-5. Branş, Grup & Program'],
-                    ['id' => 'takvim', 'icon' => '📅', 'label' => 'Komple Takvim'],
+                    ['id' => 'gruplar', 'icon' => '🏅', 'label' => '4. Branş, Grup & Program'],
+                    ['id' => 'takvim', 'icon' => '📅', 'label' => '5. Komple Takvim'],
                     ['id' => 'yoklama', 'icon' => '✅', 'label' => '6. Tek Dokunuş Yoklama'],
                     ['id' => 'paketler', 'icon' => '🏷️', 'label' => '7. Paket & Toplu Fiyat'],
                     ['id' => 'aidat', 'icon' => '💳', 'label' => '8. Aidat & Tahsilat'],
@@ -153,109 +153,120 @@
                 </div>
             @endif
 
-            <!-- ========================================== -->
-            <!-- 1. PANO (DASHBOARD)                        -->
-            <!-- ========================================== -->
-            @if($activeTab === 'pano')
-                @include("admin.tabs._pano")
-            @endif
+            {{-- Tüm modüller için TEK yetki kapısı: sol menüde görünmeyen bir
+                 sekmeye biri doğrudan ?tab=X yazarak gitmeye çalışırsa (ör.
+                 yetkisi olmayan bir sekreter "kasa" sekmesini URL'den denerse),
+                 içerik artık eskisi gibi sızmıyor — her sekmenin kendi ayrı
+                 $currentRole kontrolü yerine, hepsi $allowedTabs'e bakıyor. --}}
+            @if(!in_array($activeTab, $allowedTabs, true))
+                <div class="p-6 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 font-bold">
+                    ⛔ Bu modüle erişim yetkiniz yok.
+                </div>
+            @else
+                <!-- ========================================== -->
+                <!-- 1. PANO (DASHBOARD)                        -->
+                <!-- ========================================== -->
+                @if($activeTab === 'pano')
+                    @include("admin.tabs._pano")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 2. ADAYLAR (ÖN KAYIT & DENEME DERSİ)       -->
-            <!-- ========================================== -->
-            @if($activeTab === 'adaylar')
-                @include("admin.tabs._adaylar")
-            @endif
+                <!-- ========================================== -->
+                <!-- 2. ADAYLAR (ÖN KAYIT & DENEME DERSİ)       -->
+                <!-- ========================================== -->
+                @if($activeTab === 'adaylar')
+                    @include("admin.tabs._adaylar")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 3. ÖĞRENCİLER & YENİ KAYIT                 -->
-            <!-- ========================================== -->
-            @if($activeTab === 'ogrenciler')
-                @include("admin.tabs._ogrenciler")
-            @endif
+                <!-- ========================================== -->
+                <!-- 3. ÖĞRENCİLER & YENİ KAYIT                 -->
+                <!-- ========================================== -->
+                @if($activeTab === 'ogrenciler')
+                    @include("admin.tabs._ogrenciler")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 4 & 5. BRANŞ, GRUP VE EĞİTİM PROGRAMI      -->
-            <!-- ========================================== -->
-            @if($activeTab === 'gruplar')
-                @include("admin.tabs._gruplar")
-            @endif
+                <!-- ========================================== -->
+                <!-- 4 & 5. BRANŞ, GRUP VE EĞİTİM PROGRAMI      -->
+                <!-- ========================================== -->
+                @if($activeTab === 'gruplar')
+                    @include("admin.tabs._gruplar")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- KOMPLE TAKVIM (HAFTALIK HAREKET TAKVIMI)   -->
-            <!-- ========================================== -->
-            @if($activeTab === 'takvim')
-                @include("admin.tabs._takvim")
-            @endif
+                <!-- ========================================== -->
+                <!-- KOMPLE TAKVIM (HAFTALIK HAREKET TAKVIMI)   -->
+                <!-- ========================================== -->
+                @if($activeTab === 'takvim')
+                    @include("admin.tabs._takvim")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 6. TEK DOKUNUŞLA YOKLAMA                   -->
-            <!-- ========================================== -->
-            @if($activeTab === 'yoklama')
-                @include("admin.tabs._yoklama")
-            @endif
+                <!-- ========================================== -->
+                <!-- 6. TEK DOKUNUŞLA YOKLAMA                   -->
+                <!-- ========================================== -->
+                @if($activeTab === 'yoklama')
+                    @include("admin.tabs._yoklama")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 7. PAKETLER, EĞİTİM PROGRAMI PAKETİ & İNDİRİMLER -->
-            <!-- ========================================== -->
-            @if($activeTab === 'paketler' && $currentRole === 'super_admin')
-                @include("admin.tabs._paketler")
-            @endif
+                <!-- ========================================== -->
+                <!-- 7. PAKETLER, EĞİTİM PROGRAMI PAKETİ & İNDİRİMLER -->
+                <!-- ========================================== -->
+                @if($activeTab === 'paketler')
+                    @include("admin.tabs._paketler")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 8. AİDAT, BORÇLANDIRMA VE TAHSİLAT         -->
-            <!-- ========================================== -->
-            @if($activeTab === 'aidat' && $currentRole === 'super_admin')
-                @include("admin.tabs._aidat")
-            @endif
+                <!-- ========================================== -->
+                <!-- 8. AİDAT, BORÇLANDIRMA VE TAHSİLAT         -->
+                <!-- ========================================== -->
+                @if($activeTab === 'aidat')
+                    @include("admin.tabs._aidat")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 9. GELİR-GİDER, ÜRÜN SATIŞI VE KASA        -->
-            <!-- ========================================== -->
-            @if($activeTab === 'kasa' && $currentRole === 'super_admin')
-                @include("admin.tabs._kasa")
-            @endif
+                <!-- ========================================== -->
+                <!-- 9. GELİR-GİDER, ÜRÜN SATIŞI VE KASA        -->
+                <!-- ========================================== -->
+                @if($activeTab === 'kasa')
+                    @include("admin.tabs._kasa")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 10. PERSONEL, SEKRETER VE ANTRENÖR HAKEDİŞİ -->
-            <!-- ========================================== -->
-            @if($activeTab === 'personel' && $currentRole === 'super_admin')
-                @include("admin.tabs._personel")
-            @endif
+                <!-- ========================================== -->
+                <!-- 10. PERSONEL, SEKRETER VE ANTRENÖR HAKEDİŞİ -->
+                <!-- ========================================== -->
+                @if($activeTab === 'personel')
+                    @include("admin.tabs._personel")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 11. WHATSAPP BUSINESS HAZIR CEVAPLARI      -->
-            <!-- ========================================== -->
-            @if($activeTab === 'mesajlar')
-                @include("admin.tabs._mesajlar")
-            @endif
+                <!-- ========================================== -->
+                <!-- 11. WHATSAPP BUSINESS HAZIR CEVAPLARI      -->
+                <!-- ========================================== -->
+                @if($activeTab === 'mesajlar')
+                    @include("admin.tabs._mesajlar")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 12 & 13. ETKİNLİKLER VE GELİŞİM KARNESİ    -->
-            <!-- ========================================== -->
-            @if($activeTab === 'etkinlikler' || $activeTab === 'gelisim')
-                @include("admin.tabs._etkinlikler_gelisim")
-            @endif
+                <!-- ========================================== -->
+                <!-- 12 & 13. ETKİNLİKLER VE GELİŞİM KARNESİ    -->
+                <!-- ========================================== -->
+                @if($activeTab === 'etkinlikler' || $activeTab === 'gelisim')
+                    @include("admin.tabs._etkinlikler_gelisim")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 14. RAPORLAR VE EXCEL ÇIKTISI              -->
-            <!-- ========================================== -->
-            @if($activeTab === 'raporlar' && $currentRole === 'super_admin')
-                @include("admin.tabs._raporlar")
-            @endif
+                <!-- ========================================== -->
+                <!-- 14. RAPORLAR VE EXCEL ÇIKTISI              -->
+                <!-- ========================================== -->
+                @if($activeTab === 'raporlar')
+                    @include("admin.tabs._raporlar")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 15. TAM KAPSAMLI SİTE İÇERİĞİ (CMS STÜDYOSU) -->
-            <!-- ========================================== -->
-            @if($activeTab === 'site_icerigi')
-                @include("admin.tabs._site_icerigi")
-            @endif
+                <!-- ========================================== -->
+                <!-- 15. TAM KAPSAMLI SİTE İÇERİĞİ (CMS STÜDYOSU) -->
+                <!-- ========================================== -->
+                @if($activeTab === 'site_icerigi')
+                    @include("admin.tabs._site_icerigi")
+                @endif
 
-            <!-- ========================================== -->
-            <!-- 16. AYARLAR, YEDEK İNDİRME VE İŞLEM GÜNLÜĞÜ -->
-            <!-- ========================================== -->
-            @if($activeTab === 'ayarlar' && $currentRole === 'super_admin')
-                @include("admin.tabs._ayarlar")
+                <!-- ========================================== -->
+                <!-- 16. AYARLAR, YEDEK İNDİRME VE İŞLEM GÜNLÜĞÜ -->
+                <!-- ========================================== -->
+                @if($activeTab === 'ayarlar')
+                    @include("admin.tabs._ayarlar")
+                @endif
             @endif
 
         </main>

@@ -71,6 +71,36 @@ class DynamicOptionListsTest extends TestCase
         $this->assertStringNotContainsString('Yaz Kampı Geliri', $incomeValue);
     }
 
+    public function test_admin_can_rename_a_hall_area_and_it_cascades_to_existing_groups(): void
+    {
+        $admin = $this->makeAdmin();
+        $branch = \App\Models\Branch::create(['name' => 'Artistik Cimnastik', 'slug' => 'artistik-cimnastik', 'age_range' => '4-12 Yaş', 'level' => 'Başlangıç']);
+        $group = \App\Models\Group::create([
+            'branch_id' => $branch->id,
+            'name' => 'Test Grubu',
+            'capacity' => 10,
+            'is_active' => true,
+            'area' => 'Ana Minder',
+        ]);
+
+        $this->withSession(['admin_user_id' => $admin->id])
+            ->post(route('admin.options.update'), [
+                'option_key' => 'custom_hall_areas',
+                'operation' => 'rename',
+                'old_option' => 'Ana Minder',
+                'new_option' => 'Ana Minder (Yenilendi)',
+                'return_tab' => 'gruplar',
+            ])
+            ->assertRedirect();
+
+        $value = \App\Models\SiteSetting::where('key', 'custom_hall_areas')->value('value');
+        $items = explode('|', $value);
+        $this->assertContains('Ana Minder (Yenilendi)', $items);
+        $this->assertNotContains('Ana Minder', $items);
+
+        $this->assertSame('Ana Minder (Yenilendi)', $group->fresh()->area);
+    }
+
     public function test_kasa_tab_renders_separate_income_and_expense_category_lists(): void
     {
         $admin = $this->makeAdmin();
