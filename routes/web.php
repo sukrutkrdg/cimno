@@ -33,6 +33,7 @@ Route::prefix('panel')->group(function () {
     // Bu noktadan sonraki TÜM rotalar için merkezi oturum zorunluluğu.
     Route::middleware('admin.auth')->group(function () {
         Route::get('/', [AdminPanelController::class, 'index'])->name('admin.index');
+        Route::get('/ozet', [AdminPanelController::class, 'managerSummary'])->name('admin.summary');
 
         // --- Herhangi bir yetkili personelin (süper yönetici / sekreter / antrenör) erişebildiği temel modüller ---
         Route::post('/adaylar', [AdminPanelController::class, 'storeLead'])->name('admin.leads.store');

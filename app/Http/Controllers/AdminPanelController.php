@@ -529,4 +529,51 @@ class AdminPanelController extends Controller
             'leadSources'
         ));
     }
+
+    // Yönetici Ekranı: Veli mobil portalı tarzında, tam masaüstü panele girmeden
+    // telefonda hızlıca bakılabilecek sade bir özet — bugünkü dersler, bekleyen
+    // WhatsApp kuyruğu, bugünkü yoklama durumu ve (süper yönetici için) geciken
+    // aidat toplamı. Salt okunur; herhangi bir kayıt değiştirmez.
+    public function managerSummary()
+    {
+        $authUser = $this->getAuthenticatedStaff();
+        if (!$authUser) {
+            return redirect()->route('admin.login');
+        }
+
+        $restrictToCoachId = ($authUser->role === 'coach' && $authUser->hasPermission('only_own_groups', true))
+            ? $authUser->id
+            : null;
+
+        $turkishDays = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe', 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
+        $todayName = $turkishDays[now()->dayOfWeekIso] ?? null;
+
+        $todaySchedules = Schedule::with(['group.coach'])
+            ->where('day_of_week', $todayName)
+            ->when($restrictToCoachId, fn($q) => $q->whereHas('group', fn($g) => $g->where('coach_id', $restrictToCoachId)))
+            ->get()
+            ->sortBy('start_time');
+
+        $pendingWhatsappCount = WhatsappMessage::where('status', 'queued')->count();
+
+        $todayAttendanceCounts = Attendance::whereDate('attendance_date', today())
+            ->when($restrictToCoachId, fn($q) => $q->where('coach_id', $restrictToCoachId))
+            ->select('status', DB::raw('count(*) as toplam'))
+            ->groupBy('status')
+            ->pluck('toplam', 'status');
+
+        $allowedTabs = $authUser->allowedTabs();
+        $newLeadsCount = in_array('adaylar', $allowedTabs, true)
+            ? Lead::whereIn('status', ['new', 'trial_scheduled', 'thinking'])->count()
+            : null;
+
+        $overdueTotal = $authUser->role === 'super_admin'
+            ? Invoice::whereIn('status', ['unpaid', 'partial'])->whereDate('due_date', '<', today())->sum('remaining_amount')
+            : null;
+
+        return view('admin.ozet', compact(
+            'authUser', 'allowedTabs', 'todaySchedules', 'pendingWhatsappCount',
+            'todayAttendanceCounts', 'newLeadsCount', 'overdueTotal'
+        ));
+    }
 }
