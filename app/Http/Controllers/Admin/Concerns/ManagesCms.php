@@ -390,6 +390,12 @@ trait ManagesCms
         // kayıtlar eski isme bağlı kalıp "kayıp" görünmesin diye aynı değişiklik
         // ilgili tablo(lar)a da yansıtılır.
         if ($renamedFrom !== null) {
+            // Ana sayfa formundan gelen başvurular da yeni adla kaydedilsin.
+            if ($settingKey === 'custom_lead_sources'
+                && $renamedFrom === (SiteSetting::where('key', 'lead_source_website')->value('value') ?? 'website')) {
+                SiteSetting::updateOrCreate(['key' => 'lead_source_website'], ['value' => $renamedTo]);
+            }
+
             match ($settingKey) {
                 'custom_hall_areas' => [
                     Group::where('area', $renamedFrom)->update(['area' => $renamedTo]),

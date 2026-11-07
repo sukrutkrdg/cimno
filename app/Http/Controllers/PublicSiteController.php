@@ -83,7 +83,7 @@ class PublicSiteController extends Controller
             'student_age' => $validated['student_age'],
             'branch_id' => $validated['branch_id'] ?? null,
             'preferred_days' => $validated['preferred_days'] ?? 'Belirtilmedi',
-            'source' => 'website',
+            'source' => SiteSetting::where('key', 'lead_source_website')->value('value') ?? 'website',
             'status' => 'new',
             'notes' => 'Web sitesi online ön kayıt formundan geldi.',
             'kvkk_approved' => true,

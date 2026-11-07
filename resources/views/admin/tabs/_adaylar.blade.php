@@ -47,6 +47,46 @@
                     </form>
                 </div>
 
+                @if($authUser->hasPermission('edit_content'))
+                    <details class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm text-xs">
+                        <summary class="cursor-pointer font-extrabold text-sm text-indigo-900">🧭 Aday Kaynaklarını Yönet (Ekle · Düzenle · Sil)</summary>
+                        <div class="mt-3 pt-3 border-t space-y-2.5">
+                            <form action="{{ route('admin.options.update') }}" method="POST" class="flex gap-1.5 max-w-md">
+                                @csrf
+                                <input type="hidden" name="option_key" value="custom_lead_sources">
+                                <input type="hidden" name="operation" value="add">
+                                <input type="hidden" name="return_tab" value="adaylar">
+                                <input type="text" name="new_option" required maxlength="60" placeholder="Ör: Okul Etkinliği" class="w-full border rounded-lg px-2.5 py-1.5">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shrink-0">➕ Ekle</button>
+                            </form>
+                            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                                @foreach($leadSources as $src)
+                                    <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border">
+                                        <form action="{{ route('admin.options.update') }}" method="POST" class="flex-1 min-w-0 flex gap-1">
+                                            @csrf
+                                            <input type="hidden" name="option_key" value="custom_lead_sources">
+                                            <input type="hidden" name="operation" value="rename">
+                                            <input type="hidden" name="old_option" value="{{ $src }}">
+                                            <input type="hidden" name="return_tab" value="adaylar">
+                                            <input type="text" name="new_option" value="{{ $src }}" required maxlength="60" aria-label="Kaynak adı" class="w-full min-w-0 border rounded px-1.5 py-0.5 font-semibold bg-white text-[11px]">
+                                            <button type="submit" class="shrink-0" title="Kaydet">💾</button>
+                                        </form>
+                                        <form action="{{ route('admin.options.update') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="option_key" value="custom_lead_sources">
+                                            <input type="hidden" name="operation" value="remove">
+                                            <input type="hidden" name="remove_option" value="{{ $src }}">
+                                            <input type="hidden" name="return_tab" value="adaylar">
+                                            <button type="submit" class="text-rose-600 font-extrabold" title="Listeden kaldır">✕</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="text-[11px] text-slate-500">Ad değiştirince mevcut adaylar da yeni adı alır. Listeden kaldırmak eski adayların kaynağını silmez.</p>
+                        </div>
+                    </details>
+                @endif
+
                 <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase">
@@ -88,7 +128,7 @@
                                 </tr>
                                 <tr id="edit-lead-{{ $lead->id }}" class="hidden bg-indigo-50/50">
                                     <td colspan="5" class="p-4">
-                                        <form action="{{ route('admin.leads.update', $lead->id) }}" method="POST" class="grid sm:grid-cols-2 lg:grid-cols-7 gap-2 items-end text-xs">
+                                        <form action="{{ route('admin.leads.update', $lead->id) }}" method="POST" class="grid sm:grid-cols-2 lg:grid-cols-8 gap-2 items-end text-xs">
                                             @csrf
                                             <div>
                                                 <label class="font-bold block mb-1">Sporcu Adı</label>
@@ -111,6 +151,17 @@
                                                 <select name="branch_id" class="w-full border rounded-lg px-2 py-1.5 bg-white">
                                                     @foreach($branches as $b)
                                                         <option value="{{ $b->id }}" {{ $lead->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="font-bold block mb-1">Kaynak</label>
+                                                <select name="source" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+                                                    @if(!in_array($lead->source, $leadSources, true))
+                                                        <option value="{{ $lead->source }}" selected>{{ $lead->source }}</option>
+                                                    @endif
+                                                    @foreach($leadSources as $src)
+                                                        <option value="{{ $src }}" {{ $lead->source === $src ? 'selected' : '' }}>{{ $src }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
