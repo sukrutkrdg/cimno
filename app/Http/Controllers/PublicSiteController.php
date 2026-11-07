@@ -31,7 +31,11 @@ class PublicSiteController extends Controller
     {
         $settings = SiteSetting::pluck('value', 'key')->toArray();
         $branches = Branch::where('is_active', true)->orderBy('sort_order')->get();
-        $groups = Group::with(['branch', 'coach', 'schedules'])->withCount('activeStudents')->where('is_active', true)->get();
+        $groups = Group::with(['branch', 'coach', 'schedules'])
+            ->withCount('activeStudents')
+            ->where('is_active', true)
+            ->whereDoesntHave('branch', fn($q) => $q->where('is_active', false))
+            ->get();
         $packages = Package::where('is_active', true)->where('show_on_site', true)->get();
         $coaches = User::where('role', 'coach')->where('is_active', true)->where('show_on_website', true)->get();
         $announcements = Announcement::whereIn('target_audience', ['all', 'public_site'])->orderByDesc('is_pinned')->latest()->take(4)->get();

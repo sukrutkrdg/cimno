@@ -326,6 +326,13 @@
                                     </div>
                                     <textarea name="description" rows="2" class="w-full border rounded-xl p-2 bg-white">{{ $b->description }}</textarea>
                                     <input type="text" name="benefits" value="{{ $b->benefits }}" placeholder="Kazanımlar" class="w-full border rounded-xl px-3 py-1.5 bg-white">
+                                    <label class="flex items-start gap-2 p-2 rounded-xl border cursor-pointer {{ $b->is_active ? 'bg-white border-slate-200' : 'bg-amber-50 border-amber-300' }}">
+                                        <input type="checkbox" name="hide_on_site" value="1" class="mt-0.5" {{ $b->is_active ? '' : 'checked' }}>
+                                        <span>
+                                            <span class="font-bold block">🙈 Ana sayfada gizle</span>
+                                            <span class="text-[11px] text-slate-500">Deneme dersi formundan, branş kartlarından ve grup programı listesinden kaldırılır. Paneldeki kayıtlar etkilenmez.</span>
+                                        </span>
+                                    </label>
                                     <div class="flex justify-between items-center pt-1">
                                         <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold">💾 Branşı Güncelle</button>
                                     </div>

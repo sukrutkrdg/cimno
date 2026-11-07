@@ -60,6 +60,7 @@ trait ManagesCms
             'description' => $request->input('description', $branch->description),
             'benefits' => $request->input('benefits', $branch->benefits),
             'sort_order' => (int) $request->input('sort_order', $branch->sort_order),
+            'is_active' => !$request->boolean('hide_on_site'),
         ]);
         AuditLog::record('brans_guncellendi', "'{$branch->name}' branş bilgileri güncellendi.");
         $tab = $request->input('return_tab', 'site_icerigi');
