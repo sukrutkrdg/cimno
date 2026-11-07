@@ -206,7 +206,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="font-bold block mb-1">Salon Alanı (Çakışma Kontrolü Yapılır)</label>
+                                    <label class="font-bold block mb-1">Salon Alanı (Çalışma Kontrolü Yapılır)</label>
                                     <select name="area" class="w-full border rounded-xl px-3 py-2 bg-white">
                                         @foreach($hallAreas as $ha)
                                             <option value="{{ $ha }}">{{ $ha }}</option>

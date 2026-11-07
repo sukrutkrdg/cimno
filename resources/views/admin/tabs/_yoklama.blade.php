@@ -18,18 +18,19 @@
                             </div>
                             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 @foreach($students->where('group_id', $grp->id) as $st)
+                                    @php $todayAtt = $todayAttendanceByStudent->get($st->id); @endphp
                                     <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col justify-between gap-2">
                                         <div class="flex justify-between items-center">
                                             <span class="font-bold text-xs">{{ $st->full_name }}</span>
                                             <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold">Telafi: {{ $st->makeup_credits }}</span>
                                         </div>
                                         <select name="statuses[{{ $st->id }}]" class="w-full border rounded-lg px-2 py-1.5 text-xs font-bold bg-emerald-50 text-emerald-900">
-                                            <option value="present">✅ Geldi</option>
-                                            <option value="absent">❌ Gelmedi</option>
-                                            <option value="excused">🩺 Raporlu / İzinli (+1 Telafi)</option>
-                                            <option value="makeup">🔄 Telafi Dersi Kullandı</option>
+                                            <option value="present" {{ ($todayAtt->status ?? 'present') === 'present' ? 'selected' : '' }}>✅ Geldi</option>
+                                            <option value="absent" {{ $todayAtt?->status === 'absent' ? 'selected' : '' }}>❌ Gelmedi</option>
+                                            <option value="excused" {{ $todayAtt?->status === 'excused' ? 'selected' : '' }}>🩺 Raporlu / İzinli (+1 Telafi)</option>
+                                            <option value="makeup" {{ $todayAtt?->status === 'makeup' ? 'selected' : '' }}>🔄 Telafi Dersi Kullandı</option>
                                         </select>
-                                        <input type="text" name="notes[{{ $st->id }}]" placeholder="Antrenör ders notu..." class="w-full border rounded-lg px-2 py-1 text-[11px]">
+                                        <input type="text" name="notes[{{ $st->id }}]" value="{{ $todayAtt->note ?? '' }}" placeholder="Antrenör ders notu..." class="w-full border rounded-lg px-2 py-1 text-[11px]">
                                     </div>
                                 @endforeach
                             </div>

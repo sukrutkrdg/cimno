@@ -284,6 +284,11 @@ class AdminPanelController extends Controller
         }
         $attendances = $attendancesQuery->take(50)->get();
 
+        // Yoklama formu sayfa yenilendiğinde bugün için zaten kaydedilmiş durumu
+        // göstermiyordu, her zaman "Geldi" varsayılanına dönüyordu — bu harita
+        // formun her öğrenci için doğru seçili durumu göstermesini sağlar.
+        $todayAttendanceByStudent = Attendance::whereDate('attendance_date', today())->get()->keyBy('student_id');
+
         $developmentRecordsQuery = DevelopmentRecord::with(['student.group', 'coach'])->latest();
         if ($restrictToCoachId) {
             $developmentRecordsQuery->where('coach_id', $restrictToCoachId);
@@ -484,6 +489,7 @@ class AdminPanelController extends Controller
             'transactions',
             'staff',
             'attendances',
+            'todayAttendanceByStudent',
             'developmentRecords',
             'events',
             'whatsappTemplates',

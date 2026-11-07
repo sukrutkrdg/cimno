@@ -261,5 +261,25 @@
         </main>
     </div>
 
+    <script>
+        // Bir form gönderildiğinde (kayıt/güncelleme/silme) sayfa yeniden
+        // yüklendiğinde en başa değil, kullanıcının bulunduğu scroll
+        // konumunda kalsın — aksi hâlde örn. yoklama listesinin ortasında
+        // bir kayıt değiştirince sayfa başa zıplıyor, kullanıcı kaldığı
+        // yeri tekrar bulmak zorunda kalıyordu.
+        document.addEventListener('submit', function (e) {
+            if (e.target && e.target.tagName === 'FORM') {
+                sessionStorage.setItem('enerjik_scroll_y', String(window.scrollY));
+            }
+        }, true);
+
+        (function () {
+            const savedY = sessionStorage.getItem('enerjik_scroll_y');
+            if (savedY !== null) {
+                sessionStorage.removeItem('enerjik_scroll_y');
+                window.scrollTo(0, parseInt(savedY, 10));
+            }
+        })();
+    </script>
 </body>
 </html>
