@@ -49,8 +49,16 @@
                             </form>
                             <div class="grid sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
                                 @foreach($incomeCategories as $catItem)
-                                    <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
-                                        <span class="font-semibold truncate">{{ $catItem }}</span>
+                                    <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border">
+                                        <form action="{{ route('admin.options.update') }}" method="POST" class="flex-1 min-w-0 flex gap-1">
+                                            @csrf
+                                            <input type="hidden" name="option_key" value="custom_income_categories">
+                                            <input type="hidden" name="operation" value="rename">
+                                            <input type="hidden" name="old_option" value="{{ $catItem }}">
+                                            <input type="hidden" name="return_tab" value="kasa">
+                                            <input type="text" name="new_option" value="{{ $catItem }}" required aria-label="Kategori adı" class="w-full min-w-0 border rounded px-1.5 py-0.5 font-semibold bg-white text-[11px]">
+                                            <button type="submit" class="shrink-0" title="Kaydet">💾</button>
+                                        </form>
                                         <form action="{{ route('admin.options.update') }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="option_key" value="custom_income_categories">
@@ -77,8 +85,16 @@
                             </form>
                             <div class="grid sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
                                 @foreach($expenseCategories as $catItem)
-                                    <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
-                                        <span class="font-semibold truncate">{{ $catItem }}</span>
+                                    <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border">
+                                        <form action="{{ route('admin.options.update') }}" method="POST" class="flex-1 min-w-0 flex gap-1">
+                                            @csrf
+                                            <input type="hidden" name="option_key" value="custom_expense_categories">
+                                            <input type="hidden" name="operation" value="rename">
+                                            <input type="hidden" name="old_option" value="{{ $catItem }}">
+                                            <input type="hidden" name="return_tab" value="kasa">
+                                            <input type="text" name="new_option" value="{{ $catItem }}" required aria-label="Kategori adı" class="w-full min-w-0 border rounded px-1.5 py-0.5 font-semibold bg-white text-[11px]">
+                                            <button type="submit" class="shrink-0" title="Kaydet">💾</button>
+                                        </form>
                                         <form action="{{ route('admin.options.update') }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="option_key" value="custom_expense_categories">

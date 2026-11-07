@@ -131,15 +131,9 @@
                                     <input type="hidden" name="description" value="Federasyon müfredatına uygun cimnastik branşı.">
                                     <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">➕ Branş Ekle</button>
                                 </form>
-                                <div class="space-y-1 max-h-24 overflow-y-auto">
+                                <div class="space-y-1 max-h-72 overflow-y-auto">
                                     @foreach($branches as $b)
-                                        <div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded border text-[11px]">
-                                            <span class="font-semibold truncate">{{ $b->icon }} {{ $b->name }}</span>
-                                            <form action="{{ route('admin.branches.destroy', $b->id) }}" method="POST" onsubmit="return confirm('{{ $b->name }} branşını silmek istediğinize emin misiniz?')">
-                                                @csrf
-                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
-                                            </form>
-                                        </div>
+                                        @include('admin.tabs._brans_duzenle', ['branch' => $b, 'returnTab' => 'gruplar'])
                                     @endforeach
                                 </div>
                             </div>
@@ -159,16 +153,33 @@
                                     </select>
                                     <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 text-white font-bold">➕ Hareket Ekle</button>
                                 </form>
-                                <div class="space-y-1 max-h-32 overflow-y-auto">
+                                <div class="space-y-1 max-h-72 overflow-y-auto">
                                     @foreach($movements as $mv)
-                                        <div class="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded border">
-                                            <span class="font-semibold truncate">{{ $mv->name }}@if($mv->branch) <span class="text-slate-400 font-normal">({{ $mv->branch->name }})</span>@endif</span>
-                                            <form action="{{ route('admin.movements.destroy', $mv->id) }}" method="POST" onsubmit="return confirm('{{ $mv->name }} hareketini silmek istediğinize emin misiniz?')">
-                                                @csrf
-                                                <input type="hidden" name="return_tab" value="gruplar">
-                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
-                                            </form>
-                                        </div>
+                                        <details class="bg-slate-50 rounded border text-[11px]">
+                                            <summary class="cursor-pointer px-2 py-1 font-semibold truncate">
+                                                {{ $mv->name }}@if($mv->branch) <span class="text-slate-400 font-normal">({{ $mv->branch->name }})</span>@endif
+                                                <span class="text-indigo-600 font-bold">✏️</span>
+                                            </summary>
+                                            <div class="p-2 space-y-1.5 border-t">
+                                                <form action="{{ route('admin.movements.update', $mv->id) }}" method="POST" class="space-y-1.5">
+                                                    @csrf
+                                                    <input type="hidden" name="return_tab" value="gruplar">
+                                                    <input type="text" name="name" value="{{ $mv->name }}" required aria-label="Hareket adı" class="w-full border rounded-lg px-2 py-1 bg-white font-bold">
+                                                    <select name="branch_id" aria-label="Branş" class="w-full border rounded-lg px-2 py-1 bg-white">
+                                                        <option value="">Tüm Branşlar</option>
+                                                        @foreach($branches as $b)
+                                                            <option value="{{ $b->id }}" {{ $mv->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <button type="submit" class="w-full py-1 rounded-lg bg-indigo-600 text-white font-bold">💾 Kaydet</button>
+                                                </form>
+                                                <form action="{{ route('admin.movements.destroy', $mv->id) }}" method="POST" onsubmit="return confirm(@js($mv->name . ' hareketini silmek istediğinize emin misiniz?'))">
+                                                    @csrf
+                                                    <input type="hidden" name="return_tab" value="gruplar">
+                                                    <button type="submit" class="w-full py-1 rounded-lg text-rose-600 font-bold">🗑️ Hareketi Sil</button>
+                                                </form>
+                                            </div>
+                                        </details>
                                     @endforeach
                                 </div>
                             </div>
@@ -410,7 +421,7 @@
                                         <div class="flex flex-wrap items-center justify-between gap-2">
                                             <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-bold cursor-pointer">
                                                 <input type="checkbox" name="show_in_trial_signup" value="1" {{ $g->show_in_trial_signup ? 'checked' : '' }}>
-                                                <span>👀 Paneldeki Adaylar Sekmesinde Deneme Grubu Olarak Seçilebilsin</span>
+                                                <span>👀 Ana Sayfada ve Deneme Dersi Listelerinde Görünsün</span>
                                             </label>
                                             <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-bold">💾 Grup Bilgilerini Kaydet</button>
                                         </div>

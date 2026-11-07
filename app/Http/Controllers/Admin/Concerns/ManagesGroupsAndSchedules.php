@@ -136,6 +136,23 @@ trait ManagesGroupsAndSchedules
         return redirect()->route('admin.index', ['tab' => $request->input('return_tab', 'gruplar')])->with('success', "'{$movement->name}' hareket kataloğuna eklendi.");
     }
 
+    public function updateMovement(Request $request, \App\Models\Movement $movement)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'branch_id' => 'nullable|exists:branches,id',
+        ]);
+
+        $movement->update([
+            'name' => $validated['name'],
+            'branch_id' => $validated['branch_id'] ?? null,
+        ]);
+
+        AuditLog::record('hareket_guncellendi', "Hareket güncellendi: {$movement->name}", 'Movement', $movement->id);
+
+        return redirect()->route('admin.index', ['tab' => $request->input('return_tab', 'gruplar')])->with('success', "'{$movement->name}' hareketi güncellendi.");
+    }
+
     public function destroyMovement(Request $request, \App\Models\Movement $movement)
     {
         $name = $movement->name;

@@ -279,16 +279,29 @@
         // konumunda kalsın — aksi hâlde örn. yoklama listesinin ortasında
         // bir kayıt değiştirince sayfa başa zıplıyor, kullanıcı kaldığı
         // yeri tekrar bulmak zorunda kalıyordu.
+        const panelTab = new URLSearchParams(location.search).get('tab') || 'pano';
+
         document.addEventListener('submit', function (e) {
             if (e.target && e.target.tagName === 'FORM') {
                 sessionStorage.setItem('enerjik_scroll_y', String(window.scrollY));
+                const openPanels = [...document.querySelectorAll('details')].flatMap((d, i) => d.open ? [i] : []);
+                sessionStorage.setItem('enerjik_open_details', JSON.stringify({ tab: panelTab, openPanels }));
             }
         }, true);
 
         (function () {
+            // Kaydettikten sonra açık paneller kapanmasın; yönlendirme başka sekmeye gittiyse sıra numaraları geçersizdir.
+            const savedDetails = JSON.parse(sessionStorage.getItem('enerjik_open_details') || 'null');
+            sessionStorage.removeItem('enerjik_open_details');
+            if (savedDetails && savedDetails.tab === panelTab) {
+                const allDetails = document.querySelectorAll('details');
+                savedDetails.openPanels.forEach((i) => { if (allDetails[i]) allDetails[i].open = true; });
+            }
+
             const savedY = sessionStorage.getItem('enerjik_scroll_y');
-            if (savedY !== null) {
-                sessionStorage.removeItem('enerjik_scroll_y');
+            sessionStorage.removeItem('enerjik_scroll_y');
+            // Hata varsa üstteki uyarı görünsün diye konum geri yüklenmez.
+            if (savedY !== null && !@json(session()->has('error') || $errors->any())) {
                 window.scrollTo(0, parseInt(savedY, 10));
             }
         })();

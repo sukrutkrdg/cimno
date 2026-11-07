@@ -72,6 +72,26 @@ class HideBranchOnHomepageTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Yarisma Bransi');
     }
 
+    public function test_turning_off_a_branchs_only_group_hides_the_group_and_the_branch(): void
+    {
+        Group::where('branch_id', $this->branch->id)->update(['show_in_trial_signup' => false]);
+
+        $this->get('/')->assertOk()
+            ->assertDontSee('Yarisma Grubu A')
+            ->assertDontSee('Yarisma Bransi');
+    }
+
+    public function test_branch_stays_visible_while_another_of_its_groups_is_still_on(): void
+    {
+        Group::where('branch_id', $this->branch->id)->update(['show_in_trial_signup' => false]);
+        Group::create(['branch_id' => $this->branch->id, 'name' => 'Yarisma Grubu B', 'capacity' => 10, 'is_active' => true]);
+
+        $this->get('/')->assertOk()
+            ->assertDontSee('Yarisma Grubu A')
+            ->assertSee('Yarisma Grubu B')
+            ->assertSee('Yarisma Bransi');
+    }
+
     public function test_hidden_branch_stays_available_in_the_admin_panel(): void
     {
         $this->branch->update(['is_active' => false]);

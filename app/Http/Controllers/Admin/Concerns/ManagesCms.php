@@ -52,6 +52,14 @@ trait ManagesCms
 
     public function updateBranch(Request $request, Branch $branch)
     {
+        $request->validate([
+            'name' => 'required|string|max:120',
+            'icon' => 'sometimes|required|string|max:20',
+            'age_range' => 'sometimes|required|string|max:60',
+            'level' => 'sometimes|required|string|max:120',
+            'sort_order' => 'nullable|integer',
+        ]);
+
         $branch->update([
             'name' => $request->input('name', $branch->name),
             'icon' => $request->input('icon', $branch->icon),
@@ -355,11 +363,17 @@ trait ManagesCms
         } elseif ($action === 'remove' && $request->filled('remove_option')) {
             $remOpt = trim($request->input('remove_option'));
             $items = array_values(array_filter($items, fn($i) => $i !== $remOpt));
-        } elseif ($action === 'rename' && $request->filled('old_option') && $request->filled('new_option')) {
-            $oldOpt = trim($request->input('old_option'));
-            $newOpt = trim($request->input('new_option'));
+        } elseif ($action === 'rename') {
+            $oldOpt = trim((string) $request->input('old_option'));
+            $newOpt = trim((string) $request->input('new_option'));
             $idx = array_search($oldOpt, $items, true);
-            if ($idx !== false && $newOpt !== '' && !in_array($newOpt, $items, true)) {
+            if ($idx === false || $newOpt === '') {
+                return back()->with('error', 'Seçenek güncellenemedi: yeni ad boş olamaz.');
+            }
+            if ($newOpt !== $oldOpt && in_array($newOpt, $items, true)) {
+                return back()->with('error', "'{$newOpt}' bu listede zaten var.");
+            }
+            if ($newOpt !== $oldOpt) {
                 $items[$idx] = $newOpt;
                 $renamedFrom = $oldOpt;
                 $renamedTo = $newOpt;
@@ -383,7 +397,8 @@ trait ManagesCms
                 ],
                 'custom_age_groups' => Group::where('age_group', $renamedFrom)->update(['age_group' => $renamedTo]),
                 'custom_group_levels' => Group::where('level', $renamedFrom)->update(['level' => $renamedTo]),
-                'custom_income_categories', 'custom_expense_categories' => FinancialTransaction::where('category', $renamedFrom)->update(['category' => $renamedTo]),
+                'custom_income_categories' => FinancialTransaction::where('direction', 'income')->where('category', $renamedFrom)->update(['category' => $renamedTo]),
+                'custom_expense_categories' => FinancialTransaction::where('direction', 'expense')->where('category', $renamedFrom)->update(['category' => $renamedTo]),
                 'custom_lead_sources' => Lead::where('source', $renamedFrom)->update(['source' => $renamedTo]),
                 default => null,
             };

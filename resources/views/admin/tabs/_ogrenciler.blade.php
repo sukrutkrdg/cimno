@@ -46,6 +46,7 @@
                                     @foreach($groups as $g)
                                         <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
                                             <span class="truncate font-semibold">{{ $g->name }}</span>
+                                            <a href="{{ route('admin.index', ['tab' => 'gruplar']) }}" title="Grup ve Program sekmesinde düzenle" class="ml-auto mr-2 shrink-0">✏️</a>
                                             <form action="{{ route('admin.groups.destroy', $g->id) }}" method="POST" onsubmit="return confirm('{{ $g->name }} grubunu silmek istediğinize emin misiniz?')">
                                                 @csrf
                                                 <button type="submit" class="text-rose-600 font-extrabold">✕</button>
@@ -75,6 +76,7 @@
                                     @foreach($packages as $p)
                                         <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
                                             <span class="truncate font-semibold">{{ $p->name }} ({{ number_format($p->price, 0, ',', '.') }} ₺)</span>
+                                            <a href="{{ route('admin.index', ['tab' => 'paketler']) }}" title="Paket sekmesinde düzenle" class="ml-auto mr-2 shrink-0">✏️</a>
                                             <form action="{{ route('admin.packages.destroy', $p->id) }}" method="POST" onsubmit="return confirm('{{ $p->name }} paketini silmek istediğinize emin misiniz?')">
                                                 @csrf
                                                 <button type="submit" class="text-rose-600 font-extrabold">✕</button>
@@ -101,15 +103,9 @@
                                     <input type="hidden" name="description" value="Türkiye Cimnastik Federasyonu müfredatına uygun branş eğitimi.">
                                     <button type="submit" class="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold">➕ Yeni Branş Ekle</button>
                                 </form>
-                                <div class="max-h-28 overflow-y-auto space-y-1 pt-1 border-t">
+                                <div class="max-h-72 overflow-y-auto space-y-1 pt-1 border-t">
                                     @foreach($branches as $b)
-                                        <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
-                                            <span class="truncate font-semibold">{{ $b->icon }} {{ $b->name }}</span>
-                                            <form action="{{ route('admin.branches.destroy', $b->id) }}" method="POST" onsubmit="return confirm('{{ $b->name }} branşını silmek istediğinize emin misiniz?')">
-                                                @csrf
-                                                <button type="submit" class="text-rose-600 font-extrabold">✕</button>
-                                            </form>
-                                        </div>
+                                        @include('admin.tabs._brans_duzenle', ['branch' => $b, 'returnTab' => 'ogrenciler'])
                                     @endforeach
                                 </div>
                             </div>
@@ -135,6 +131,7 @@
                                     @foreach($discountRules as $d)
                                         <div class="flex justify-between items-center text-[11px] bg-slate-50 px-2 py-1 rounded">
                                             <span class="truncate font-semibold">{{ $d->name }} (%{{ $d->percentage }})</span>
+                                            <a href="{{ route('admin.index', ['tab' => 'paketler']) }}" title="Paket sekmesinde düzenle" class="ml-auto mr-2 shrink-0">✏️</a>
                                             <form action="{{ route('admin.discounts.destroy', $d->id) }}" method="POST" onsubmit="return confirm('{{ $d->name }} indirimini silmek istediğinize emin misiniz?')">
                                                 @csrf
                                                 <button type="submit" class="text-rose-600 font-extrabold">✕</button>
