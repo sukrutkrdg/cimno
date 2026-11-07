@@ -72,24 +72,46 @@ class HideBranchOnHomepageTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Yarisma Bransi');
     }
 
-    public function test_turning_off_a_branchs_only_group_hides_the_group_and_the_branch(): void
+    public function test_groups_previously_switched_off_are_visible_again_while_their_branch_is_visible(): void
     {
         Group::where('branch_id', $this->branch->id)->update(['show_in_trial_signup' => false]);
 
         $this->get('/')->assertOk()
-            ->assertDontSee('Yarisma Grubu A')
-            ->assertDontSee('Yarisma Bransi');
+            ->assertSee('Yarisma Grubu A')
+            ->assertSee('Yarisma Bransi');
     }
 
-    public function test_branch_stays_visible_while_another_of_its_groups_is_still_on(): void
+    public function test_saving_a_group_does_not_need_the_removed_checkbox(): void
     {
-        Group::where('branch_id', $this->branch->id)->update(['show_in_trial_signup' => false]);
-        Group::create(['branch_id' => $this->branch->id, 'name' => 'Yarisma Grubu B', 'capacity' => 10, 'is_active' => true]);
+        $group = Group::where('branch_id', $this->branch->id)->first();
 
-        $this->get('/')->assertOk()
-            ->assertDontSee('Yarisma Grubu A')
-            ->assertSee('Yarisma Grubu B')
-            ->assertSee('Yarisma Bransi');
+        $this->withSession(['admin_user_id' => $this->admin->id])
+            ->get('/panel?tab=gruplar')
+            ->assertOk()
+            ->assertDontSee('name="show_in_trial_signup"', false);
+
+        $this->withSession(['admin_user_id' => $this->admin->id])
+            ->post(route('admin.groups.update', $group->id), [
+                'name' => 'Yarisma Grubu Yeni',
+                'branch_id' => $this->branch->id,
+                'capacity' => 10,
+            ])
+            ->assertRedirect();
+
+        $this->get('/')->assertSee('Yarisma Grubu Yeni');
+    }
+
+    public function test_groups_of_a_hidden_branch_cannot_be_picked_for_a_trial_lesson(): void
+    {
+        $visibleBranch = Branch::create(['name' => 'Acik Brans', 'slug' => 'acik-brans', 'age_range' => '4-6 Yaş', 'level' => 'Başlangıç', 'is_active' => true]);
+        Group::create(['branch_id' => $visibleBranch->id, 'name' => 'Acik Grup', 'capacity' => 10, 'is_active' => true]);
+        $this->branch->update(['is_active' => false]);
+
+        $response = $this->withSession(['admin_user_id' => $this->admin->id])->get('/panel?tab=adaylar');
+
+        $eligibleNames = $response->viewData('trialEligibleGroups')->pluck('name')->all();
+        $this->assertContains('Acik Grup', $eligibleNames);
+        $this->assertNotContains('Yarisma Grubu A', $eligibleNames);
     }
 
     public function test_hidden_branch_stays_available_in_the_admin_panel(): void

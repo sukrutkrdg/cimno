@@ -30,15 +30,10 @@ class PublicSiteController extends Controller
     public function home()
     {
         $settings = SiteSetting::pluck('value', 'key')->toArray();
-        // Grubu olan bir branş, gruplarının hepsi ana sayfada kapatıldıysa da gizlenir.
-        $branches = Branch::where('is_active', true)
-            ->where(fn($q) => $q->doesntHave('groups')->orWhereHas('groups', fn($g) => $g->where('show_in_trial_signup', true)))
-            ->orderBy('sort_order')
-            ->get();
+        $branches = Branch::where('is_active', true)->orderBy('sort_order')->get();
         $groups = Group::with(['branch', 'coach', 'schedules'])
             ->withCount('activeStudents')
             ->where('is_active', true)
-            ->where('show_in_trial_signup', true)
             ->whereDoesntHave('branch', fn($q) => $q->where('is_active', false))
             ->get();
         $packages = Package::where('is_active', true)->where('show_on_site', true)->get();
